@@ -1,0 +1,103 @@
+Oinkmaster FAQ
+--------------
+
+
+Q1:  I want to download the rules archive using the program XXXXX, which I 
+     can't do with Oinkmaster. What do I do?
+
+A1:  Use whatever program you want to download the rules archive to the local
+     filesystem first, and then run Oinkmaster with -u file://<file>.
+
+
+
+Q2:  Can Oinkmaster be useful for distributing rules locally to my sensors?
+
+A2:  Yes, there are several situations where Oinkmaster can be handy when 
+     dealing with local rules management.
+
+     Let's say you have one machine called foohost and also an arbitrary 
+     number of sensors, where foohost may be the only one with ability to 
+     download the (official) rules from the Internet, and also has the 
+     ability to talk to the sensors as well (if the sensors is not be 
+     able to talk to the Internet, they can obviously not run Oinkmaster 
+     in the traditional way anyway). One solution could be to run 
+     Oinkmaster on foohost, which then distributes the rules archive to 
+     the sensors (over https/sftp/scp/whatever) who will then run 
+     Oinkmaster and point to the file on their local filesystem. You can 
+     also have the sensors pull the rules from foohost using -u 
+     scp://user@foohost:/...
+
+     An example step-by-step how this could be done:
+
+     1) foohost uses Oinkmaster in a traditional way, with its own 
+        oinkmaster.conf, to download the rules to some local directory.
+        Rules that you disable/modify here will become disabled/modified 
+        on ALL sensors by default. This is a convenient way to disable 
+        rules that you don't want to use on any sensors, instead of 
+        having to disable them on each sensor. (You can of course override 
+        this on a sensor by using 'enablesid'.) If you don't want any 
+        global preprocessing of the rules, you could just use a simple 
+        wget of the archive on this host.
+
+     2) Create a script that re-creates the rules tarball from the rules 
+        just downloaded/processed, if needed. You could either have push 
+        the archive to all the sensors, or have each sensor pull the 
+        tarball from foohost using '-u scp://user@foohost:/...'. If your 
+        sensors does not have a way to talk to other hosts at all (like 
+        when using receive-only cables only), the rules archive will 
+        obviously have to be distributed manually using a removable media 
+        like a USB memory stick for example. If you pushed the archive to 
+        the sensors, they should run Oinkmaster with '-u file:///...' and 
+        point to this file. In each local oinkmaster.conf, you can then 
+        adjust things so they fit this perticular sensor.
+
+
+
+Q3:  Can Oinkmaster be useful for distributing my homemade rules to my sensors?
+
+A3:  Yes! This can be done almost exactly like in the example above.
+     The main difference is that in step 1, you don't download from the 
+     Internet, but rather point to a rules tarball created from a directory 
+     (perhaps checked out from a cvs repository) containing your homemade 
+     rules when running Oinkmaster on foohost.
+     There are a few scripts in Oinkmaster's contrib/ directory (that all 
+     handle multi-line rules) that may be useful in this case. For 
+     example, addsid.pl will parse all your rules and add the next 
+     available SIDs to rules that don't have any. This may be useful to 
+     run before creating the rules tarball (probably in the same script). 
+     So when adding new homemade rules on foohost (and you only have to 
+     add them here since they will be distributed to all your sensors), 
+     just leave out the SID and it will be filled in for you 
+     automatically.
+
+
+
+Q4: In which order will 'modifysid'/'disablesid'/'enablesid' be processed?
+
+A4: All the 'modifysid' will be processed first, then 'disablesid' and last 
+    'enablesid'. The order they apperar in oinkmaster.conf does not matter.
+    So if you use both "enablesid 1" and "disablesid 1" in 
+    oinkmaster.conf (in any order), sid 1 will first be disabled and then 
+    enabled. So if sid 1 was enabled by default in the downloaded rules 
+    archive, this is a NOOP.
+
+
+
+Q5:  How can the 'include' statement in oinkmaster.conf be useful?
+
+A5:  There are many situations where this is useful, but perhaps the most
+     common usage is to be able to use one global and one sensor-specific
+     configuration file. You would usually want to make sure to include the 
+     sensor-specific file last, since possible values that are redefined 
+     overrides the previous ones.
+
+
+
+Q6: Can Oinkmaster restart Snort after an update?
+
+A6: No. This functionality does not belong in Oinkmaster since almost everyone
+    has their own way of restarting Snort. Automatic restart of Snort
+    after an update is usually no good idea either. See the README
+    for more information. If you really want to do an automatic restart, just
+    write a little wrapper that does what you want, and remember to run snort -T
+    first and refuse to restart if the test was not successful.

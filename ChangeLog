@@ -25,6 +25,7 @@ o Added 'enablesid' keyword to oinkmaster.conf.
   'modifysid' will be processed first, then 'disablesid' and last 'enablesid'.
 o Slightly improved rules parsing.
 o Look for oinkmaster.conf in /etc/ and /usr/local/etc/ by default.
+o Added a FAQ.
 
 
 
