@@ -11,7 +11,11 @@ o deleted.rules is skipped in default oinkmaster.conf ("skipfile deleted.rules")
 o A bunch of Win32/Cygwin fixes, mostly from Ueli Kistler <iuk@gmx.ch>
   To avoid problems when running under Win32/Cygwin, you should only use
   Cygwin-style paths (e.g. "/cygdrive/c/foo" instead of "c:\foo").
-o Better check for duplicate SIDs (check is done across all files now).
+o Better check for duplicate SIDs. Check is done across all files now, and
+  duplicate SIDs in downloaded archive are discarded (only first one is 
+  kept) and not copied to the local files. This will avoid some annoying 
+  warning messages about duplicates in the local files that won't go away 
+  until the files gets updated again.
 o Slightly modified format when printing results 
   (hopefully easier to read when there are a large number of changes).
 o New options in oinkmaster.conf: min_files and min_rules.
