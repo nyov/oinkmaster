@@ -40,8 +40,8 @@ o Depending on your Perl installation, you may or may not be able to call
 o Oinkmaster usually requires a few external binaries (tar, gzip and 
   wget). As of Oinkmaster v1.0 though, you don't need them if you have the 
   Perl modules Archive::Tar, IO::Zlib and LWP::UserAgent. The good news is 
-  that ActivePerl comes with these modules and that Oinkmaster uses them 
-  by default on Windows. See the default oinkmaster.conf for more 
+  that ActivePerl 5.8.1+ comes with these modules and that Oinkmaster uses
+  them by default on Windows. See the default oinkmaster.conf for more 
   information about this.
 
 
@@ -49,10 +49,14 @@ o Oinkmaster usually requires a few external binaries (tar, gzip and
 ActivePerl
 ----------
 
-- If you don't have a recent version of ActivePerl installed already, get 
-  it from http://www.activestate.com/Products/ActivePerl/.
-  It contains all required Perl modules (even for the Oinkmaster GUI), 
-  no external binaries are required.
+- If you don't have ActivePerl installed already, get the most recent 
+  version from http://www.activestate.com/Products/ActivePerl/.
+  ActivePerl 5.8.1 and later contains all required Perl modules (even for 
+  the Oinkmaster GUI), no external binaries are required. If your 
+  ActivePerl is older than 5.8.1 and you for some reason don't want to 
+  upgrade to a more recent version, you need to execute the command 
+  "ppm install IO::Zlib" from a command shell. This is not required on 
+  5.8.1 and later since that module is already included there.
 
 - Install Oinkmaster by following the INSTALL file.
 
