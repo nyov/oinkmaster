@@ -565,7 +565,7 @@ sub disable_and_modify_rules($ $ $)
 
                     $line =~ s/\Q$sub\E/$repl/;
 
-  	  	    print STDERR "  After: $line\n"
+  	  	    print STDERR "After:  $line\n"
                       if ($verbose);
 		} else {
                    print STDERR "\nWARNING: SID $sid does not contain modifysid-string ".
