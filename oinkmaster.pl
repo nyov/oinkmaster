@@ -338,8 +338,8 @@ sub show_usage
 		 "-u <url>   Download from this URL (http:// or ftp:// ...tar.gz)\n".
                  "           instead of the URL specified in $config_file\n".
 		 "-c         Careful mode. Don't update anything, just check for changes\n".
-		 "-e         Re-enable rules that are disabled by default in the rules distribution.\n".
-                 "           (Warning: they are disabled for a reason!)\n".
+		 "-e         Re-enable all rules that are disabled by default in the rules distribution.\n".
+                 "           (They are disabled for a reason so use with care)\n".
                  "-r         Check for rules files that exist in the output directory\n".
                  "           but not in the downloaded rules archive (i.e. files that may\n".
                  "           have been removed from the archive).\n".
