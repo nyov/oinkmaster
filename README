@@ -63,7 +63,8 @@ But of course, be very careful when doing the latter. Think about what you're
 doing. It usually doesn't take much for these automatic updating scripts 
 to fail, so things could easily get messed up from one update to another 
 because of different layout in the rules archive, typo in a rule, bugs in 
-the script, etc etc. And as always when updating the Snort rules there may 
+the script etc etc (at least run snort -T on the new rules before restarting
+your running Snort). And as always when updating the Snort rules there may 
 be some changes that you really don't like (or at least want to know about 
 before using), so you should always manually verify the new rules before 
 using them. Since Oinkmaster will print all changes in the new rules to 
@@ -134,13 +135,26 @@ disabled has changed and you now decide that you want to use it again,
 just remove its SID from oinkmaster.conf and it will be reactivated after 
 the next update). If you want the output to be sent to you in a mail 
 instead, you could use something like:
-./oinkmaster.pl ... 2>&1 | mail -s subject you@somewhere.foo
+./oinkmaster.pl ... 2>&1 | mail -s "subject" you@somewhere.foo
 
-If you just want to check for changes in the new rules archive but not 
+If you just want to check for changes in the rules archive but not 
 actually update your existing rules, you can use the -c flag for "careful" 
 mode. It's nice to combine -c with -q  and run as a cron job to silently 
 check for updates (perhaps you just want to use this script to check for 
 updates, but still want to do the actual rules updating manually!).
+
+To silently check for updates as a cron job, not sending any e-mail unless
+there were updates available, you could use something like this:
+
+30 2 * * * cd /usr/local/oinkmaster; TMP=`mktemp /tmp/oinkmaster.XXXXXX` && (./oinkmaster.pl -o /snort/snort.org-rules/ -q -c > $TMP 2>&1; if [ -s $TMP ]; then mail -s "subject" you@somewhere.foo < $TMP; fi; rm $TMP)
+
+This example only works on systems with the mktemp command but could easily be
+rewritten for others. You get the point. The important thing here is to use the
+-q argument (quiet mode) so Oinkmaster doesn't give any output unless there
+were any updates available, or if there were warning/error messages.
+
+You should of course change directories and e-mail addresses in the
+examples above as appropriate.
 
 
 

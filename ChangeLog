@@ -1,8 +1,13 @@
-v0.5 - 20020504
+v0.5 - 20020506
 ~~~~~~~~~~~~~~~
 o Fixed bug where all filenames would not always be printed.
-o Fixed whitespace idiocy.
-o Document that using -p is recommended.
+o Fixed minor whitespace idiocy.
+o Print which rules that are being preserved or enabled (for rules that
+  are commented out by default) when running in verbose mode.
+o SID dup warnings will no longer be printed when running in quiet mode.
+o Document example where running silently as a cron job, only
+  sending e-mail when there were updates available.
+o Document that using -p is usually a good idea.
 
 
 
