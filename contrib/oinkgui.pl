@@ -18,11 +18,11 @@ sub show_help();
 sub update_rules();
 sub clear_messages();
 sub create_cmdline($);
-sub fileDialog($ $ $);
+sub fileDialog($ $ $ $);
 sub load_config();
 sub save_config();
 sub update_file_label_color($ $ $);
-sub create_fileSelectFrame($ $ $ $ $);
+sub create_fileSelectFrame($ $ $ $ $ $);
 sub create_checkbutton($ $ $);
 sub create_radiobutton($ $ $);
 sub create_actionbutton($ $ $);
@@ -48,14 +48,14 @@ my @urls = qw(http://www.snort.org/dl/rules/snortrules-stable.tar.gz
 
 
 my %color = (
-    bgcolor              => 'Bisque3',
-    butcolor             => 'Bisque2',
-    actbutcolor          => 'Bisque2',
-    labelcolor           => 'Bisque1',
-    file_label_ok        => '#00e000',
-    file_label_not_ok    => 'red',
-    out_frame_foreground => 'white',
-    out_frame_background => 'black',
+    background        => 'Bisque3',
+    button            => 'Bisque2',
+    label             => 'Bisque1',
+    notebook          => 'Bisque2',
+    file_label_ok     => '#00e000',
+    file_label_not_ok => 'red',
+    out_frame_fg      => 'white',
+    out_frame_bg      => 'black',
 );
 
 
@@ -82,12 +82,12 @@ my $editor = "";
 my %help = (
 
   # File locations.
-    oinkscript   => 'Location of the executable Oinkmaster script.',
+    oinkscript   => 'Location of the executable Oinkmaster script (oinkmaster.pl).',
     oinkconf     => 'The Oinkmaster configuration file to use.',
-    outdir       => 'Where to put the new rules. This shoudl be the directory where you '.
-                    'store your existing rules.',
+    outdir       => 'Where to put the new rules. This should be the directory where you '.
+                    'store your rules.',
 
-    url          => 'Alternate location of rules archive. '.
+    url          => 'Alternate location of rules archive to download/copy. '.
                     'If empty, the location in oinkmaster.conf is used.',
     varfile      => 'Variables that exist in downloaded snort.conf but not in '.
                     'this file will be added to it. Leave empty to skip.',
@@ -167,7 +167,7 @@ if ($ENV{HOME}) {
 
 # Create main window.
 my $main = MainWindow->new(
-  -background => "$color{bgcolor}",
+  -background => "$color{background}",
   -title      => "$version"
 );
 
@@ -175,13 +175,13 @@ my $main = MainWindow->new(
 my $out_frame = $main->Scrolled('ROText',
   -setgrid    => 'true',
   -scrollbars => 'e',
-  -background => $color{out_frame_background},
-  -foreground => $color{out_frame_foreground},
+  -background => $color{out_frame_bg},
+  -foreground => $color{out_frame_fg},
 );
 
 my $help_label = $main->Label(
     -relief     => 'groove',
-    -background => "$color{labelcolor}"
+    -background => "$color{label}"
 );
 
 my $balloon = $main->Balloon(
@@ -193,7 +193,7 @@ my $balloon = $main->Balloon(
 my $notebook = $main->NoteBook(
   -ipadx      => 6,
   -ipady      => 6,
-  -background => 'Bisque2'
+  -background => $color{notebook},
 );
 
 
@@ -205,22 +205,30 @@ my $req_tab = $notebook->add("required",
 
 
 # Create frame with oinkmaster.pl location.
+my $types = [
+  ['Oinkmaster script', 'oinkmaster.pl'],
+  ['All files',         '*'            ]
+];
 my $oinkscript_frame = 
-  create_fileSelectFrame($req_tab, "oinkmaster.pl", 'EXECFILE', \$config{oinkmaster}, 'NOEDIT');
+  create_fileSelectFrame($req_tab, "oinkmaster.pl", 'EXECFILE', \$config{oinkmaster}, 'NOEDIT', $types);
 
 $balloon->attach($oinkscript_frame, -statusmsg => $help{oinkscript});
 
 
 # Create frame with oinkmaster.conf location.
+$types = [
+  ['configuration files', '.conf'],
+  ['All files',           '*'    ]
+];
 my $oinkconf_frame = 
-  create_fileSelectFrame($req_tab, "oinkmaster.conf", 'ROFILE', \$config{oinkmaster_conf}, 'EDIT');
+  create_fileSelectFrame($req_tab, "oinkmaster.conf", 'ROFILE', \$config{oinkmaster_conf}, 'EDIT', $types);
 
 $balloon->attach($oinkconf_frame, -statusmsg => $help{oinkconf});
 
 
 # Create frame with output directory.
 my $outdir_frame =
-  create_fileSelectFrame($req_tab, "output directory", 'WRDIR', \$config{outdir}, 'NOEDIT');
+  create_fileSelectFrame($req_tab, "output directory", 'WRDIR', \$config{outdir}, 'NOEDIT', undef);
 
 $balloon->attach($outdir_frame, -statusmsg => $help{outdir});
 
@@ -234,22 +242,29 @@ my $opt_tab = $notebook->add("optional",
 
 
 # Create frame with alternate URL location.
+$types = [
+  ['compressed tar files', '.tar.gz']
+];
 my $url_frame =
-  create_fileSelectFrame($opt_tab, "Alternate URL", 'URL', \$config{url}, 'NOEDIT');
+  create_fileSelectFrame($opt_tab, "Alternate URL", 'URL', \$config{url}, 'NOEDIT', $types);
 
 $balloon->attach($url_frame, -statusmsg => $help{url});
 
 
 # Create frame with variable file.
+$types = [
+  ['Snort files', ['.conf', '.config', '.rules']],
+  ['All files',    '*'                           ]
+];
 my $varfile_frame =
-  create_fileSelectFrame($opt_tab, "Variable file", 'WRFILE', \$config{varfile}, 'EDIT');
+  create_fileSelectFrame($opt_tab, "Variable file", 'WRFILE', \$config{varfile}, 'EDIT', $types);
 
 $balloon->attach($varfile_frame, -statusmsg => $help{varfile});
 
 
 # Create frame with backup dir location.
 my $backupdir_frame =
-  create_fileSelectFrame($opt_tab, "Backup directory", 'WRDIR', \$config{backupdir}, 'NOEDIT');
+  create_fileSelectFrame($opt_tab, "Backup directory", 'WRDIR', \$config{backupdir}, 'NOEDIT', undef);
 
 $balloon->attach($backupdir_frame, -statusmsg => $help{backupdir});
 
@@ -265,7 +280,7 @@ $notebook->pack(
 
 # Create the frame to the left.
 my $left_frame = $main->Frame(
-  -background => "$color{labelcolor}", 
+  -background => "$color{label}", 
   -border     => '2'
 )->pack(
   -side       => 'left',
@@ -276,7 +291,7 @@ my $left_frame = $main->Frame(
 # Create "GUI settings" label.
 $left_frame->Label(
   -text       => "GUI settings:",
-  -background => "$color{labelcolor}"
+  -background => "$color{label}"
 )->pack(
   -side       => 'top',
   -fill       => 'x'
@@ -290,7 +305,7 @@ create_actionbutton($left_frame, "Save current settings", \&save_config);
 # Create "options" label at the top of the left frame.
 $left_frame->Label(
   -text       => "Options:", 
-  -background => "$color{labelcolor}"
+  -background => "$color{label}"
 )->pack(side  => 'top',
         fill  => 'x'
 );
@@ -316,7 +331,7 @@ $balloon->attach(
 # Create "mode" label.
 $left_frame->Label(
   -text       => "Mode:", 
-  -background => "$color{labelcolor}"
+  -background => "$color{label}"
 )->pack(side  => 'top',
         fill  => 'x'
 );
@@ -333,7 +348,7 @@ create_radiobutton($left_frame, "verbose",    \$config{mode});
 $main->Label(
   -text       => "Output messages:", 
   -width      => '100', 
-  -background => "$color{labelcolor}"
+  -background => "$color{label}"
 )->pack(
   -side       => 'top',
   -fill       => 'x'
@@ -357,7 +372,7 @@ $help_label->pack(
 # Create "actions" label.
 $left_frame->Label(
   -text       => "Actions:",
-  -background => "$color{labelcolor}"
+  -background => "$color{label}"
 )->pack(
   -side       => 'top',
   -fill       => 'x'
@@ -435,11 +450,12 @@ MainLoop;
 
 
 
-sub fileDialog($ $ $)
+sub fileDialog($ $ $ $)
 {
-    my $var_ref = shift;
-    my $title   = shift;
-    my $type    = shift;
+    my $var_ref   = shift;
+    my $title     = shift;
+    my $type      = shift;
+    my $filetypes = shift;
 
     if ($type eq 'WRDIR') {
         my $fs = $main->FileSelect();
@@ -447,7 +463,7 @@ sub fileDialog($ $ $)
         my $dirname = $fs->Show;
         $$var_ref = $dirname if ($dirname);
     } else {
-        my $filename = $main->getOpenFile(-title => $title);
+        my $filename = $main->getOpenFile(-title => $title, -filetypes => $filetypes);
         $$var_ref = $filename if ($filename);
     }
 }
@@ -523,7 +539,7 @@ sub create_checkbutton($ $ $)
  
     my $button = $frame->Checkbutton(
       -text       => $name,
-      -background => $color{butcolor},
+      -background => $color{button},
       -variable   => $var_ref,
       -relief     => 'raise',
       -anchor     => 'w',
@@ -547,7 +563,7 @@ sub create_actionbutton($ $ $)
     my $button = $frame->Button(
       -text       => "$name",
       -command    => sub { &$func_ref }, 
-      -background => "$color{actbutcolor}",
+      -background => "$color{button}",
     )->pack(
       -fill       => 'x',
     );
@@ -565,7 +581,7 @@ sub create_radiobutton($ $ $)
  
     my $button = $frame->Radiobutton(
       -text       => "$name",
-      -background => "$color{butcolor}",
+      -background => "$color{button}",
       -variable   =>  $mode_ref,
       -relief     => 'raised',
       -anchor     => 'w',
@@ -582,13 +598,14 @@ sub create_radiobutton($ $ $)
 
 
 # Create <label><entry><browsebutton> in given frame.
-sub create_fileSelectFrame($ $ $ $ $) 
+sub create_fileSelectFrame($ $ $ $ $ $) 
 {
-    my $win     = shift;
-    my $name    = shift;
-    my $type    = shift;  # FILE|DIR|URL
-    my $var_ref = shift;
-    my $edtype  = shift;  # EDIT|NOEDIT
+    my $win       = shift;
+    my $name      = shift;
+    my $type      = shift;  # FILE|DIR|URL
+    my $var_ref   = shift;
+    my $edtype    = shift;  # EDIT|NOEDIT
+    my $filetypes = shift;
 
   # Create frame.
     my $frame = $win->Frame->pack(
@@ -641,7 +658,7 @@ sub create_fileSelectFrame($ $ $ $ $)
     if ($edtype eq 'EDIT') {
         my $edit_but = $frame->Button(
           -text       => "Edit",
-          -background => "$color{actbutcolor}",
+          -background => "$color{button}",
           -command    => sub {
                                  unless (-e "$$var_ref") {
                                      logmsg("Select an existing file first!.\n\n", 'ERROR');
@@ -666,9 +683,9 @@ sub create_fileSelectFrame($ $ $ $ $)
   # Create browse-button.
     my $but = $frame->Button(
       -text       => "browse ...",
-      -background => "$color{actbutcolor}",
+      -background => "$color{button}",
       -command    => sub {
-                            fileDialog($var_ref, $name, $type);
+                            fileDialog($var_ref, $name, $type, $filetypes);
                          }
     )->pack(
       -side       => 'left',
