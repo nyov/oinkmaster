@@ -13,6 +13,7 @@ http://oinkmaster.sourceforge.net/
 
 Introduction
 ~~~~~~~~~~~~
+
 Oinkmaster is simple Perl script released under the BSD license that 
 helps you keep your Snort rules current with little or no user 
 interaction. It has quite a few nifty features regarding rules management, 
@@ -45,6 +46,7 @@ rules.
 
 Requirements
 ~~~~~~~~~~~~
+
 It should work on most UNIX-like systems with a recent version of Perl 5.
 You also need either the binaries tar, gzip and wget, or the Perl modules
 Archive::Tar, IO::Zlib and LWP::UserAgent. (See oinkmaster.conf for more
@@ -57,6 +59,7 @@ Again, use it at your own risk!
 
 What problem does Oinkmaster solve?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 To have any use of your NIDS, you must keep ýour signatures (or "rules") 
 current. On www.snort.org, there is a rules tarball that is updated with
 new and improved rules on a regaular basis. Very soon you will realize 
@@ -82,6 +85,7 @@ editing your rules files directly.
 
 How it works
 ~~~~~~~~~~~~
+
 It's actually really simple. Here follows a step by step list of how a 
 rules update with Oinkmaster works. (Optional features may of course 
 activate additional procedures, but this is how the basic update works.)
@@ -109,6 +113,7 @@ activate additional procedures, but this is how the basic update works.)
 
 Usage information
 ~~~~~~~~~~~~~~~~~
+
 Try ./oinkmaster.pl -h for more usage information and available options.
 There are also many useful notes and examples in the default oinkmaster.conf.
 
@@ -164,6 +169,7 @@ simple task.
 
 Usage examples
 ~~~~~~~~~~~~~~
+
 To automagically update the rules every night at 02:30 and make a backup
 of the old ones into /snort/backup/ if there were any updates, and sending
 difference notification to syslog, you could use something like this
@@ -205,6 +211,7 @@ examples above as appropriate.
 
 Oinkmaster output
 ~~~~~~~~~~~~~~~~~
+
 If there were any changes, Oinkmaster will tell you about them.
 Here are what the different changes in the rules mean:
 
@@ -284,6 +291,7 @@ that.
 
 Misc important notes
 ~~~~~~~~~~~~~~~~~~~~
+
 o It's a really good idea to have a separate directory for your snort.org rules
   on your snort machine. Why? Because if you have a local rules file called
   "coolstuff.rules" in the output directory and a file called "coolstuff.rules"
