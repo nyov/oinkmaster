@@ -619,6 +619,8 @@ sub disable_rules
 	        print STDERR "Modifying sid $sid with expression: $_\n  Before:$line"
 		  if ($verbose);
 		eval "\$line =~ $_";
+		print STDERR "WARNING: error in expression \"$_\": $@\n"
+		  if ($@);
 		print STDERR "  After:$line\n"
                   if ($verbose);
 	    }
