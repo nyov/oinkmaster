@@ -1739,8 +1739,9 @@ sub get_new_vars($ $ $)
 # Add new variables to local snort.conf.
 sub add_new_vars($ $)
 {
-    my $ch_ref  = shift;
-    my $varfile = shift;
+    my $ch_ref      = shift;
+    my $varfile     = shift;
+    my $tmp_varfile = "$tmpdir/tmp_varfile.conf";
     my $new_content;
 
     return unless ($#{$changes{new_vars}} > -1);
@@ -1750,8 +1751,8 @@ sub add_new_vars($ $)
     my @old_content = <OLD_LOCAL_CONF>;
     close(OLD_LOCAL_CONF);
 
-    open(NEW_LOCAL_CONF, ">", "$varfile")
-      or clean_exit("could not open $varfile for writing: $!");
+    open(NEW_LOCAL_CONF, ">", "$tmp_varfile")
+      or clean_exit("could not open $tmp_varfile for writing: $!");
 
     my @old_vars = grep(/$VAR_REGEXP/i, @old_content);
 
@@ -1768,6 +1769,9 @@ sub add_new_vars($ $)
     print NEW_LOCAL_CONF @old_content;
 
     close(NEW_LOCAL_CONF);
+
+    clean_exit("could not copy $tmp_varfile to $varfile: $!")
+      unless (copy("$tmp_varfile", "$varfile"));
 }
 
 
