@@ -8,7 +8,6 @@ use File::Basename;
 use File::Copy;
 use Getopt::Std;
 
-
 sub show_usage();
 sub parse_cmdline($);
 sub read_config($ $);
@@ -98,7 +97,7 @@ $| = 1;
 my $taint_mode = 1;
 my $taint_var  = $ENV{PWD} || $ENV{PATH};
 
-$taint_mode = ! eval { eval("#" . substr(join("", $taint_var), 0, 0)); 1 }
+$taint_mode = !eval { eval("#" . substr(join("", $taint_var), 0, 0)); 1 }
   if ($taint_var);
 
 my $start_date = scalar(localtime);
@@ -587,10 +586,10 @@ sub unpack_rules_archive($)
                "file in URL not in gzip format?).")
       unless (-e  "$archive");
 
-  # Read output from "tar tf $archive" into @tar_test, unless we're on win32.
+  # Read output from "tar tf $archive" into @tar_test, unless we're on Windows.
     my @tar_test;
 
-    unless ($^O eq "MSWin32") {
+    unless ($^O eq "MSWin32" || $^O =~ /^Windows/) {
         if (open(TAR,"-|")) {
             @tar_test = <TAR>;
         } else {
@@ -879,13 +878,10 @@ sub make_backup($ $)
       or clean_exit("could not open directory $src_dir: $!");
 
     while ($_ = readdir(OLDRULES)) {
-
-      # Untaint source filename.
-	my $src_file = untaint_path("$src_dir/$_");
-
         if (/$config{update_files}/) {
+	    my $src_file = untaint_path("$src_dir/$_");
             copy("$src_file", "$backup_tmp_dir/")
-              or warn("WARNING: error copying $src_file to $backup_tmp_dir: $!");
+              or warn("WARNING: error copying $src_file to $backup_tmp_dir/: $!");
 	}
     }
 
@@ -1126,8 +1122,8 @@ sub get_changes($ $)
         while ($_ = readdir(OLDRULES)) {
             $changes{removed_files}{"$_"}++
               if (/$config{update_files}/ && 
-                  !exists($config{file_ignore_list}{$_}) && 
-                  !-e "$tmpdir/rules/$_");
+                !exists($config{file_ignore_list}{$_}) && 
+                !-e "$tmpdir/rules/$_");
         }
 
         closedir(OLDRULES);
@@ -1248,11 +1244,11 @@ sub update_rules($ @)
 sub is_in_path($)
 {
     my $file = shift;
-    my $SEP  = ':';
+    my $sep  = ':';
 
-    $SEP = ';' if ($^O eq "MSWin32");
+    $sep = ';' if ($^O eq "MSWin32" || $^O =~ /^Windows/);
 
-    foreach my $dir (split(/$SEP/, $ENV{PATH})) {
+    foreach my $dir (split(/$sep/, $ENV{PATH})) {
         return (1) if (-x "$dir/$file" || -x "$dir/$file.exe");
     }
 
@@ -1272,10 +1268,10 @@ sub is_in_path($)
 # returned (put in the 2nd ref).
 sub get_next_entry($ $ $ $)
 {
-    my $arr_ref        = shift;
-    my $single_ref     = shift;
-    my $multi_ref      = shift;
-    my $nonrule_ref    = shift;
+    my $arr_ref     = shift;
+    my $single_ref  = shift;
+    my $multi_ref   = shift;
+    my $nonrule_ref = shift;
 
     undef($$single_ref);
     undef($$multi_ref);
@@ -1291,7 +1287,7 @@ sub get_next_entry($ $ $ $)
       # Keep on reading as long as line ends with "\".
         while ($line =~ /\\\s*\n$/) {
 
-          # Remove trailing "\" for single-line version.
+          # Remove trailing "\" and newline for single-line version.
             $$single_ref =~ s/\\\s*\n//;
 
           # If there are no more lines, this can not be a valid multi-line rule.
