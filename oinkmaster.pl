@@ -39,11 +39,11 @@ my $PRINT_NEW         = 1;
 my $PRINT_OLD         = 2;
 my $PRINT_BOTH        = 3;
 
-my $min_rules         = 1;   # default number of required rules
-my $min_files         = 1;   # default number of required files
+my $min_rules         = 1;                   # default minimum number of required rules
+my $min_files         = 1;                   # default minimum number of required files
 
-my $config_file       = "/usr/local/etc/oinkmaster.conf";
-my $tmp_basedir       = "/tmp";
+my $tmp_basedir       = "/tmp";                            # default base temporary directory
+my $config_file       = "/usr/local/etc/oinkmaster.conf";  # default config file
 
 my $verbose           = 0;
 my $careful           = 0;
@@ -53,10 +53,8 @@ my $check_removed     = 0;
 my $preserve_comments = 1;
 my $update_vars       = 0;
 
-# Regexp to match a snort rule line.
-# Multiline rules are currently not handled, but at this time,
-# all of the official rules are one rule per line. The msg string
-# will go into $1 and the sid will go into $2 if the regexp matches.
+# Regexp to match a snort rule line. The msg string will go into $1 and 
+# the sid will go into $2.
 my $SINGLELINE_RULE_REGEXP = '^\s*#*\s*(?:alert|log|pass)\s.+msg\s*:\s*"(.+?)'.
                              '"\s*;.*sid\s*:\s*(\d+)\s*;.*\)\s*$'; # ';
 
@@ -1146,10 +1144,10 @@ sub is_in_path($)
 # returned (put in the 2nd ref).
 sub get_next_entry($ $ $ $)
 {
-    my $arr_ref     = shift;
-    my $single_ref  = shift;
-    my $multi_ref   = shift;
-    my $nonrule_ref = shift;
+    my $arr_ref        = shift;
+    my $single_ref     = shift;
+    my $multi_ref      = shift;
+    my $nonrule_ref    = shift;
 
     undef($$single_ref);
     undef($$multi_ref);
@@ -1157,7 +1155,7 @@ sub get_next_entry($ $ $ $)
 
     my $line = shift(@$arr_ref) || return(0);
 
-    if ($line =~ /$MULTILINE_RULE_REGEXP/oi) {    # start multi-line rule?
+    if ($line =~ /$MULTILINE_RULE_REGEXP/oi) {    # possible beginning of multi-line rule?
         $$single_ref = $line;
         $$multi_ref  = $line;
 
@@ -1167,6 +1165,10 @@ sub get_next_entry($ $ $ $)
 
           # If there are no more lines, this can not be a valid multi-line rule.
             if (!($line = shift(@$arr_ref))) {
+
+                warn("WARNING: got EOF while parsing multi-line rule: $$multi_ref\n")
+                  if ($verbose);
+
                 @_ = split(/\n/, $$multi_ref);
 
                 undef($$multi_ref);
@@ -1174,7 +1176,7 @@ sub get_next_entry($ $ $ $)
 
               # First line of broken multi-line rule will be returned as a non-rule line.
                 $$nonrule_ref = shift(@_) . "\n";
-		$$nonrule_ref =~ s/\s*\n$/\n/;            # remove trailing whitespaces
+                $$nonrule_ref =~ s/\s*\n$/\n/;            # remove trailing whitespaces
 
               # The rest is put back to the array again.
                 foreach $_ (reverse((@_))) {
@@ -1186,18 +1188,18 @@ sub get_next_entry($ $ $ $)
 
           # Multi-line continuation.
             $$multi_ref .= $line;
-            $line =~ s/^\s*#*\s*//;          # In single-line version, remove leading #'s first
+            $line =~ s/^\s*#*\s*//;     # In single-line version, remove leading #'s first
             $$single_ref .= $line;
-        } # while line ends with "\"
 
+        } # while line ends with "\"
 
       # Single-line version should now be a valid rule.
       # If not, it wasn't a valid multi-line rule after all.
         if ($$single_ref =~ /$SINGLELINE_RULE_REGEXP/oi) {
 
             $$single_ref =~ s/^\s*//;        # remove leading whitespaces
-	    $$single_ref =~ s/^#+\s*/#/;     # remove whitespaces next to the leading #
-	    $$single_ref =~ s/\s*\n$/\n/;    # remove trailing whitespaces
+            $$single_ref =~ s/^#+\s*/#/;     # remove whitespaces next to the leading #
+            $$single_ref =~ s/\s*\n$/\n/;    # remove trailing whitespaces
 
             $$multi_ref  =~ s/^\s*//;
             $$multi_ref  =~ s/\s*\n$/\n/;
@@ -1205,6 +1207,9 @@ sub get_next_entry($ $ $ $)
 
             return (1);   # return multi
         } else {
+            warn("WARNING: invalid multi-line rule: $$single_ref\n")
+              if ($verbose && $$multi_ref !~ /^\s*#/);
+
             @_ = split(/\n/, $$multi_ref);
 
             undef($$multi_ref);
@@ -1212,7 +1217,7 @@ sub get_next_entry($ $ $ $)
 
           # First line of broken multi-line rule will be returned as a non-rule line.
             $$nonrule_ref = shift(@_) . "\n";
- 	    $$nonrule_ref =~ s/\s*\n$/\n/;   # remove trailing whitespaces
+            $$nonrule_ref =~ s/\s*\n$/\n/;   # remove trailing whitespaces
 
           # The rest is put back to the array again.
             foreach $_ (reverse((@_))) {
@@ -1222,15 +1227,22 @@ sub get_next_entry($ $ $ $)
             return (1);   # return non-rule
         }
 
-    } elsif ($line =~ /$SINGLELINE_RULE_REGEXP/oi) {  # single-line rule?
+    } elsif ($line =~ /$SINGLELINE_RULE_REGEXP/oi) {  # regular single-line rule?
         $$single_ref = $line;
         $$single_ref =~ s/^\s*//;            # remove leading whitespaces
-	$$single_ref =~ s/^#+\s*/#/;         # remove whitespaces next to the leading #
-	$$single_ref =~ s/\s*\n$/\n/;        # remove trailing whitespaces
+        $$single_ref =~ s/^#+\s*/#/;         # remove whitespaces next to the leading #
+        $$single_ref =~ s/\s*\n$/\n/;        # remove trailing whitespaces
+
         return (1);   # return single
     } else {                                 # non-rule line?
+
+      # Do extra check and warn if it *might* be a rule anyway, but that we couldn't parse.
+        warn("WARNING: line may be a rule but it could not be parsed: $line\n")
+          if ($verbose && $line =~ /^\s*alert .+msg\s*:\s*".+"\s*;/);
+
         $$nonrule_ref = $line;
-	$$nonrule_ref =~ s/\s*\n$/\n/;       # remove trailing whitespaces
+        $$nonrule_ref =~ s/\s*\n$/\n/;       # remove trailing whitespaces
+
         return (1);   # return non-rule
     }
 }
