@@ -393,8 +393,8 @@ sub read_config($ $)
 
 	} elsif (/^url\s*=\s*(.*)/i) {          # URL to use
 	    $$cfg_ref{url} = $1
-              unless (exists($$cfg_ref{url}));  # may already be defined by -u
-
+              unless (defined($opt_u));         # command line wins
+        
 	} elsif (/^path\s*=\s*(.+)/i) {         # $PATH to be used
 	    $$cfg_ref{path} = $1;
 
