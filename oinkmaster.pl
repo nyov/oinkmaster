@@ -225,8 +225,10 @@ if ($rules_changed || $other_changed) {
 
       # Move each modified file from the temporary directory to the output directory.
         foreach $_ (keys(%modified_files)) {
-            move("$TMPDIR/rules/$_", "$output_dir/$_")
-              or clean_exit("Error: could not move $TMPDIR/rules/$_ to $output_dir/$_: $!")
+	    my $filename = $_;
+            $filename =~ s/.*\///;  # remove path
+            move("$_", "$output_dir/$filename")
+              or clean_exit("Error: could not move $_ to $output_dir/$filename: $!")
         }
     }
 } else {
@@ -336,7 +338,7 @@ Options:
 -b <dir>   Backup old rules into <dir> if anything had changed
 -u <url>   Download from this URL (http://, ftp:// or file:// ...tar.gz)
            instead of the URL specified in $config_file
-           Careful mode. Don't update anything, just check for changes
+-c         Careful mode - only check for changes, but do not update anything
 -e         Re-enable all rules that are disabled by default in the rules
            distribution (they are disabled for a reason so use with care)
 -r         Check for rules files that exist in the output directory
@@ -569,7 +571,8 @@ sub unpack_rules_archive($)
           if (/\.\./);
       # Links in the tar archive are not allowed
       # (should be detected because of illegal chars above though).
-        clean_exit("Error: file in tar archive contains link: refuse to unpack file.\nOffending file/line:\n$_")
+        clean_exit("Error: file in tar archive contains link: refuse to unpack file.\n".
+                   "Offending file/line:\n$_")
           if (/->/ || /=>/ || /==/);
     }
 
@@ -674,50 +677,53 @@ sub disable_and_modify_rules($ $ @)
 #### As a bonus, we get list of added files in %added_files.
 
 # Setup rules hash.
-# Format will be rules{old|new}{rules|other}{filename}{sid} = rule|line
+# Format for rules will be:     rh{old|new}{rules{filename}{sid} = rule
+# Format for non-rules will be: rh{old|new}{other}{filename}     = array of lines
 sub setup_rule_hash
 {
-    my ($file, $sid);
+    my $rh_ref    = shift;
+    my $old_dir   = shift;
+    my @new_files = shift;
 
-    my $rules_hash_ref = shift;
-    my $old_dir        = shift;
-    my @new_files      = shift;
-
-    foreach $file (keys(%new_files)) {
+    foreach my $file (keys(%new_files)) {
         warn("WARNING: downloaded rules file $file is empty (maybe correct, maybe not)\n")
-          if (!-s "$TMPDIR/rules/$file" && $verbose);
+          if (!-s "$file" && $verbose);
 
-        open(NEWFILE, "<$TMPDIR/rules/$file")
-          or clean_exit("Error: could not open $TMPDIR/rules/$file: $!");
+        open(NEWFILE, "<$file")
+          or clean_exit("Error: could not open $file for reading: $!");
 
 	while (<NEWFILE>) {
 	    if (/$SNORT_RULE_REGEXP/) {
-	        $sid = $2;
-		warn("WARNING: duplicate SID in downloaded rules archive: SID $sid\n")
-		  if (exists($new_rules{"$file"}{"$sid"}) && !$quiet);
-	        $new_rules{"$file"}{"$sid"} = $_;
+	        my $sid = $2;
+		warn("WARNING: duplicate SID in downloaded rules archive in file $file: SID $sid\n")
+		  if (exists($$rh_ref{new}{rules}{"$file"}{"$sid"}) && !$quiet);
+		$$rh_ref{new}{rules}{"$file"}{"$sid"} = $_;
 	    } else {
-	        push(@{$new_other{"$file"}}, $_);  # use array so the lines stay sorted
+	        push(@{$$rh_ref{new}{other}{"$file"}}, $_);
 	    }
 	}
 
 	close(NEWFILE);
 
+     # From now on, we only are about the actual name of the file, not the entire path.
+       $file =~ s/.*\///;
+
      # Also read in old file if it exists.
         if (-f "$output_dir/$file") {
-            open(OLDFILE, "<$output_dir/$file") or clean_exit("Error: could not open $output_dir/$file: $!");
+            open(OLDFILE, "<$output_dir/$file")
+              or clean_exit("Error: could not open $output_dir/$file for reading: $!");
 
 	    while (<OLDFILE>) {
                 if (/$SNORT_RULE_REGEXP/) {
-		    $sid = $2;
+		    my $sid = $2;
 		    s/^\s*//;     # remove leading whitespaces
 		    s/\s*\n$/\n/; # remove trailing whitespaces
 		    s/^#+\s*/#/;  # make sure comment syntax is how we like it
-		    warn("WARNING: duplicate SID in your local rules: SID $sid\n")
-		      if (exists($old_rules{"$file"}{"$sid"}) && !$quiet);
-                    $old_rules{$file}{$sid} = $_;
+		    warn("WARNING: duplicate SID in your local rules in file $file: SID $sid\n")
+	  	      if (exists($$rh_ref{old}{rules}{"$file"}{"$sid"}) && !$quiet);
+	  	    $$rh_ref{old}{rules}{"$file"}{"$sid"} = $_;
                 } else {
-                    push(@{$old_other{$file}}, $_);
+	            push(@{$$rh_ref{old}{other}{"$file"}}, $_);
                 }
             }
 
@@ -727,6 +733,7 @@ sub setup_rule_hash
 	    $added_files{"$file"}++;
         }
     }
+exit;    # tmp... no need to even try to continue right now...
 }
 
 
