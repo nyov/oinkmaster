@@ -2003,15 +2003,29 @@ sub minimize_diff($ $)
     my $old_rule = shift;
     my $new_rule = shift;
 
+    my $original_old = $old_rule;
+    my $original_new = $new_rule;
+
   # Additional chars to print next to the diffing part.
     my $additional_chars = 20;
 
   # Remove the rev keyword from the rules, as it often
   # makes the whole diff minimizing useless.
-    $old_rule =~ s/\s*\brev\s*:\s*\d+\s*;\s*//;
-    $new_rule =~ s/\s*\brev\s*:\s*\d+\s*;\s*//;
+    $old_rule =~ s/\s*\b(rev\s*:\s*\d+\s*;)\s*//;
+    my $old_rev = $1;
 
-  # Also temporarily remove possible leading # so it works nicely
+    $new_rule =~ s/\s*\b(rev\s*:\s*\d+\s*;)\s*//;
+    my $new_rev = $1;
+
+  # If rev was the only thing that changed, we want to restore the rev
+  # before continuing so we don't remove common stuff from rules that
+  # are identical.
+    if ($old_rule eq $new_rule) {
+        $old_rule = $original_old;
+        $new_rule = $original_new;
+    }
+
+  # Temporarily remove possible leading # so it works nicely
   # with modified rules that are also being either enabled or disabled.
     my $old_is_disabled = 0;
     my $new_is_disabled = 0;
