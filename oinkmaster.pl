@@ -14,15 +14,15 @@ sub show_usage();
 sub parse_cmdline($);
 sub read_config($ $);
 sub sanity_check();
-sub download_rules($ $);
-sub unpack_rules_archive($);
+sub download_file($ $);
+sub unpack_rules_archive($ $);
 sub process_rules($ $ $ $);
 sub setup_rules_hash($ $);
 sub get_first_only($ $ $);
 sub print_changes($ $);
 sub print_changetype($ $ $ $);
 sub make_backup($ $);
-sub get_changes($ $);
+sub get_changes($ $ $);
 sub get_new_filenames($ $);
 sub update_rules($ @);
 sub is_in_path($);
@@ -83,7 +83,7 @@ my $VAR_REGEXP = '^\s*var\s+(\S+)\s+\S+';
 my $OK_PATH_CHARS = 'a-zA-Z\d\ _\(\)\[\]\.\-+:\\\/~@,=';
 
 # Default locations for configuration file.
-my @default_config_files = qw(
+my @DEFAULT_CONFIG_FILES = qw(
     /etc/oinkmaster.conf
     /usr/local/etc/oinkmaster.conf
 );
@@ -112,7 +112,7 @@ parse_cmdline(\%config);
 
 # If no config was specified on command line, look for one in default locations.
 if ($#{$config{config_files}} == -1) {
-    foreach my $config (@default_config_files) {
+    foreach my $config (@DEFAULT_CONFIG_FILES) {
         if (-e "$config") {
             push(@{${config{config_files}}}, $config);
             last;
@@ -123,7 +123,7 @@ if ($#{$config{config_files}} == -1) {
 # If config is still not defined, we can't continue.
 if ($#{$config{config_files}} == -1) {
     clean_exit("configuration file not found in default locations\n".
-               "(@default_config_files)\n".
+               "(@DEFAULT_CONFIG_FILES)\n".
                "Put it there or use the \"-C\" argument.");
 }
 
@@ -163,12 +163,12 @@ $tmpdir = tempdir("oinkmaster.XXXXXXXXXX", DIR => $config{tmp_basedir})
 umask($config{umask}) if exists($config{umask});
 
 # Download the rules archive. Will exit if it fails.
-download_rules("$config{url}", "$tmpdir/$OUTFILE");
+download_file("$config{url}", "$tmpdir/$OUTFILE");
 
 # Verify and unpack archive. This should will us with a directory
 # called $RULES_DIR in the same directory as the archive, containing the
 # new rules. Will exit if something fails.
-unpack_rules_archive("$tmpdir/$OUTFILE");
+unpack_rules_archive("$tmpdir/$OUTFILE", $RULES_DIR);
 
 # Create list of new files that we care about from the downloaded
 # Filenames (with full path) will be stored as %new_files{filenme}.
@@ -194,7 +194,7 @@ clean_exit("not enough rules in downloaded archive (is it broken?)\n".
 my %rh = setup_rules_hash(\%new_files, $config{output_dir});
 
 # Compare the new rules to the old ones.
-my %changes = get_changes(\%rh, \%new_files);
+my %changes = get_changes(\%rh, \%new_files, $RULES_DIR);
 
 # Check for variables that exist in dist snort.conf but not in local snort.conf.
 get_new_vars(\%changes, $config{varfile}, "$tmpdir/$DIST_SNORT_CONF")
@@ -274,7 +274,7 @@ Options:
 -b <dir>   Backup your old rules into <dir> before overwriting them
 -c         Careful mode - only check for changes and do not update anything
 -C <cfg>   Use this configuration file instead of the default
-           (@default_config_files)
+           (@DEFAULT_CONFIG_FILES)
            May be specified multiple times to load multiple files
 -e         Re-enable all rules that are disabled by default in the rules
            distribution (they are disabled for a reason, so use with care)
@@ -606,7 +606,7 @@ sub sanity_check()
 
 
 # Download the rules archive.
-sub download_rules($ $)
+sub download_file($ $)
 {
     my $url       = shift;
     my $localfile = shift;
@@ -615,34 +615,34 @@ sub download_rules($ $)
 
   # Use wget if URL starts with "http[s]" or "ftp" and we use external binaries.
     if ($config{use_external_bins} && $url =~ /^(?:https*|ftp)/) {
-        print STDERR "Downloading rules archive from $url... "
+        print STDERR "Downloading file from $url... "
           unless ($config{quiet});
 
         if ($config{verbose}) {
             print STDERR "\n";
-            clean_exit("could not download rules")
-              if (system("wget","-v","-O","$localfile","$url"));
+            clean_exit("could not download file")
+              if (system("wget", "-v", "-O", "$localfile", "$url"));
         } else {
-            if (system("wget","-v","-o","$log","-O","$localfile","$url")) {
+            if (system("wget", "-v", "-o", "$log", "-O", "$localfile", "$url")) {
                 open(LOG, "<", "$log")
                   or clean_exit("could not open $log for reading: $!");
                 my @log = <LOG>;
                 close(LOG);
-                clean_exit("could not download rules. Output from wget follows:\n\n @log");
+                clean_exit("could not download file. Output from wget follows:\n\n @log");
             }
             print STDERR "done.\n" unless ($config{quiet});
         }
 
   # Use LWP if URL starts with http[s] and use_external_bins=0.
     } elsif (!$config{use_external_bins} && $url =~ /^(?:https*|ftp)/) {
-        print STDERR "Downloading rules archive from $url... "
+        print STDERR "Downloading ril3 from $url... "
           unless ($config{quiet});
 
         my $ua = LWP::UserAgent->new();
         $ua->env_proxy;
         my $response = $ua->get($url, ':content_file' => $localfile);
 
-        clean_exit("could not download rules: " . $response->status_line)
+        clean_exit("could not download file: " . $response->status_line)
           unless $response->is_success;
 
         print "done.\n" unless ($config{quiet});
@@ -657,7 +657,7 @@ sub download_rules($ $)
 	clean_exit("the file $url is empty.")
           unless (-s "$url");
 
-        print STDERR "Copying rules archive from $url... "
+        print STDERR "Copying file from $url... "
           unless ($config{quiet});
 
         copy("$url", "$localfile")
@@ -677,7 +677,7 @@ sub download_rules($ $)
         push(@cmd, "-v")                     if ($config{verbose});
         push(@cmd, "$url", "$localfile");
 
-        print STDERR "Copying rules archive from $url using scp:\n"
+        print STDERR "Copying file from $url using scp:\n"
           unless ($config{quiet});
 
         clean_exit("scp returned error when trying to copy $url")
@@ -689,12 +689,12 @@ sub download_rules($ $)
     }
 
   # Make sure the downloaded file actually exists.
-    clean_exit("failed to get rules archive: ".
+    clean_exit("failed to download file: ".
                "local target file $localfile doesn't exist after download.")
       unless (-e "$localfile");
 
   # Also make sure it's at least non-empty.
-    clean_exit("failed to get rules archive: local target file $localfile is empty ".
+    clean_exit("failed to download file: local target file $localfile is empty ".
                "after download (perhaps you're out of diskspace or file in url is empty?)")
       unless (-s "$localfile");
 }
@@ -703,9 +703,11 @@ sub download_rules($ $)
 
 # Make a few basic sanity checks on the rules archive and then
 # uncompress/untar it if everything looked ok.
-sub unpack_rules_archive($)
+sub unpack_rules_archive($ $)
 {
-    my $archive = shift;
+    my $archive   = shift;
+    my $rules_dir = shift;
+
     my ($tar, @tar_content);
 
     my $old_dir = untaint_path(File::Spec->rel2abs(File::Spec->curdir()));
@@ -715,13 +717,13 @@ sub unpack_rules_archive($)
 
     if ($config{use_external_bins}) {
 
-      # Run integrity check (gzip -t) on the gzip file.
+      # Run integrity check on the gzip file.
         clean_exit("integrity check on gzip file failed (file transfer failed or ".
                    "file in URL not in gzip format?).")
-          if (system("gzip","-t","$archive"));
+          if (system("gzip", "-t", "$archive"));
 
       # Decompress it.
-        system("gzip","-d","$archive")
+        system("gzip", "-d", "$archive")
           and clean_exit("unable to uncompress $archive.");
 
       # Suffix has now changed from .tar.gz to .tar.
@@ -733,15 +735,20 @@ sub unpack_rules_archive($)
                    "file in URL not in gzip format?).")
           unless (-e  "$archive");
 
-      # Read output from "tar tfP $archive" into @tar_content, unless we're on Windows.
-        unless ($^O eq "MSWin32" || $^O =~ /^Windows/) {
-            if (open(TAR,"-|")) {
-                @tar_content = <TAR>;
-            } else {
-                exec("tar","tfP","$archive");
-            }
-            close(TAR);
-        }
+        my $stdout_file = "$tmpdir/tar_content.out";
+
+        open(my $oldout, ">&STDOUT") or clean_exit("could not dup STDOUT: $!");
+        open(STDOUT, '>', "$stdout_file") or clean_exit("could not redirect STDOUT: $!");
+
+        system("tar", "tfP", "$archive")
+          and clean_exit("could not list files in tar archive (is it broken?)");
+
+        close(STDOUT);
+        open(STDOUT, ">&", $oldout) or clean_exit("could not dup STDOUT: $!");
+
+        open(TAR, "$stdout_file") or clean_exit("failed to open $stdout_file: $!");
+        @tar_content = <TAR>;
+        close(TAR);
 
  # use_external_bins=0
     } else {
@@ -751,13 +758,17 @@ sub unpack_rules_archive($)
         @tar_content = $tar->list_files();
     }
 
+  # Make sure we could grab some content from the tarball.
+    clean_exit("could not list files in tar archive (is it broken?)")
+      if ($#tar_content < 0);
+
   # For each filename in the archive, do some basic (pretty useless)
   # sanity checks.
     foreach my $filename (@tar_content) {
        chomp($filename);
 
       # We don't want absolute filename.
-        clean_exit("archive contains absolute filenames. ".
+        clean_exit("archive contains absolute filename. ".
                    "Offending file/line:\n$filename")
           if ($filename =~ /^\//);
 
@@ -778,11 +789,11 @@ sub unpack_rules_archive($)
 
     if ($config{use_external_bins}) {
         clean_exit("failed to untar $archive.")
-          if system("tar","xf","$archive");
+          if system("tar", "xf", "$archive");
     } else {
-        mkdir("$RULES_DIR") or clean_exit("could not create \"$RULES_DIR\" directory: $!\n");
+        mkdir("$rules_dir") or clean_exit("could not create \"$rules_dir\" directory: $!\n");
         foreach my $file ($tar->list_files) {
-            next unless ($file =~ /^$RULES_DIR\/[^\/]+$/);
+            next unless ($file =~ /^$rules_dir\/[^\/]+$/);
 
             my $content = $tar->get_content($file);
 
@@ -793,8 +804,8 @@ sub unpack_rules_archive($)
         }
     }
 
-    clean_exit("no \"$RULES_DIR\" directory found in tar file.")
-      unless (-d "$dir/$RULES_DIR");
+    clean_exit("no \"$rules_dir\" directory found in tar file.")
+      unless (-d "$dir/$rules_dir");
 
     chdir($old_dir)
       or clean_exit("could not change directory back to $old_dir: $!");
@@ -1310,10 +1321,11 @@ sub print_changetype($ $ $ $)
 
 
 # Compare the new rules to the old ones.
-sub get_changes($ $)
+sub get_changes($ $ $)
 {
     my $rh_ref        = shift;
     my $new_files_ref = shift;
+    my $rules_dir     = shift;
     my %changes;
 
     print STDERR "Comparing new files to the old ones... "
@@ -1326,10 +1338,10 @@ sub get_changes($ $)
   # Added files are also regarded as modified since we want to update
   # (i.e. add) those as well. Here we want them with full path.
     foreach my $file (keys(%{$changes{added_files}})) {
-        $changes{modified_files}{"$tmpdir/$RULES_DIR/$file"}++;
+        $changes{modified_files}{"$tmpdir/$rules_dir/$file"}++;
     }
 
-  # Add list of possibly removed files into $removed_files if requested.
+  # Add list of possibly removed files if requested.
     if ($config{check_removed}) {
         opendir(OLDRULES, "$config{output_dir}")
           or clean_exit("could not open directory $config{output_dir}: $!");
@@ -1339,7 +1351,7 @@ sub get_changes($ $)
             $changes{removed_files}{"$_"}++
               if (/$config{update_files}/ && 
                 !exists($config{file_ignore_list}{$_}) && 
-                !-e "$tmpdir/$RULES_DIR/$_");
+                !-e "$tmpdir/$rules_dir/$_");
         }
 
         closedir(OLDRULES);
@@ -1474,7 +1486,8 @@ sub is_in_path($)
     my $file = shift;
 
     foreach my $dir (File::Spec->path()) {
-        if ((-f "$dir/$file" && -x "$dir/$file") || (-f "$dir/$file.exe" && -x "$dir/$file.exe")) {
+        if ((-f "$dir/$file" && -x "$dir/$file") 
+          || (-f "$dir/$file.exe" && -x "$dir/$file.exe")) {
             print STDERR "Found $file binary in $dir\n"
               if ($config{verbose});
             return (1);
