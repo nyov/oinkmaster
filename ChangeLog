@@ -12,7 +12,7 @@ o You can now run without external binaries if you have the required
   Perl modules installed (Archive::Tar, IO::Zlib and LWP::UserAgent).
   You can set use_external_bins to 0 or 1 in oinkmaster.conf to override
   the default. 0 means to use the Perl modules, 1 means to use external
-  binaries. It's set to 0 by default on Windows (since the required
+  binaries. It's set to 0 by default on Win32 (since the required
   Perl modules are already included in ActivePerl), and 1 on other systems 
   (i.e. same behaviour as before). This makes it much easier to install 
   Oinkmaster on Windows/ActivePerl. See the new default oinkmaster.conf
