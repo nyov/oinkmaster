@@ -31,6 +31,8 @@ o Permission on all rules files in the output directory that are subject
   before starting, so that we don't bail out in a middle of
   execution if a copy of an updated file should fail because of
   permission problem.
+o A manual page is now included which describes all the command 
+  line options in detail.
 o Major documentation updates.
 o Slightly improved multi-line rule parsing.
 o A bunch of other minor improvements.
