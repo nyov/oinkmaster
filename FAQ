@@ -32,6 +32,7 @@ Q15: When starting Oinkmaster it says my Perl version is too old, or
 Q16: If I make a modification directly in a rules file that is updated by
      Oinkmaster, will that change be permanent?
 Q17: Should I run Oinkmaster as root?
+Q18: I get "/usr/bin/perl: bad interpreter" when starting.
 
 --------------
 
@@ -406,3 +407,11 @@ A17: No! You must run Oinkmaster as a user that has read/write access to
      just make sure it has read/write access to your rules.
      (The user you run Snort as, if different than the Oinkmaster user, 
      usually only needs read access to the rules.)
+
+
+
+Q18: I get "/usr/bin/perl: bad interpreter" when starting.
+
+A18: By default, Oinkmaster assumes that Perl is found as /usr/bin/perl.
+     If you get this message, you need to edit oinkmaster.pl and modify 
+     the first line so it points to the right location for your system.
