@@ -30,7 +30,7 @@ my $rules_changed     = 0;
 my $other_changed     = 0;
 my $something_changed = 0;
 my $check_removed     = 0;
-my $preserve_comments = 0;
+my $preserve_comments = 1;
 
 # Regexp to match a snort rule line.
 # The msg string will go into $1, and the sid will go into $2.
@@ -38,7 +38,7 @@ my $snort_rule_regexp = '^\s*#*\s*(?:alert|log|pass) .+msg\s*:\s*"(.+?)"\s*;.+si
 
 use vars qw
    (
-      $opt_b $opt_c $opt_C $opt_h $opt_o $opt_q $opt_p $opt_r $opt_u $opt_v
+      $opt_b $opt_c $opt_C $opt_e $opt_h $opt_o $opt_q $opt_p $opt_r $opt_u $opt_v
    );
 
 my (
@@ -338,12 +338,11 @@ sub show_usage
 		 "-u <url>   Download from this URL (http:// or ftp:// ...tar.gz)\n".
                  "           instead of the URL specified in $config_file\n".
 		 "-c         Careful mode. Don't update anything, just check for changes\n".
+		 "-e         Re-enable rules that are disabled by default in the rules distribution.\n".
+                 "           (Warning: they are disabled for a reason!)\n".
                  "-r         Check for rules files that exist in the output directory\n".
                  "           but not in the downloaded rules archive (i.e. files that may\n".
                  "           have been removed from the archive).\n".
-		 "-p         Preserve disabled rules in downloaded rules.\n".
-                 "           Some rules may be disabled by default in the rules distribution\n".
-                 "           and Oinkmaster will re-enable them unless -p is specified\n".
                  "-q         Quiet mode. No output unless changes were found\n".
 		 "-v         Verbose mode (usually not needed)\n".
                  "-h         Show usage help\n\n";
@@ -354,13 +353,13 @@ sub show_usage
 
 sub parse_cmdline
 {
-    my $cmdline_ok = getopts('b:cC:ho:pqru:v');
+    my $cmdline_ok = getopts('b:cC:eho:pqru:v');
 
     $backup_dir    = $opt_b if (defined($opt_b));
     $config_file   = $opt_C if (defined($opt_C));
     $url           = $opt_u if (defined($opt_u));
     $careful           = 1  if (defined($opt_c));
-    $preserve_comments = 1  if (defined($opt_p));
+    $preserve_comments = 0  if (defined($opt_e));
     $quiet             = 1  if (defined($opt_q));
     $check_removed     = 1  if (defined($opt_r));
     $verbose           = 1  if (defined($opt_v));
@@ -372,6 +371,13 @@ sub parse_cmdline
     } else {
         show_usage;
     }
+
+  # Print warning if -p is used (obsolete).
+  # (But keep it valid for a while though, so we don't screw up people's cron jobs)
+    if (defined($opt_p)) {
+    print STDERR "Note: the -p switch is obsolete " .
+                 "(not needed anymore since this is now the default behaviour)\n";
+  }
 
   # Remove possible trailing slash (just for cosmetic reasons).
     $output_dir =~ s/\/+$//;
@@ -546,6 +552,11 @@ sub disable_rules
     my ($num_disabled, $msg, $sid, $line, $file);
 
     $num_disabled = 0;
+
+    if ($preserve_comments) {
+        print STDERR "Warning: rules that are disabled by default will be enabled\n";
+    }
+
     print STDERR "Disabling rules according to $config_file... " unless ($quiet);
     print STDERR "\n" if ($verbose);
 
@@ -568,8 +579,8 @@ sub disable_rules
 	    $line =~ s/\s*\n$/\n/;
 	    $line =~ s/^#+\s*/#/;
 
-          # Some rules may be commented out by default, but we want our oinkmaster.conf to decide
-          # what to disable, so uncomment all rules by unless -p is specified.
+          # Some rules may be commented out by default.
+          # Enable them if -e is specified.
 	    if ($line =~ /^#/) {
 		if ($preserve_comments) {
 		    print STDERR "Preserving disabed rule (sid $sid): $msg\n"

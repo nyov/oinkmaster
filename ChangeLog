@@ -1,3 +1,12 @@
+v0.6 - XXXXXXXX
+~~~~~~~~~~~~~~~
+o Rules that are disabled by default in the rules distribution
+  will now NOT be re-enabled by Oinkmaster by default, finally.
+  I.e. "-p" is obsolete. If you want to enable those rules you now
+  have to use "-e".
+
+
+
 v0.5 - 20020506
 ~~~~~~~~~~~~~~~
 o Fixed bug where all filenames would not always be printed.

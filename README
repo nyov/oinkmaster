@@ -85,15 +85,15 @@ This time the files in the downloaded archive will be compared to the ones
 in /tmp/rules/ and Oinkmaster will tell you if something has been
 updated.
 
-By default, all rules will be uncommented (unless -p is specified).
-(Yes, even those that are commented out by default in the rules archive 
-distribution, but please note that these are disabled on purpose and for a 
-reason so you probably want to consider keeping them disabled unless you
-know what you're doing. In other words, using -p is usually recommended.)
-Instead, we let the oinkmaster.conf file decide exactly what to comment 
-out. Note that all possible local modifications you've done inside the 
-official Snort rules files will be lost since the files will be overwritten 
-by the new versions from the downloaded rules archive. See the notes below.
+If you already have several rules commented out (or removed) in your current
+rules, you need to add those SIDs to oinkmaster.conf manually, or they
+will be re-enabled after each update. Some rules may be commented out by
+default in the rules distribution, and as of Oinkmaster 0.6 they will stay
+that way. If you want to enable them you have to use "-e". Note that those
+rules are commented out for a reason (they may not even work!), so be careful.
+Also note that possible local modifications you've done inside the official
+Snort rules files will be lost since the files will be overwritten by the
+new versions from the downloaded rules archive after each update.
 
 You disable rules by adding "disablesid x" to the file oinkmaster.conf, where
 x is the Snort rule ID (the "sid") of the rule in question. 
