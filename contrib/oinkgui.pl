@@ -41,7 +41,7 @@ my @oinkmaster_conf = qw(
 
 # Graphical editors to look for.
 my @editors = qw(
-  kwrite kate kedit gedit xemacs xedit notepad wordpad
+  kwrite kate kedit gedit xemacs xedit wordpad
 );
 
 # List of URLs that will show up in the URL BrowseEntry.
