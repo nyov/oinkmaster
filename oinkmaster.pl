@@ -334,11 +334,12 @@ sub read_config($ $)
     print STDERR "Loading $config_file.\n"
       unless ($quiet);
 
-  # Basic check to avoid cross-include of files (infinite recursion).
-    clean_exit("attempt to load \"$config_file\" twice.")
-      if (exists($loaded{$config_file}));
+    my ($dev, $ino) = (stat($config_file))[0,1]
+      or clean_exit("unable to stat $config_file: $!");
 
-    $loaded{$config_file}++;
+  # Avoid loading the same file multiple times to avoid infinite recursion.
+    clean_exit("attempt to load \"$config_file\" twice.")
+      if ($loaded{$dev, $ino}++);
 
     open(CONF, "<", "$config_file")
       or clean_exit("could not open configuration file \"$config_file\": $!");
