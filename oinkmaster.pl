@@ -475,13 +475,13 @@ sub disable_and_modify_rules($ $ @)
             unless ($line =~ /$SNORT_RULE_REGEXP/) {
 
 	      # Our regexp didn't match, but make a less strict check to see if
-              # it's likely to be a Snort rule anyway. If it is, then print a warning
+              # it's likely to be a Snort rule anyway. If it is, then print a warning.
               # Only care about active rules to avoid false alarms.
    	        if ($line =~ /^\s*(?:alert|log|pass) .*msg.*;\)\n$/) {
 		    $_ = $file;
                     $_ =~ s/.*\///;    # remove path
 		    warn("\nWARNING: I don't understand this rule in downloaded file $_ ".
-                         "(perhaps bad syntax?):\n  $line");
+                         "(perhaps bad syntax or missing SID etc?):\n$line");
                 }
 
 	        print OUTFILE $line;
