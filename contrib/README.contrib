@@ -5,9 +5,6 @@
 
   A graphical front-end to Oinkmaster written in Perl/Tk.
   See README.gui for complete documentation.
-
-  Usage: oinkgui.pl
-
 -------------------------------------------------------------------------------
 
 
@@ -15,16 +12,13 @@
 -------------------------------------------------------------------------------
 * addsid.pl by Andreas Östling <andreaso@it.su.se>
 
-  A script that parses *.rules in all specified directories and adds a SID to
-  (active) rules that don't have any. (Actually, rev and classtype are also
-  added if missing, unless you edit addsid.pl and tune this.) The script first  
-  looks for the current highest SID (even in inactive rules) and starts at
-  the next one, unless this value is below MIN_SID (defined inside addsid.pl).
-  By default, this value is set to 1000001 since this is the lowest SID assigned
-  for local usage. Handles multi-line rules.
-
-  Usage: addsid.pl <rulesdir> [rulesdir2, ...]
-
+  A script that parses *.rules in all specified directories and adds a 
+  SID to (active) rules that don't have any. (Actually, rev and classtype 
+  are also added if missing, unless you edit addsid.pl and tune this.) The 
+  script first looks for the current highest SID (even in inactive rules) 
+  and starts at the next one, unless this value is below MIN_SID (defined 
+  inside addsid.pl). By default, this value is set to 1000001 since this 
+  is the lowest SID assigned for local usage. Handles multi-line rules.
 -------------------------------------------------------------------------------
 
 
@@ -32,12 +26,10 @@
 -------------------------------------------------------------------------------
 * create-sidmap.pl by Andreas Östling <andreaso@it.su.se>
 
-  A script that parses *.rules in all specified directories and creates a SID
-  map. (Like Snort's regen-sidmap, but this one handles multi-line rules.)
-  Result goes to standard output.
-
-  Usage: create-sidmap.pl <rulesdir> [rulesdir2, ...]
-
+  A script that parses all active rules in *.rules in all specified 
+  directories and creates a SID map. (Like Snort's regen-sidmap, but this 
+  one handles multi-line rules.) Result goes to standard output which can 
+  be redirected to a sid-msg.map file.
 -------------------------------------------------------------------------------
 
 
@@ -50,9 +42,6 @@
   rules and prints a "disablesid <sid>  # <msg>" line for each disabled rule.
   The output can be appended to oinkmaster.conf.
   Useful to new Oinkmaster users.
-
-  Usage: makesidex.pl <rulesdir> [rulesdir2, ...]
-
 -------------------------------------------------------------------------------
 
 
@@ -76,8 +65,6 @@
 
   addmsg.pl will not touch lines that already has a comment in them.
   It's not able to handle disablesid lists (i.e "disablesid 1,2,3,4,5,...").
-
-  Usage: ./addmsg.pl <oinkmaster config file> <rules directory>
 
   New config file will be printed to standard output, so you
   probably want to redirect the output to a file, for example:

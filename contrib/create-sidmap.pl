@@ -18,7 +18,16 @@ my $MULTILINE_RULE_REGEXP  = '^\s*(?:%ACTIONS%)'.
 my $SINGLELINE_RULE_REGEXP = '^\s*(?:%ACTIONS%)'.
                              '\s.+;\s*\)\s*$'; # ';
 
-my $USAGE   = "usage: $0 <rulesdir> [rulesdir2, ...]\n";
+my $USAGE = << "RTFM";
+
+Parse active rules in *.rules in one or more directories and create a SID 
+map. Result is sent to standard output, which can be redirected to a 
+sid-msg.map file.
+
+Usage: $0 <rulesdir> [rulesdir2, ...]
+
+RTFM
+
 my $verbose = 1;
 
 my (%sidmap, %config);
@@ -36,13 +45,12 @@ $MULTILINE_RULE_REGEXP  =~ s/%ACTIONS%/$config{rule_actions}/;
 # Read in all rules from each rules file (*.rules) in each rules dir.
 # into %sidmap.
 foreach my $rulesdir (@rulesdirs) {
-    opendir(RULESDIR, "$rulesdir") or die("could not open $rulesdir: $!\n");
+    opendir(RULESDIR, "$rulesdir") or die("could not open \"$rulesdir\": $!\n");
 
     while (my $file = readdir(RULESDIR)) {
         next unless ($file =~ /\.rules$/);
 
-        open(FILE, "$rulesdir/$file") or die("could not open $rulesdir/$file: $!\n");
-        print STDERR "Processing $file\n";
+        open(FILE, "$rulesdir/$file") or die("could not open \"$rulesdir/$file\": $!\n");
         my @file = <FILE>;
         close(FILE);
 

@@ -34,7 +34,20 @@ my $MULTILINE_RULE_REGEXP  = '^\s*#*\s*(?:%ACTIONS%)'.
 my $SINGLELINE_RULE_REGEXP = '^\s*#*\s*(?:%ACTIONS%)'.
                              '\s.+;\s*\)\s*$'; # ';
 
-my $USAGE = "usage: $0 <rulesdir> [rulesdir2, ...]\n";
+
+my $USAGE = << "RTFM";
+
+Parse *.rules in one or more directories and add "sid:<sid>;" to rules 
+that don't have any "sid" entry, starting with the next available SID 
+after parsing all rules files (but $MIN_SID at minumum).
+Also, "rev:1;" is added to rules without a "rev" entry, and 
+"classtype:misc-attack;" is added to rules without a "classtype" entry
+(edit options at the top of $0 if you want to change this).
+
+Usage: $0 <rulesdir> [rulesdir2, ...]
+
+RTFM
+
 
 # Start in verbose mode.
 my $verbose = 1;
@@ -59,19 +72,18 @@ $verbose = 0;
 
 # Add sid to active rules that don't have any.
 foreach my $dir (@rulesdirs) {
-    opendir(RULESDIR, "$dir") or die("could not open $dir: $!\n");
+    opendir(RULESDIR, "$dir") or die("could not open \"$dir\": $!\n");
 
     while (my $file = readdir(RULESDIR)) {
         next unless ($file =~ /\.rules$/);
 
         open(OLDFILE, "$dir/$file")
-          or die("could not open $dir/$file: $!\n");
-        print "Processing $file\n";
+          or die("could not open \"$dir/$file\": $!\n");
         my @file = <OLDFILE>;
         close(OLDFILE);
 
         open(NEWFILE, ">", "$dir/$file")
-          or die("could not open $dir/$file for writing: $!\n");
+          or die("could not open \"$dir/$file\" for writing: $!\n");
 
         my ($single, $multi, $nonrule, $msg, $sid);
         while (get_next_entry(\@file, \$single, \$multi, \$nonrule, \$msg, \$sid)) {
@@ -123,13 +135,13 @@ sub get_next_available_sid(@)
     my @dirs = @_;
 
     foreach my $dir (@dirs) {
-        opendir(RULESDIR, "$dir") or die("could not open $dir: $!\n");
+        opendir(RULESDIR, "$dir") or die("could not open \"$dir\": $!\n");
 
       # Only care about *.rules.
         while (my $file = readdir(RULESDIR)) {
             next unless ($file =~ /\.rules$/);
 
-            open(OLDFILE, "<$dir/$file") or die("could not open $dir/$file: $!\n");
+            open(OLDFILE, "<$dir/$file") or die("could not open \"$dir/$file\": $!\n");
             my @file = <OLDFILE>;
             close(OLDFILE);
 

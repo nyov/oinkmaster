@@ -19,7 +19,17 @@ my $MULTILINE_RULE_REGEXP  = '^\s*#*\s*(?:%ACTIONS%)'.
 my $SINGLELINE_RULE_REGEXP = '^\s*#*\s*(?:%ACTIONS%)'.
                              '\s.+;\s*\)\s*$'; # ';
 
-my $USAGE   = "usage: $0 <rulesdir> [rulesdir2, ...]\n";
+my $USAGE = << "RTFM";
+
+Parse *.rules in one or more directories and look for all rules that are 
+disabled (i.e. begin with "#") and print "disable <sid>  # <msg>" to 
+standard output for all those rules. This output can be redirected to a 
+file, which will be understood by Oinkmaster.
+
+Usage: $0 <rulesdir> [rulesdir2, ...]
+
+RTFM
+
 my $verbose = 1;
 
 my (%disabled, %config);
@@ -34,13 +44,12 @@ $SINGLELINE_RULE_REGEXP =~ s/%ACTIONS%/$config{rule_actions}/;
 $MULTILINE_RULE_REGEXP  =~ s/%ACTIONS%/$config{rule_actions}/;
 
 foreach my $rulesdir (@rulesdirs) {
-    opendir(RULESDIR, "$rulesdir") or die("could not open $rulesdir: $!\n");
+    opendir(RULESDIR, "$rulesdir") or die("could not open \"$rulesdir\": $!\n");
 
     while (my $file = readdir(RULESDIR)) {
         next unless ($file =~ /\.rules$/);
 
-        open(FILE, "$rulesdir/$file") or die("could not open $rulesdir/$file: $!\n");
-        print STDERR "Processing $file\n";
+        open(FILE, "$rulesdir/$file") or die("could not open \"$rulesdir/$file\": $!\n");
         my @file = <FILE>;
         close(FILE);
 
@@ -56,7 +65,7 @@ foreach my $rulesdir (@rulesdirs) {
 
 # Print results.
 foreach my $sid (sort { $a <=> $b } keys(%disabled)) {
-  printf("%-25s # %s\n", "disablesid $sid", $disabled{$sid});
+    printf("%-25s # %s\n", "disablesid $sid", $disabled{$sid});
 }
 
 

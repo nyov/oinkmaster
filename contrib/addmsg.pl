@@ -11,15 +11,20 @@ sub parse_singleline_rule($ $ $);
 
 
 my $USAGE = << "RTFM";
-Usage: $0 <oinkmaster config file> <rulesdir> [rulesdir2, ... ]
+
+Parse Oinkmaster configuration file and add the rule's "msg" string as a 
+#comment for each disablesid/enablesid line.
+
+Usage: $0 <oinkmaster.conf> <rulesdir> [rulesdir2, ...]
 
 The new config file will be printed to standard output, so you
-probably want to redirect the output to a file (NOT the same
-file you used as input!), for example:
+probably want to redirect the output to a new file (*NOT* the same
+file you used as input, because that will destroy the file!).
+For example:
 
-$0 oinkmaster.conf rules/ > oinkmaster.conf.new
+$0 /etc/oinkmaster.conf /etc/rules/ > oinkmaster.conf.new
 
-If oinkmaster.conf.new looks ok, simply rename it to oinkmaster.conf.
+If oinkmaster.conf.new looks ok, simply rename it to /etc/oinkmaster.conf.
 
 RTFM
 
@@ -34,9 +39,9 @@ my $SINGLELINE_RULE_REGEXP = '^\s*#*\s*(?:%ACTIONS%)'.
                              '\s.+;\s*\)\s*$'; # ';
 
 
-my $config    = shift || die($USAGE);
-my @rulesdirs = @ARGV;
+my $config   = shift || die($USAGE);
 
+my @rulesdirs = @ARGV;
 die($USAGE) unless ($#rulesdirs > -1);
 
 my $verbose = 1;
@@ -50,18 +55,19 @@ $MULTILINE_RULE_REGEXP  =~ s/%ACTIONS%/$config{rule_actions}/;
 
 
 # Read in oinkmaster.conf.
-open(CONFIG, "<" , "$config") or die("could not open $config for reading: $!\n");
+open(CONFIG, "<" , "$config") or die("could not open \"$config\" for reading: $!\n");
 my @config = <CONFIG>;
 close(CONFIG);
 
 
-# Read in *.rules in all rules dirs and create %sidmsgmap ($sidmsgmap{sid} = msg).
-foreach my $dir (@rulesdirs) {
-    opendir(RULESDIR, "$dir") or die("could not open $dir: $!\n");
+# Read in *.rules in all rulesdirs and create %sidmsgmap ($sidmsgmap{sid} = msg).
+foreach my $rulesdir (@rulesdirs) {
+    opendir(RULESDIR, "$rulesdir") or die("could not open \"$rulesdir\": $!\n");
+
     while (my $file = readdir(RULESDIR)) {
         next unless ($file =~ /\.rules$/);
 
-        open(FILE, "<", "$dir/$file") or die("could not open $dir/$file: $!\n");
+        open(FILE, "<", "$rulesdir/$file") or die("could not open \"$rulesdir/$file\": $!\n");
         my @file = <FILE>;
         close(FILE);
 
@@ -73,7 +79,6 @@ foreach my $dir (@rulesdirs) {
         }
     }
 }
-
 
 
 # Print new oinkmaster.conf.
