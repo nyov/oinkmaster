@@ -61,8 +61,8 @@ been added/removed/modified since the last update. Unwanted rules are specified
 in the file oinkmaster.conf. In this file you can also tell Oinkmaster to 
 skip entire files that you don't care about (i.e. don't want to update or watch
 for changes). By default, files in the archived that are updated and checked for 
-changes are *.rules, *.conf, *.config and *.txt with a couple exceptions as you
-can see in oinkmaster.conf.
+changes are *.rules, *.conf, *.config, *.txt and *.map with a couple exceptions
+as you can see in oinkmaster.conf.
 
 This script should probably be run manually but can also be run as a cron job.
 But of course, be very careful when doing the latter. Think about what you're 
@@ -96,19 +96,19 @@ that these are disabled on purpose and for a reason so you may want to
 consider keeping them disabled, see the -p argument). 
 Instead, we let the oinkmaster.conf file decide exactly what to comment out.
 
-You disable rules by adding "sid x" to the file oinkmaster.conf, where x is
-the Snort rule ID (the "sid") of the rule in question. 
-So if you want to the rule with sid 123 to be commented out after every update,
-you just append the line "sid 123" to oinkmaster.conf
+You disable rules by adding "disablesid x" to the file oinkmaster.conf, where
+x is the Snort rule ID (the "sid") of the rule in question. 
+So if you want to the rule with sid 12345 to be commented out after every update,
+you just append the line "disablesid 12345" to oinkmaster.conf.
 When you update the rules the next time, this rule will be commented out
 and Oinkmaster will notify you about that change.
 
-You can also add entire files to be totally ignored by adding "file filename"
+You can also add entire files to be totally ignored by adding "skipfile filename"
 to oinkmaster.conf where "filename" is a file in the archive you don't care
 about at all. These files will not be checked for changes and they will not be
-added or updated. For example if you don't include the file  icmp-info.rules
+added or updated. For example if you don't include the file icmp-info.rules
 from your snort.conf and don't care about keeping it up to date and don't want
-to be notified of changes, you can to add the line "file icmp-info.rules" to
+to be notified of changes, you can to add the line "skipfile icmp-info.rules" to
 oinkmaster.conf. Although it may be a good idea to track changes even for
 rules files you don't use. Who knows, you might find something interesting
 some day.

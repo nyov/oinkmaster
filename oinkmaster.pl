@@ -384,20 +384,20 @@ sub read_config
 	s/\s*$//;                        # remove trailing whitespaces
         next unless (/\S/);              # skip blank lines
 
-        if (/^\s*sid\s*(\d+)/i) {                             # sid X
+        if (/^\s*sid\s*(\d+)/i || /^\s*disablesid\s*(\d+)/ ) {     # disablesid X
             $sid_disable_list{$1}++;
-        } elsif (/^\s*file\s*(\S+)/i) {                       # file X
+        } elsif (/^\s*file\s*(\S+)/i || /^\s*skipfile\s*(\S+)/) {  # file X
             $verbose && print STDERR "Adding file to ignore list: $1.\n";
             $file_ignore_list{$1}++;
-	} elsif (/^URL\s*=\s*(.*)/i) {                        # URL to use
-	    $url = $1 unless (defined($url));                 # may already be defined by -u <url>
-	} elsif (/^PATH\s*=\s*(.*)/i) {                       # $PATH to be used
+	} elsif (/^URL\s*=\s*(.*)/i) {                             # URL to use
+	    $url = $1 unless (defined($url));                      # may already be defined by -u <url>
+	} elsif (/^PATH\s*=\s*(.*)/i) {                            # $PATH to be used
 	    $config{path} = $1;
-	} elsif (/^update_files\s*=\s*(.*)/i) {               # regexp of files to be updated
+	} elsif (/^update_files\s*=\s*(.*)/i) {                    # regexp of files to be updated
 	    $config{update_files} = $1;
-	} elsif (/^skip_diff\s*=\s*(.*)/i) {                  # regexp of files to skip comparison for
+	} elsif (/^skip_diff\s*=\s*(.*)/i) {                       # regexp of files to skip comparison for
 	    $config{skip_diff} = $1;
-        } else {                                              # invalid line
+        } else {                                                   # invalid line
             print STDERR "Warning: line $line in $config_file is invalid, skipping line.\n";
         }
     }

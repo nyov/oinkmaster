@@ -6,6 +6,9 @@ o Print warning message if two (or more) rules share the same SID.
 o Update all files matching a regexp (see config file).
 o Skip diffing files matching another regexp (see config file).
 o Added option -p to preserve disabled rules in downloaded archive.
+o "file" and "sid" keywords in oinkmaster.conf are obsolete.
+  They are now called "skipfile" and "disablesid" (to avoid confusion
+  when possibly adding new keywords in the future).
 
 
 
