@@ -88,7 +88,7 @@ By default, all rules will be uncommented (unless -p is specified).
 (Yes, even those that are commented out by default in the rules archive 
 distribution, but please note that these are disabled on purpose and for a 
 reason so you probably want to consider keeping them disabled unless you
-know what you're doing. In other words, using -p is highly recommended.)
+know what you're doing. In other words, using -p is usually recommended.)
 Instead, we let the oinkmaster.conf file decide exactly what to comment 
 out. Note that all possible local modifications you've done inside the 
 official Snort rules files will be lost since the files will be overwritten 
@@ -125,7 +125,7 @@ difference between the files to syslog, you could use something like this
 in your crontab (always consider adding the -c flag (careful mode) when
 running as a cron job though):
 
-30 2 * * * cd /usr/local/oinkmaster-0.4; ./oinkmaster.pl -o /snort/snort.org-rules/ -b /snort/backup 2>&1 | logger -t oinkmaster
+30 2 * * * cd /usr/local/oinkmaster; ./oinkmaster.pl -o /snort/snort.org-rules/ -b /snort/backup 2>&1 | logger -t oinkmaster
 
 When you check your syslog the next time and see that a new rule has been 
 added that you don't want to use, just add its SID to oinkmaster.conf and 
