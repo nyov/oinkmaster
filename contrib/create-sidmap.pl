@@ -100,7 +100,7 @@ sub get_next_entry($ $ $ $ $ $)
         $$single_ref = $line;
         $$multi_ref  = $line;
 
-        $disabled = 1 if ($line =~ /\s*#/);
+        $disabled = 1 if ($line =~ /^\s*#/);
 
       # Keep on reading as long as line ends with "\".
         while (!$broken && $line =~ /\\\s*\n$/) {
@@ -136,9 +136,9 @@ sub get_next_entry($ $ $ $ $ $)
 
           # If there are non-comment lines in the middle of a disabled rule,
           # mark the rule as broken to return as non-rule lines.
-            if ($line !~ /\s*#/ && $disabled) {
+            if ($line !~ /^\s*#/ && $disabled) {
                 $broken = 1;
-            } elsif ($line =~ /\s*#/ && !$disabled) {
+            } elsif ($line =~ /^\s*#/ && !$disabled) {
                 # comment line (with trailing slash) in the middle of an active rule - ignore it
             } else {
                 $line =~ s/^\s*#*\s*//;  # remove leading # in single-line version
