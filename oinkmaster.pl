@@ -345,7 +345,7 @@ Options:
 -u <url>  Download from this URL instead of the one in the configuration file
           (must be http://, https://, ftp://, file:// or scp:// ... .tar.gz)
 -U <file> Merge new variables from downloaded snort.conf into <file>
--v        Verbose mode
+-v        Verbose/debug mode
 -V        Show version and exit
 
 RTFM
