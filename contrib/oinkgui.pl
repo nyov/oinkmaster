@@ -76,7 +76,6 @@ my %config = (
     url              => "",
     varfile          => "",
     backupdir        => "",
-    editor           => "",
 );
 
 my %help = (
@@ -116,7 +115,7 @@ my %help = (
 
 my $gui_config_file = "";
 my $perl            = "";
-
+my $editor          = "";
 
 
 #### MAIN ####
@@ -155,7 +154,7 @@ EDITOR:foreach my $ed (@editors) {
     foreach my $dir (File::Spec->path()) {
         my $file = "$dir/$ed";
         if ((-f "$file" && -x "$file") || (-f "$file.exe" && -x "$file.exe")) {
-            $config{editor} = $file;
+            $editor= $file;
             last EDITOR;
         }
     } 
@@ -701,12 +700,12 @@ sub create_fileSelectFrame($ $ $ $ $ $)
                                      return;
                                  }
 
-                                 if ($config{editor}) {
+                                 if ($editor) {
                                      $main->Busy(-recurse => 1);
-                                     logmsg("Launching $config{editor}. ".
+                                     logmsg("Launching $editor. ".
                                             "Close it to continue the GUI.\n\n", 'MISC');
                                      sleep(2);
-                                     system($config{editor}, $$var_ref); # MainLoop will be put on hold...
+                                     system($editor, $$var_ref); # MainLoop will be put on hold...
                                      $main->Unbusy;
                                  } else {
                                      logmsg("No suitable editor found (looked for @editors ".
