@@ -689,8 +689,8 @@ sub unpack_rules_archive($)
           if ($filename =~ /^\//);
 
       # We don't want to have any weird characters anywhere in the filename.
-        clean_exit("illegal characters in filename in tar archive. ".
-                   "Offending file/line:\n$filename")
+        clean_exit("illegal character in filename in tar archive. Allowed are ".
+                   "$OK_PATH_CHARS\nOffending file/line:\n$filename")
           if ($filename =~ /[^$OK_PATH_CHARS]/);
 
       # We don't want to unpack any "../../" junk.
@@ -1648,7 +1648,7 @@ sub untaint_path($)
     my $orig_path = $path;
 
     (($path) = $path =~ /^([$OK_PATH_CHARS]+)$/)
-      or clean_exit("illegal characterss in path/filename ".
+      or clean_exit("illegal character in path/filename ".
                     "\"$orig_path\", allowed are $OK_PATH_CHARS\n");
 
     return ($path);
