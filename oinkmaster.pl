@@ -920,7 +920,7 @@ sub process_rules($ $ $ $)
                 print STDERR "Disabling SID $sid: $msg\n"
                   if ($config{verbose});
                 $multi = "#$multi";
-                $multi =~ s/\n(.+)/\n#$1/g;
+                $multi =~ s/\n([^#].+)/\n#$1/g;
                 $stats{disabled}++;
 	    }
 
@@ -1507,9 +1507,7 @@ sub is_in_path($)
 # - multi-line rule (put in 3rd ref)
 # - non-rule line (put in 4th ref)
 # If the entry is a multi-line rule, its single-line version is also
-# returned (put in the 2nd ref). If there is a #comment line in the
-# middle of an active multi-line rule, all those lines will be
-# returned as non-rule lines.
+# returned (put in the 2nd ref).
 sub get_next_entry($ $ $ $ $ $)
 {
     my $arr_ref     = shift;
@@ -1566,14 +1564,18 @@ sub get_next_entry($ $ $ $ $ $)
             }
 
           # Multi-line continuation.
-
-          # If beginning of rule was active, the rest must be active.
-          # If beginning was disabled, the rest must be disabled.
-            $broken = 1 if ($line =~ /\s*#/ != $disabled);
-
             $$multi_ref .= $line;
-            $line =~ s/^\s*#*\s*//;  # remove leading # in single-line version
-            $$single_ref .= $line;
+
+          # If there are non-comment lines in the middle of a disabled rule,
+          # mark the rule as broken to return as non-rule lines.
+            if ($line !~ /\s*#/ && $disabled) {
+                $broken = 1;
+            } elsif ($line =~ /\s*#/ && !$disabled) {
+                # comment line (with trailing slash) in the middle of an active rule - ignore it
+            } else {
+                $line =~ s/^\s*#*\s*//;  # remove leading # in single-line version
+                $$single_ref .= $line;
+            }
 
         } # while line ends with "\"
 
