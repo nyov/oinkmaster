@@ -21,6 +21,7 @@ sub print_changes($ $);
 sub make_backup($ $);
 sub get_modified_files($ $);
 sub get_changes($ $);
+sub get_new_filenames($ $);
 sub update_rules($ @);
 sub clean_exit($);
 
@@ -95,17 +96,9 @@ download_rules("$config{'url'}", "$TMPDIR/$outfile");
 # Will exit if something fails.
 unpack_rules_archive("$TMPDIR/$outfile");
 
-# Add filenames to update from the downloaded archive to the list of new
-# files, unless filename exists in %config{file_ignore_list}.
+# Create list of new files that we care about from the downloaded archive.
 # Filenames (with full path) will be stored as %new_files{filenme}.
-opendir(NEWRULES, "$TMPDIR/rules")
-  or clean_exit("Error: could not open directory $TMPDIR/rules: $!");
-
-while ($_ = readdir(NEWRULES)) {
-    $new_files{"$TMPDIR/rules/$_"}++
-      if (/$config{update_files}/ && !exists($config{file_ignore_list}{$_}));
-}
-closedir(NEWRULES);
+get_new_filenames(\%new_files, "$TMPDIR/rules/");
 
 # Make sure there is at least one file to be updated.
 clean_exit("Error: no file in archive matches the regexp \"$config{update_files}\".")
@@ -923,6 +916,26 @@ sub get_changes($ $)
     print STDERR "done.\n" unless ($quiet);
 
     return(%changes);
+}
+
+
+
+# Create list of new files (with full path) that we care about.
+# I.e. files that match the 'update_files' regexp and isn't listed
+# in the ignore list.
+sub get_new_filenames($ $)
+{
+    my $fn_ref    = shift;
+    my $rules_dir = shift;
+
+    opendir(NEWRULES, "$rules_dir")
+      or clean_exit("Error: could not open directory $rules_dir: $!");
+
+    while ($_ = readdir(NEWRULES)) {
+        $new_files{"$rules_dir/$_"}++
+          if (/$config{update_files}/ && !exists($config{file_ignore_list}{$_}));
+    }
+    closedir(NEWRULES);
 }
 
 
