@@ -19,6 +19,7 @@ o Added addmsg.pl (by myself) to contrib section.
   and add to them their SID message.
 o Fixed bug related to deleted rules printout.
 o Default URL is now http://www.snort.org/dl/signatures/snortrules-stable.tar.gz.
+o Print warning if a file in the archive is empty, unless running in quiet mode.
 o A few minor cleanups.
 
 

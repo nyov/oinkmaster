@@ -641,6 +641,9 @@ sub setup_rule_hashes
     my ($file, $sid);
 
     foreach $file (keys(%new_files)) {
+        print STDERR "WARNING: downloaded rules file $file is empty (maybe correct, maybe not)\n"
+          if (!-s "$TMPDIR/rules/$file" && !$quiet);
+
         open(NEWFILE, "<$TMPDIR/rules/$file") or clean_exit("Could not open $TMPDIR/rules/$file: $!");
 	while (<NEWFILE>) {
 	    if (/$SNORT_RULE_REGEXP/) {
