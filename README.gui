@@ -31,9 +31,7 @@ your ports/package system or get the latest version from
 http://www.cpan.org/authors/id/NI-S/. At the time of writing, 
 http://www.cpan.org/authors/id/NI-S/Tk-800.024.tar.gz is probably the one 
 you'll want. Unpack it and run "perl Makefile.pl && make && make install" 
-and you should be able to start the GUI by running oinkgui.pl.
-(If you're on *BSD, the TK module is probably available in your ports 
-system.)
+and you should then be able to start the GUI by running oinkgui.pl.
 
 If you're on Windows with ActivePerl, you do not need any extra module
 since everything is probably installed already. Should the Tk Perl module 
