@@ -9,8 +9,8 @@ o The 'modifysid' keyword now regards the arguments as regular expressions.
   So if you already use this function, you may have to adjust the arguments.
   Based on a patch from operator@email.it. Also added a bunch of examples.
 o Understand Snort_inline's "drop", "sdrop" and "reject" rules.
-o You can now start Perl with tainting checks enabled if you like
-  (not done by default yet).
+o You can now start Perl with tainting checks enabled if you like, if
+  you have a reasonably recent version of Perl.
 o The default temporary directory will be checked for in the environment
   variables TMP, TMPDIR and TEMPDIR. "/tmp" will be used if none was set.
   You can override this by setting tmpdir in oinkmaster.conf.
