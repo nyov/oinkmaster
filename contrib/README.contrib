@@ -23,7 +23,7 @@
   By default, this value is set to 1000001 since this is the lowest SID assigned
   for local usage. Handles multi-line rules.
 
-  Usage: addsid.pl <rulesdir> [rulesdir2, ...]
+  Usage: addsid.pl <rulesdir> [rulesdir2, ... ]
 
 -------------------------------------------------------------------------------
 
@@ -36,7 +36,7 @@
   (Like snort's regen-sidmap, but this one handles multi-line rules.)
   Result goes to standard output.
 
-  Usage: create-sidmap.pl <rulesdir> [rulesdir2, ...]
+  Usage: create-sidmap.pl <rulesdir> [rulesdir2, ... ]
 
 -------------------------------------------------------------------------------
 
@@ -76,10 +76,11 @@
   It's not able to handle disablesid lists (i.e "disablesid 1,2,3,4,5,..." 
   lines).
 
-  Usage: ./addmsg.pl <oinkmaster config file> <rules directory>
-
   New config file will be printed to standard output, so you
   probably want to redirect the output to a file, for example:
   ./addmsg.pl oinkmaster.conf rules/ > oinkmaster.conf.new
   If oinkmaster.conf.new looks ok, simply rename it to oinkmaster.conf.
+
+  Usage: ./addmsg.pl <oinkmaster config file> <rulesdir> [<rulesdir2, ... ]
+
 -------------------------------------------------------------------------------
