@@ -74,7 +74,7 @@ my $SINGLELINE_RULE_REGEXP = '^\s*#*\s*(?:alert|drop|log|pass|reject|sdrop|activ
 my $VAR_REGEXP = '^\s*var\s+(\S+)\s+\S+';
 
 # Allowed characters in misc paths/filenames, including the ones in the tarball.
-my $OK_PATH_CHARS = 'a-zA-Z\d\ _\.\-+:\\\/~@,=';
+my $OK_PATH_CHARS = 'a-zA-Z\d\ _\(\)\[\]\.\-+:\\\/~@,=';
 
 # Set default temporary base directory.
 my $tmp_basedir = $ENV{TMP} || $ENV{TMPDIR} || $ENV{TEMPDIR} || '/tmp';
@@ -883,7 +883,7 @@ sub setup_rules_hash($)
       unless ($quiet);
 
     foreach my $file (sort(keys(%$new_files_ref))) {
-        warn("WARNING: downloaded rules file $file is empty\n")
+        warn("\nWARNING: downloaded rules file $file is empty\n")
           if (!-s "$file" && $verbose);
 
         open(NEWFILE, "<", "$file")
