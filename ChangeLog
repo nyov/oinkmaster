@@ -1,5 +1,6 @@
 v0.9 - 200xxxxx
 ~~~~~~~~~~~~~~~
+o It's much faster now.
 o Added ability to use "include <file>" in oinkmaster configuration
   files. <file> will be parsed (just like a regular oinkmaster.conf) as
   soon as the include statement is seen, and then return and continue
@@ -31,6 +32,7 @@ o oinkmaster.conf will be searched for in /etc/ and /usr/local/etc/ by default.
 o Make contrib/create-sidmap.pl and contrib/addsid.pl take an arbtitrary number
   of directories as argument.
 o Added a FAQ.
+o Use ISO 8601 format for date string in backup filename.
 
 
 
