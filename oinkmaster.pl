@@ -549,7 +549,7 @@ sub disable_and_modify_rules($ $ $)
 		    print STDERR "Enabling disabled rule (SID $sid): $msg\n"
 		      if ($verbose);
                     $multi =~ s/^#*//;
-                    $multi =~ s/\n#*/\n/g;   # XXX verify
+                    $multi =~ s/\n#*/\n/g;
 		}
 	    }
 
