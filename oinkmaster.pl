@@ -50,7 +50,7 @@ use vars qw
    );
 
 my (
-      $output_dir, $backup_dir
+      $output_dir
    );
 
 my (
@@ -125,15 +125,15 @@ my @modified_files = get_modified_files(\%changes, \%new_files);
 if ($#modified_files > -1) {
     if ($careful) {
         print STDERR "No need to backup old files (running in careful mode), skipping.\n"
-          if (defined($backup_dir) && (!$quiet));
+          if (exists($config{backup_dir}) && (!$quiet));
     }  else {
-        make_backup($output_dir, $backup_dir)
-          if (defined($backup_dir));
+        make_backup($output_dir, $config{backup_dir})
+          if (exists($config{backup_dir}));
         update_rules($output_dir, @modified_files);
     }
 } else {
     print STDERR "No files modified - no need to backup old files, skipping.\n"
-      if (defined($backup_dir) && !$quiet);
+      if (exists($config{backup_dir}) && !$quiet);
 }
 
 # Print changes.
@@ -198,16 +198,16 @@ sub parse_cmdline()
 {
     my $cmdline_ok = getopts('b:cC:eho:pqru:vV');
 
-    $backup_dir    = $opt_b if (defined($opt_b));
-    $config_file   = $opt_C if (defined($opt_C));
-    $config{url}   = $opt_u if (defined($opt_u));
-    $careful           = 1  if (defined($opt_c));
-    $preserve_comments = 0  if (defined($opt_e));
-    $quiet             = 1  if (defined($opt_q));
-    $check_removed     = 1  if (defined($opt_r));
-    $verbose           = 1  if (defined($opt_v));
-    show_usage()            if (defined($opt_h));
-    die("$VERSION\n")       if (defined($opt_V));
+    $config{backup_dir} = $opt_b if (defined($opt_b));
+    $config_file        = $opt_C if (defined($opt_C));
+    $config{url}        = $opt_u if (defined($opt_u));
+    $careful            = 1      if (defined($opt_c));
+    $preserve_comments  = 0      if (defined($opt_e));
+    $quiet              = 1      if (defined($opt_q));
+    $check_removed      = 1      if (defined($opt_r));
+    $verbose            = 1      if (defined($opt_v));
+    show_usage()                 if (defined($opt_h));
+    die("$VERSION\n")            if (defined($opt_V));
 
     show_usage unless ($cmdline_ok);
 
@@ -223,7 +223,7 @@ sub parse_cmdline()
 
   # Remove possible trailing slashes (just for cosmetic reasons).
     $output_dir =~ s/\/+$//;
-    $backup_dir =~ s/\/+$// if (defined($backup_dir));
+    $config{backup_dir} =~ s/\/+$// if (exists($config{backup_dir}));
 }
 
 
@@ -341,8 +341,10 @@ sub sanity_check()
       if (!$careful && !-w "$output_dir");
 
   # Make sure the backup directory exists and is writable if running with -b.
-    clean_exit("the backup directory \"$backup_dir\" doesn't exist or isn't writable by you.")
-      if (defined($backup_dir) && (!-d "$backup_dir" || !-w "$backup_dir"));
+    clean_exit("the backup directory \"$config{backup_dir}\" doesn't exist or ".
+               " isn't writable by you.")
+      if (exists($config{backup_dir}) &&
+        (!-d "$config{backup_dir}" || !-w "$config{backup_dir}"));
 }
 
 
@@ -647,7 +649,7 @@ sub find_line($ $)
 
 
 
-# Backup files in $output_dir matching $config{update_files} into $backup_dir.
+# Backup files in $output_dir matching $config{update_files} into the backup dir.
 sub make_backup($ $)
 {
     my $src_dir  = shift;    # dir with the rules to be backed up
@@ -693,11 +695,11 @@ sub make_backup($ $)
     chdir("$old_dir") or clean_exit("could not change directory back to $old_dir: $!");
 
   # Move the archive to the backup directory.
-    move("$TMPDIR/rules-backup-$date.tar.gz", "$backup_dir/")
+    move("$TMPDIR/rules-backup-$date.tar.gz", "$dest_dir/")
       or warn("WARNING: unable to move $TMPDIR/rules-backup-$date.tar.gz ".
-              "to $backup_dir/: $!\n");
+              "to $dest_dir/: $!\n");
 
-    print STDERR " saved as $backup_dir/rules-backup-$date.tar.gz.\n"
+    print STDERR " saved as $dest_dir/rules-backup-$date.tar.gz.\n"
       unless ($quiet);
 }
 
