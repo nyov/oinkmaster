@@ -68,7 +68,7 @@ my $MULTILINE_RULE_REGEXP  = '^\s*#*\s*(?:alert|drop|log|pass|reject|sdrop|activ
 
 # Regexp to match a single-line rule.
 my $SINGLELINE_RULE_REGEXP = '^\s*#*\s*(?:alert|drop|log|pass|reject|sdrop|activate|dynamic)'.
-                             '\s.+;\s*\)\s*$';
+                             '\s.+;\s*\)\s*$'; # ';
 
 # Match var line where var name goes into $1.
 my $VAR_REGEXP = '^\s*var\s+(\S+)\s+\S+';
@@ -367,7 +367,7 @@ sub read_config($ $)
        if (/^modifysids*\s+(\d+.*|\*)\s+"(.+)"\s+\|\s+"(.*)"\s*$/i) {
             my ($sid_list, $subst, $repl) = ($1, $2, $3);
             warn("WARNING: line $linenum in $config_file is invalid, ignoring\n")
-              unless(parse_mod_expr(\%{$$cfg_ref{sid_modify_list}}, 
+              unless(parse_mod_expr(\%{$$cfg_ref{sid_modify_list}},
                                     $sid_list, $subst, $repl));
 
       # disablesid <SID[,SID, ...]>
@@ -678,7 +678,7 @@ sub unpack_rules_archive($)
         close(TAR);
     }
 
-  # For each filename in the archive, do some basic (pretty useless) 
+  # For each filename in the archive, do some basic (pretty useless)
   # sanity checks.
     foreach my $filename (@tar_test) {
        chomp($filename);
@@ -713,7 +713,7 @@ sub unpack_rules_archive($)
     chdir($old_dir)
       or clean_exit("could not change directory back to $old_dir: $!");
 
-    print STDERR "done.\n" 
+    print STDERR "done.\n"
       unless ($quiet);
 }
 
@@ -771,7 +771,7 @@ sub process_rules($ $ $ $)
           # We've got a valid rule. If we have already seen this sid, discard this rule.
             if (exists($sids{$sid})) {
                 warn("\nWARNING: duplicate SID in downloaded archive, SID $sid in ".
-                     basename($file) . " has already been seen in " . 
+                     basename($file) . " has already been seen in " .
                      basename($sids{$sid}). ", discarding rule \"$msg\"\n");
                 next RULELOOP;
             }
@@ -781,7 +781,7 @@ sub process_rules($ $ $ $)
           # Even if it was a single-line rule, we want a copy in $multi.
 	    $multi = $single unless (defined($multi));
 
-          # Some rules may be commented out by default. 
+          # Some rules may be commented out by default.
           # Enable them if -e is specified.
 	    if ($multi =~ /^#/ && $enable_all) {
   	        print STDERR "Enabling disabled rule (SID $sid): $msg\n"
@@ -1277,7 +1277,7 @@ sub get_changes($ $)
 	        }
         } # foreach sid
 
-      # Check for removed rules, i.e. sids that exist in the old file but 
+      # Check for removed rules, i.e. sids that exist in the old file but
       # not in the new one.
         foreach my $sid (keys(%{$$rh_ref{old}{rules}{$file}})) {
             unless (exists($$rh_ref{new}{rules}{$file}{$sid})) {
@@ -1288,7 +1288,7 @@ sub get_changes($ $)
 
       # Check for added non-rule lines.
         get_first_only(\my @added, 
-                       \@{$$rh_ref{new}{other}{$file}}, 
+                       \@{$$rh_ref{new}{other}{$file}},
                        \@{$$rh_ref{old}{other}{$file}});
 
         if (scalar(@added)) {
@@ -1298,7 +1298,7 @@ sub get_changes($ $)
 
       # Check for removed non-rule lines.
         get_first_only(\my @removed,
-                       \@{$$rh_ref{old}{other}{$file}}, 
+                       \@{$$rh_ref{old}{other}{$file}},
                        \@{$$rh_ref{new}{other}{$file}});
 
         if (scalar(@removed)) {
@@ -1477,16 +1477,16 @@ sub get_next_entry($ $ $ $ $ $)
 
             return (1);   # return non-rule
         }
-     } elsif (parse_singleline_rule($line, $msg_ref, $sid_ref)) {  # regular single-line rule?
+     } elsif (parse_singleline_rule($line, $msg_ref, $sid_ref)) {
         $$single_ref = $line;
-        $$single_ref =~ s/^\s*//;     # remove leading whitespaces
-        $$single_ref =~ s/^#+\s*/#/;  # remove whitespaces next to leading #
-        $$single_ref =~ s/\s*\n$/\n/; # remove trailing whitespaces
+        $$single_ref =~ s/^\s*//;
+        $$single_ref =~ s/^#+\s*/#/;
+        $$single_ref =~ s/\s*\n$/\n/;
 
         return (1);   # return single
     } else {                          # non-rule line
 
-      # Do extra check and warn if it *might* be a rule anyway, 
+      # Do extra check and warn if it *might* be a rule anyway,
       # but that we just couldn't parse for some reason.
         warn("\nWARNING: line may be a rule but it could not be parsed (missing sid or msg?): $line\n")
           if ($verbose && $line =~ /^\s*alert .+msg\s*:\s*".+"\s*;/);
