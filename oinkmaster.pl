@@ -80,7 +80,7 @@ sub catch_sigint();
 sub clean_exit($);
 
 
-my $VERSION            = 'Oinkmaster v1.2 by Andreas Östling <andreaso@it.su.se>';
+my $VERSION            = 'Oinkmaster v1.2, Copyright (C) 2001-2005 Andreas Östling <andreaso@it.su.se>';
 my $OUTFILE            = 'snortrules.tar.gz';
 my $RULES_DIR          = 'rules';
 my $DIST_SNORT_CONF    = "$RULES_DIR/snort.conf";
@@ -920,6 +920,10 @@ sub join_tmp_rules_dirs($ $ @)
             clean_exit("a file called \"$_\" exists in multiple rules archives")
               if (exists($rules_files{$_}));
 
+          # Make sure it's a regular file.
+            clean_exit("downloaded \"$_\" is not a regular file.")
+              unless (-f "$url_tmpdir/$_" && !-l "$url_tmpdir/$_");
+
             $rules_files{$_} = 1;
             $$new_files_ref{"$rules_dir/$_"} = 1;
 
@@ -1349,10 +1353,12 @@ sub process_rule($ $ $ $ $ $ $ $)
         my ($subst, $repl, $type, $arg) =
           ($mod_expr->[0], $mod_expr->[1], $mod_expr->[2], $mod_expr->[3]);
 
-        if ($type eq "wildcard" || ($type eq "sid" && $sid eq $arg) || ($type eq "file" && $filename eq $arg)) {
+        if ($type eq "wildcard" || ($type eq "sid" && $sid eq $arg) ||
+          ($type eq "file" && $filename eq $arg)) {
 
             if ($single =~ /$subst/si) {
-                print STDERR "Modifying rule, SID=$sid, filename=$filename, match type=$type, subst=$subst, ".
+                print STDERR "Modifying rule, SID=$sid, filename=$filename, ".
+                             "match type=$type, subst=$subst, ".
                              "repl=$repl\nBefore: $single"
                   if ($print_messages && $config{verbose});
 
@@ -1412,10 +1418,6 @@ sub setup_rules_hash($ $)
         warn("\nWARNING: downloaded rules file $file is empty\n")
           if (!-s "$file" && $config{verbose});
 
-      # Make sure it's a regular file.
-        clean_exit("\"$file\" is not a regular file.")
-          unless (-f "$file" && !-l "$file");
-
         open(NEWFILE, "<", "$file")
           or clean_exit("could not open $file for reading: $!");
         my @newfile = <NEWFILE>;
@@ -1428,16 +1430,7 @@ sub setup_rules_hash($ $)
 
 	while (get_next_entry(\@newfile, \$single, \$multi, \$nonrule, \$msg, \$sid)) {
 	    if (defined($single)) {
-
-              # If there are dups in the temporary files now, it means that
-              # we can blame the user for this since it was create by a bad
-              # modifysid.
-                if (exists($rh{new}{rules}{"$file"}{"$sid"})) {
-                    warn("\nWARNING: duplicate SID in downloaded archive (probably caused by bad modifysid), SID=$sid\n")
-                      unless($config{super_quiet});
-                } else {
-  		    $rh{new}{rules}{"$file"}{"$sid"} = $single;
-                }
+  	        $rh{new}{rules}{"$file"}{"$sid"} = $single;
 	    } else {
 	        push(@{$rh{new}{other}{"$file"}}, $nonrule);
 	    }
@@ -1454,7 +1447,7 @@ sub setup_rules_hash($ $)
 	    while (get_next_entry(\@oldfile, \$single, \$multi, \$nonrule, undef, \$sid)) {
 	        if (defined($single)) {
 		    warn("\nWARNING: duplicate SID in your local rules, SID ".
-                         "$sid exists multiple times, please fix this manually!\n")
+                         "$sid exists multiple times, you may need to fix this manually!\n")
 		      if (exists($old_sids{$sid}));
 
 	  	    $rh{old}{rules}{"$file"}{"$sid"} = $single;
