@@ -9,7 +9,7 @@ Feedback is of course appreciated.
 Homepage:
 http://nitzer.dhs.org/oinkmaster/
 
-Browsable CVS tree:
+Browsable CVS repository:
 http://devel.it.su.se/cgi-bin/local/cvsweb.cgi/oinkmaster/
 
 
@@ -23,7 +23,7 @@ hence giving you good control of your rules.
 
 It's a variant of my (obsolete) arachNIDS snort rules updater
 (http://nitzer.dhs.org/arachnids_upd/) which is pretty much the same
-thing but for the arachNIDS Snort rules exports at www.whitehats.com.
+thing but for the arachNIDS Snort rules exports at http://www.whitehats.com/.
 
 Use with care and at your own risk.   
 Check out http://www.snort.org/ for more information about Snort and its 
@@ -53,7 +53,7 @@ from the URL specified in oinkmaster.conf, comments out the unwanted rules and
 prints what have been added/removed/modified since the last update.
 Unwanted rules are specified in the file oinkmaster.conf. In this file you can
 also tell Oinkmaster to skip entire files that you don't care about (i.e. don't
-want to update or watch for changes). By default, files in the archive that are
+want to update or check for changes). By default, files in the archive that are
 updated and checked for changes (or added if missing on your system) are 
 *.rules, *.conf, *.config, *.txt and *.map with a couple exceptions as you 
 can see in oinkmaster.conf.
@@ -76,12 +76,12 @@ Usage information
 Try ./oinkmaster.pl -h for more usage information and available options. 
 
 As a first test, you can create an empty rules directory, for example
-"/tmp/rules". Then try executing "./oinkmaster.pl -o /tmp/rules"
-Since your "rules/" directory is empty, all rules files in the downloaded
+/tmp/rules/. Then try executing "./oinkmaster.pl -o /tmp/rules"
+Since your /tmp/rules/ directory is empty, all rules files in the downloaded
 archive will be regarded as added, and copied to that directory.
 Then try "./oinkmaster.pl -o /tmp/rules" one more time.
 This time the files in the downloaded archive will be compared to the ones
-in your rules/ directory, and Oinkmaster will tell you if something has been
+in /tmp/rules/ and Oinkmaster will tell you if something has been
 updated.
 
 By default, all rules will be uncommented (yes, even those that are 
@@ -124,7 +124,7 @@ difference between the files to syslog, you could use something like this
 in your crontab (always consider adding the -c flag (careful mode) when
 running as a cron job though):
 
-30 2 * * * cd /usr/local/oinkmaster-0.4; ./oinkmaster.pl -o /snort/rules/snort.org-rules/ -b /snort/backup 2>&1 | logger -t oinkmaster
+30 2 * * * cd /usr/local/oinkmaster-0.4; ./oinkmaster.pl -o /snort/snort.org-rules/ -b /snort/backup 2>&1 | logger -t oinkmaster
 
 When you check your syslog the next time and see that a new rule has been 
 added that you don't want to use, just add its SID to oinkmaster.conf and 
@@ -133,11 +133,11 @@ disabled has changed and you now decide that you want to use it again,
 just remove its SID from oinkmaster.conf and it will be reactivated after 
 the next update). If you want the output to be sent to you in a mail 
 instead, you could use something like:
-./oinkmaster.pl ... | mail -s subject you@somewhere.foo
+./oinkmaster.pl ... 2>&1 | mail -s subject you@somewhere.foo
 
 If you just want to check for changes in the new rules archive but not 
 actually update your existing rules, you can use the -c flag for "careful" 
-mode. Its nice to combine -c with -q  and run as a cron job to silently 
+mode. It's nice to combine -c with -q  and run as a cron job to silently 
 check for updates (perhaps you just want to use this script to check for 
 updates, but still want to do the actual rules updating manually!).
 
@@ -161,14 +161,14 @@ o Enabled and modified:
      is now activated. The actual rule had also been modified.
 
 o Removed:
-  - The rule (with this SID) does no longer exist in this file.
+  - The rule (with this SID) does no longer exist in the new rules file.
 
 o Disabled:
   - The rule (with this SID) still exists but has now been commented out
     (probably because the SID was added to oinkmaster.conf).
 
 o Disabled and modified:
-  - The rule (with this SID) still exists but has now been commented.
+  - The rule (with this SID) still exists but has now been commented out.
     The actual rule had also been modified.
 
 o Modified active:
@@ -181,7 +181,7 @@ o Modified inactive:
 
 Here comes some typical example output.
 We see that a rule has been removed from web-cgi.rules and that a rule 
-in dos.rules has been updated.
+in dos.rules has been modified.
 
 
 
@@ -228,15 +228,15 @@ o It's a really good idea to have a separate directory for your snort.org rules
   on your snort machine. Why? Because if you have a local rules file called
   "coolstuff.rules" in the output directory (-o <dir>) and a file
   called "coolstuff.rules" is one day added to the rules distribution archive,
-  your local file will be overwritten by that one. It could also
-  be a problem with the "local.rules" file if you use that one for your
-  local rules. In that case you probably don't want it to be overwritten by the
-  empty local.rules from the archive every update.
+  your local file will be overwritten by that one. It could also be a problem
+  with the "local.rules" file if you use that one for your local rules.
+  In that case you probably don't want it to be overwritten by the empty
+  local.rules from the archive every update.
   That's why it's ignored by default in oinkmaster.conf.
-  Same thing goes for snort.conf. Personally I keep an extra copy of snort.conf
-  in the rules directory and specify another snort.conf when starting Snort.
-  This way I can keep track of changes in the snort.conf from the rules archive
-  while keeping my customized copy intact. If there are added/removed 
+  Same thing goes for snort.conf. Personally I keep an extra (unused) copy of
+  snort.conf in the rules directory and specify another snort.conf when starting
+  Snort. This way I can keep track of changes in the snort.conf from the rules
+  archive while keeping my customized copy intact. If there are added/removed 
   rules files in the archive, you will have to edit your snort.conf 
   manually and include/exclude those files. Oinkmaster does not do that 
   kind of stuff.
@@ -245,7 +245,7 @@ o Oinkmaster also never deletes any rules files from your system.
   So if a file called foo.rules is usually included in the rules distribution
   archive but is one day removed from it, the old foo.rules will still be left
   in your rules directory. Oinkmaster will notify you of this but only if you
-  use the "-r" argument. "-r" means that each interesting file
+  use the "-r" argument, which means that each interesting file
   (*.rules, *.conf ...) in your output directory will be checked to see if it
   also exists in the downloaded rules archive. If it doesn't, it will be
   regarded as removed from the archive and a message will be printed because
@@ -256,7 +256,7 @@ o Oinkmaster also never deletes any rules files from your system.
   (i.e. you have possible local rules files in another directory) you 
   probably want to use the "-r" argument. Otherwise it will be very  
   missleading since your local rules files obviously don't exist in the 
-  rules distribution and therefore will be regarded as removed every time. 
+  rules distribution, and will therefore be regarded as removed every time. 
   Note that the rules in your output directory will be overwritten after each
   update (if there were any changes, that is) which means that all possible
   local modifications will be lost. Therefore it's better to move rules you
