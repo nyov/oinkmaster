@@ -65,7 +65,7 @@ my $SINGLELINE_RULE_REGEXP = '^\s*#*\s*(?:alert|log|pass)\s.+msg\s*:\s*"(.+?)'.
 # Regexp to match the start (the first line) of a possible multi-line rule.
 my $MULTILINE_RULE_REGEXP = '^\s*#*\s*(?:alert|log|pass)\s.*\\\\\s*\n$'; # ';
 
-# Default temporary base directory.
+# Set default temporary base directory.
 my $tmp_basedir;
 
 if (exists($ENV{tmp})) {
@@ -83,7 +83,7 @@ use vars qw
    );
 
 my (
-      %config, %new_files
+      %config, %new_files, $tmpdir
    );
 
 
@@ -116,7 +116,7 @@ if ($config_test_mode) {
 }
 
 # Create empty temporary directory.
-my $tmpdir = make_tempdir($tmp_basedir);
+$tmpdir = make_tempdir($tmp_basedir);
 
 # Set new umask if one was specified in the config file.
 umask($config{umask}) if exists($config{umask});
@@ -140,10 +140,7 @@ clean_exit("not enough rules files in downloaded archive (is it broken?)\n".
            "Number of rules files is $num_files but minimum is set to $min_files.")
   if ($num_files < $min_files);
 
-# In the downloaded rules, disable (#comment out) all sids listed in
-# conf{sid_disable_list} and modify sids listed in conf{sid_modify_list}.
-# Will open each file listed in %new_files, make modifications, and
-# write back to the same file.
+# Disable/modify/clean downloaded rules.
 my $num_rules = disable_and_modify_rules(\%{$config{sid_disable_list}},
                                          \%{$config{sid_modify_list}}, \%new_files);
 
@@ -166,10 +163,10 @@ get_new_vars(\%changes, $config{varfile}, "$tmpdir/$DIST_SNORT_CONF")
 # Find out if something had changed.
 my $something_changed = 0;
 $something_changed = 1
-    if (keys(%{$changes{modified_files}}) ||
-        keys(%{$changes{added_files}})    ||
-        keys(%{$changes{removed_files}})  ||
-        $#{$changes{new_vars}} > -1);
+  if (keys(%{$changes{modified_files}}) ||
+      keys(%{$changes{added_files}})    ||
+      keys(%{$changes{removed_files}})  ||
+      $#{$changes{new_vars}} > -1);
 
 
 # Update files listed in %changes{modified_files} (move the new files from the temporary
@@ -238,7 +235,7 @@ Options:
 -T         Test configuration and then exit
 -u <url>   Download from this URL (http://, ftp:// or file:// ...tar.gz)
            instead of the URL specified in the configuration file
--U <file>  Variables that exist in the distribution snort.conf but not in <file>
+-U <file>  Variables that exist in downloaded snort.conf but not in <file>
            will be added to this file (usually your production snort.conf).
 -v         Verbose mode
 -V         Show version and exit
@@ -525,12 +522,13 @@ sub download_rules($ $)
     }
 
   # Make sure the downloaded file actually exists.
-    clean_exit("failed to get rules archive: local target file $localfile doesn't exist after download.")
+    clean_exit("failed to get rules archive: ".
+               "local target file $localfile doesn't exist after download.")
       unless (-e "$localfile");
 
   # Also make sure it's at least non-empty.
-    clean_exit("failed to get rules archive: local target file $localfile is empty after download ".
-               "(perhaps you're out of diskspace or file in url is empty?)")
+    clean_exit("failed to get rules archive: local target file $localfile is empty ".
+               "after download (perhaps you're out of diskspace or file in url is empty?)")
       unless (-s "$localfile");
 }
 
@@ -585,6 +583,7 @@ sub unpack_rules_archive($)
         clean_exit("forbidden characters in filename in tar archive. ".
                    "Offending file/line:\n$filename")
           if ($filename =~ /[^$ok_chars]/);
+
       # We don't want to unpack any "../../" junk.
         clean_exit("filename in tar archive contains \"..\".\n".
                    "Offending file/line:\n$filename")
@@ -1199,7 +1198,7 @@ sub is_in_path($)
     my $file = shift;
     my $SEP  = ':';
 
-    $SEP = ';' if $^O eq "MSWin32";
+    $SEP = ';' if ($^O eq "MSWin32");
 
     foreach my $dir (split(/$SEP/, $ENV{PATH})) {
         return (1) if (-x "$dir/$file" || -x "$dir/$file.exe");
@@ -1343,8 +1342,7 @@ sub make_tempdir($)
 
 
 # Look for variables that exist in dist snort.conf but not in local snort.conf.
-sub
-get_new_vars($ $ $)
+sub get_new_vars($ $ $)
 {
     my $ch_ref     = shift;
     my $local_conf = shift;
@@ -1399,8 +1397,7 @@ get_new_vars($ $ $)
 
 
 # Add variables to local snort.conf.
-sub
-add_new_vars($ $)
+sub add_new_vars($ $)
 {
     my $ch_ref  = shift;
     my $varfile = shift;
