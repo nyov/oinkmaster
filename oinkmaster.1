@@ -153,7 +153,9 @@ separate output directories. If
 .B -u
 .I url
 is specified, it overrides 
-any URLs specified in the configuration file(s).
+any URLs specified in the configuration file(s). Note that if multiple 
+URLs are specified and one of them is broken, Oinkmaster will exit 
+immediately without further processing.
 .IP "\fB-U \fIfile\fP
 Variables that exist in downloaded snort.conf but not in
 .I file
