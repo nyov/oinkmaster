@@ -7,7 +7,8 @@ Oinkmaster GUI (oinkgui.pl in the contrib directory) is my very first
 attempt at creating a graphical user interface. It was written just for 
 fun. The result is not the prettiest interface you've seen, but it 
 actually works. It runs on Unix systems and also on Windows with 
-ActivePerl. Send feedback to Andreas Östling <andreaso@it.su.se>.
+ActivePerl. It has not been tested under Cygwin.
+Send feedback to Andreas Östling <andreaso@it.su.se>.
 
 
 
@@ -23,7 +24,10 @@ INSTALL and README (and README.win32 of you're on Windows) for more
 information. 
 
 The GUI is written in Perl and requires the Perl Tk module.
-If you're on Unix, get the latest version from 
+You must also make sure the Perl binary is in your PATH.
+
+If you're on Unix and don't have the module already, install it from
+your ports/package system or get the latest version from
 http://www.cpan.org/authors/id/NI-S/. At the time of writing, 
 http://www.cpan.org/authors/id/NI-S/Tk-800.024.tar.gz is probably the one 
 you'll want. Unpack it and run "perl Makefile.pl && make && make install" 
@@ -33,13 +37,13 @@ system.)
 
 If you're on Windows with ActivePerl, you do not need any extra module
 since everything is probably installed already. Should the Tk Perl module 
-be missing, you can install it with "ppm install Tk" from the command 
-line.If you want a non-ugly interface when browsing for directories, you need 
-to install the Win32::FileOp module. This is strongly recommended and is 
-as simple as typing "ppm install Win32::FileOp" on the command line.
-Then you just need to copy the GUI perl file to some suitable 
-directory and execute it. Using the GUI under Cygwin is untested and may 
-or may not work.
+be missing, you can install it with the command "ppm install Tk" in a DOS
+shell. If you want a non-ugly interface when browsing for directories, you
+need to install the Win32::FileOp module. This is strongly recommended and
+is as simple as typing "ppm install Win32::FileOp" in a DOS shell.
+Then you just need to copy the GUI perl file to some suitable directory
+and execute it (You don't have to be in a DOS shell to start it, you
+can create an icon for it on your desktop if you like.)
 
 
 
