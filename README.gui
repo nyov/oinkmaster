@@ -3,19 +3,22 @@
 Intro
 ~~~~~
 
-Oinkmaster GUI (oinkgui.pl in the contrib directory) is my very first 
-attempt at creating a graphical user interface in Perl/Tk. It was written 
-just for fun. The result is not the prettiest interface you've seen, but 
-it actually works. It runs on UNIX systems and also on Windows with 
-ActivePerl. It has not been tested under Cygwin Send feedback to
-Andreas Östling <andreaso@it.su.se>.
+Oinkmaster GUI is my very first attempt at creating a graphical user 
+interface in Perl/Tk. It was written just for fun and the result is not 
+the prettiest interface you've seen, but it actually works. It runs on 
+UNIX systems and also on Windows with ActivePerl. It's not well-written 
+and may not be a high priority for me in the future, so use at your own 
+risk. Send feedback to Andreas Östling <andreaso@it.su.se>.
 
 
 
 How to install
 ~~~~~~~~~~~~~~
 
-This GUI is simply a front-end used to create the right command line and
+The Oinkmaster GUI can be found as oinkgui.pl in Oinkmaster's contrib 
+directory. If you're lucky, you can just execute it right away.
+
+The GUI is simply a front-end used to create the right command line and
 then execute Oinkmaster with it. In other words, oinkmaster.pl can be run 
 without the GUI but the GUI can not be run without oinkmaster.pl.
 It may be easiest if you make sure you have Oinkmaster (without the GUI) 
