@@ -3,10 +3,12 @@
 # $Id$ #
 
 use strict;
+use File::Spec;
 use Tk;
 use Tk::NoteBook;
 use Tk::ROText;
 use Tk::Balloon;
+use Tk::BrowseEntry;
 
 
 sub test_config();
@@ -19,7 +21,7 @@ sub fileDialog($ $);
 sub load_config();
 sub save_config();
 sub update_file_label_color($ $ $);
-sub create_fileSelectFrame($ $ $);
+sub create_fileSelectFrame($ $ $ $);
 sub create_checkbutton($ $ $);
 sub create_radiobutton($ $ $);
 sub create_actionbutton($ $ $);
@@ -28,11 +30,7 @@ sub logmsg($ $);
 
 my $version     = 'Oinkmaster GUI v0.1';
 
-my %gui_config;
-
-my @oinkmaster_pl   = qw(./oinkmaster.pl
-                         /usr/local/bin/oinkmaster.pl
-                        );
+my %config;
 
 my @oinkmaster_conf = qw(./oinkmaster.conf
                          /etc/oinkmaster.conf
@@ -40,6 +38,10 @@ my @oinkmaster_conf = qw(./oinkmaster.conf
                         );
 
 
+# List of URLs that will show up in the URL BrowseEntry.
+my @urls = qw(http://www.snort.org/dl/rules/snortrules-stable.tar.gz
+              http://www.snort.org/dl/rules/snortrules-current.tar.gz
+             );
 
 my $bgcolor        = 'Bisque3';
 my $butcolor       = 'Bisque2';
@@ -47,28 +49,28 @@ my $actbutcolor    = 'Bisque2';
 my $labelcolor     = 'Bisque1';
 
 
-$gui_config{careful}       = 0;
-$gui_config{enable_all}    = 1;
-$gui_config{check_removed} = 0;
+$config{careful}       = 0;
+$config{enable_all}    = 0;
+$config{check_removed} = 0;
 
-$gui_config{mode} = 'normal';
+$config{mode} = 'normal';
 
-my $animate = 1;
+my $animate = 0;
 
-$gui_config{oinkmaster}             = "";
-$gui_config{oinkmaster_config_file} = "";
-$gui_config{outdir}                 = "";
-$gui_config{url}                    = "";
-$gui_config{varfile}                = "";
-$gui_config{backupdir}              = "";
+$config{oinkmaster}      = "";
+$config{oinkmaster_conf} = "";
+$config{outdir}          = "";
+$config{url}             = "";
+$config{varfile}         = "";
+$config{backupdir}       = "";
 
-my $gui_config_file     = "";
+my $config_file     = "";
 
 
 my %help = (
 
   # File locations.
-    oinkscript   => 'Location of the executable oinkmaster.pl file.',
+    oinkscript   => 'Location of the executable oinkmaster script.',
     oinkconf     => 'The oinkmaster configuration file to use.',
     outdir       => 'Where to put the new rules. This shoudl be the directory where you '.
                     'store your existing rules.',
@@ -111,21 +113,26 @@ $| = 1;
 # Find out which oinkmaster config file to use.
 foreach my $file (@oinkmaster_conf) {
     if (-e "$file") {
-        $gui_config{oinkmaster_config_file} = $file;
+        $config{oinkmaster_conf} = $file;
         last;
     }
 }
 
 # Find out which oinkmaster.pl file to use.
-foreach my $file (@oinkmaster_pl) {
-    if (-e "$file") {
-        $gui_config{oinkmaster} = $file;
+foreach my $dir (File::Spec->path()) {
+    my $file = "$dir/oinkmaster";
+    if (-f "$file" && -x "$file") {
+        $config{oinkmaster} = $file;
         last;
-    }
+    } elsif (-f "$file.pl" && -x "$file.pl") {
+        $config{oinkmaster} = "$file.pl";
+        last;
+    } 
 }
 
+
 # Find out where the GUI config file is (it's not required).
-$gui_config_file = "$ENV{HOME}/.oinkguirc" if ($ENV{HOME});
+$config_file = "$ENV{HOME}/.oinkguirc" if ($ENV{HOME});
 
 
 # Create main window.
@@ -169,21 +176,21 @@ my $req_tab = $notebook->add("required",
 
 # Create frame with oinkmaster.pl location.
 my ($oinkscript_frame, $oinkscript_label, $oinkscript_entry, $oinkscript_but) = 
-  create_fileSelectFrame($req_tab, "Oinkmaster.pl", 'EXECFILE');
+  create_fileSelectFrame($req_tab, "Oinkmaster.pl", 'EXECFILE', \$config{oinkmaster});
 
 $balloon->attach($oinkscript_frame, -statusmsg => $help{oinkscript});
 
 
 # Create frame with oinkmaster.conf location.
 my ($oinkconf_frame, $oinkconf_label, $oinkconf_entry, $oinkconf_but) = 
-  create_fileSelectFrame($req_tab, "Oinkmaster.conf", 'ROFILE');
+  create_fileSelectFrame($req_tab, "Oinkmaster.conf", 'ROFILE', \$config{oinkmaster_conf});
 
 $balloon->attach($oinkconf_frame, -statusmsg => $help{oinkconf});
 
 
 # Create frame with output directory. XXX must be able to select dir only.
 my ($outdir_frame, $outdir_label, $outdir_entry, $outdir_but) = 
-  create_fileSelectFrame($req_tab, "Output directory", 'WRDIR');
+  create_fileSelectFrame($req_tab, "Output directory", 'WRDIR', \$config{outdir});
 
 $balloon->attach($outdir_frame, -statusmsg => $help{outdir});
 
@@ -198,21 +205,21 @@ my $opt_tab = $notebook->add("optional",
 
 # Create frame with alternate URL location. XXX choice between stable/current/local.
 my ($url_frame, $url_label, $url_entry, $url_but) = 
-  create_fileSelectFrame($opt_tab, "Alternate URL", 'ROFILE');
+  create_fileSelectFrame($opt_tab, "Alternate URL", 'URL', \$config{url});
 
 $balloon->attach($url_frame, -statusmsg => $help{url});
 
 
 # Create frame with variable file.
 my ($varfile_frame, $varfile_label, $varfile_entry, $varfile_but) = 
-  create_fileSelectFrame($opt_tab, "Variable file", 'WRFILE');
+  create_fileSelectFrame($opt_tab, "Variable file", 'WRFILE', \$config{varfile});
 
 $balloon->attach($varfile_frame, -statusmsg => $help{varfile});
 
 
 # Create frame with backup dir location. XXX must be able to select dir only.
 my ($backupdir_frame, $backupdir_label, $backupdir_entry, $backupdir_but) = 
-  create_fileSelectFrame($opt_tab, "Backup directory", 'WRDIR');
+  create_fileSelectFrame($opt_tab, "Backup directory", 'WRDIR', \$config{backupdir});
 
 $balloon->attach($backupdir_frame, -statusmsg => $help{backupdir});
 
@@ -226,8 +233,8 @@ $notebook->pack(
 );
 
 
-# Create the option frame to the left.
-my $opt_frame = $main->Frame(
+# Create the frame to the left.
+my $left_frame = $main->Frame(
   -background => "$labelcolor", 
   -border     => '2'
 )->pack(
@@ -237,7 +244,7 @@ my $opt_frame = $main->Frame(
 
 
 # Create "GUI settings" label.
-$opt_frame->Label(
+$left_frame->Label(
   -text       => "GUI settings:",
   -background => "$labelcolor"
 )->pack(
@@ -246,12 +253,12 @@ $opt_frame->Label(
 );
 
 
-create_actionbutton($opt_frame, "Load saved settings",   \&load_config);
-create_actionbutton($opt_frame, "Save current settings", \&save_config);
+create_actionbutton($left_frame, "Load saved settings",   \&load_config);
+create_actionbutton($left_frame, "Save current settings", \&save_config);
 
 
-# Create "options" label at the top of the option frame.
-$opt_frame->Label(
+# Create "options" label at the top of the left frame.
+$left_frame->Label(
   -text       => "Options:", 
   -background => "$labelcolor"
 )->pack(side  => 'top',
@@ -259,36 +266,36 @@ $opt_frame->Label(
 );
 
 
-# Create checkbuttons in the option frame.
+# Create checkbuttons in the left frame.
 $balloon->attach(
-  create_checkbutton($opt_frame, "Careful mode", \$gui_config{careful}),
+  create_checkbutton($left_frame, "Careful mode", \$config{careful}),
   -statusmsg => $help{careful}
 );
 
 $balloon->attach(
-  create_checkbutton($opt_frame, "Enable all", \$gui_config{enable_all}),
+  create_checkbutton($left_frame, "Enable all", \$config{enable_all}),
   -statusmsg => $help{enable}
 );
 
 $balloon->attach(
-  create_checkbutton($opt_frame, "Check for removed files", \$gui_config{check_removed}),
+  create_checkbutton($left_frame, "Check for removed files", \$config{check_removed}),
   -statusmsg => $help{removed}
 );
 
 
 # Create "mode" label.
-$opt_frame->Label(
+$left_frame->Label(
   -text       => "Mode:", 
   -background => "$labelcolor"
 )->pack(side  => 'top',
         fill  => 'x'
 );
 
-# Create mode radiobuttons in the option frame.
-create_radiobutton($opt_frame, "über-quiet", \$gui_config{mode});
-create_radiobutton($opt_frame, "quiet",      \$gui_config{mode});
-create_radiobutton($opt_frame, "normal",     \$gui_config{mode});
-create_radiobutton($opt_frame, "verbose",    \$gui_config{mode});
+# Create mode radiobuttons in the left frame.
+create_radiobutton($left_frame, "über-quiet", \$config{mode});
+create_radiobutton($left_frame, "quiet",      \$config{mode});
+create_radiobutton($left_frame, "normal",     \$config{mode});
+create_radiobutton($left_frame, "verbose",    \$config{mode});
 
 
 
@@ -318,7 +325,7 @@ $help_label->pack(
 
 
 # Create "actions" label.
-$opt_frame->Label(
+$left_frame->Label(
   -text       => "Actions:",
   -background => "$labelcolor"
 )->pack(
@@ -330,32 +337,32 @@ $opt_frame->Label(
 # Create action buttons.
 
 $balloon->attach(
-  create_actionbutton($opt_frame, "Show version", \&show_version), 
+  create_actionbutton($left_frame, "Show version", \&show_version), 
   -statusmsg => $help{version}
 );
 
 $balloon->attach(
-  create_actionbutton($opt_frame, "Show help", \&show_help),
+  create_actionbutton($left_frame, "Show help", \&show_help),
   -statusmsg => $help{help}
 );
 
 $balloon->attach(
-  create_actionbutton($opt_frame, "Test configuration", \&test_config),
+  create_actionbutton($left_frame, "Test configuration", \&test_config),
   -statusmsg => $help{test}
 );
 
 $balloon->attach(
-  create_actionbutton($opt_frame, "Update rules!", \&update_rules),
+  create_actionbutton($left_frame, "Update rules!", \&update_rules),
   -statusmsg => $help{update}
 );
 
 $balloon->attach(
-  create_actionbutton($opt_frame, "Clear messages", \&clear_messages),
+  create_actionbutton($left_frame, "Clear messages", \&clear_messages),
   -statusmsg => $help{clear}
 );
 
 $balloon->attach(
-  create_actionbutton($opt_frame, "Exit", \&exit),
+  create_actionbutton($left_frame, "Exit", \&exit),
   -statusmsg => $help{exit}
 );
 
@@ -373,40 +380,22 @@ if ($animate) {
 
 logmsg("\n\n", 'MISC');
 
-# Load gui settings into %config. Will overwrite the defaults if it exists.
+# Load gui settings into %config.
 load_config();
 
 
-# Fill in values in the graphical entries if files were found in default locations.
-if ($gui_config{oinkmaster_config_file} !~ /\S/) {
-    logmsg("No configuration file found, please choose one above!\n", 'ERROR');
-} else {
-    $oinkconf_entry->delete(0.0, 'end');
-    $oinkconf_entry->insert(0.0, "$gui_config{oinkmaster_config_file}");
-    update_file_label_color($oinkconf_label, $oinkconf_entry->get, 'ROFILE'); 
-}
+# Warn if any required file/directory is not set.
+logmsg("No oinkmaster.pl set, please select one above!\n", 'ERROR')
+  if ($config{oinkmaster} !~ /\S/);
 
-if ($gui_config{oinkmaster} !~ /\S/) {
-    logmsg("No oinkmaster.pl found, please select one above!\n", 'ERROR');
-} else {
-    $oinkscript_entry->delete(0.0, 'end');
-    $oinkscript_entry->insert(0.0, "$gui_config{oinkmaster}");
-    update_file_label_color($oinkscript_label, $oinkscript_entry->get, 'EXECFILE');
-}
+logmsg("No configuration file set, please select one above!\n", 'ERROR')
+  if ($config{oinkmaster_conf} !~ /\S/);
 
-if ($gui_config{outdir} !~ /\S/) {
-    logmsg("Please select an output directory above before continuing!\n", 'ERROR');
-} else {
-    $outdir_entry->delete(0.0, 'end');
-    $outdir_entry->insert(0.0, "$gui_config{outdir}");
-    update_file_label_color($outdir_label, $outdir_entry->get, 'WRDIR');
-}
-
+logmsg("Output directory is not set, please select one above!\n", 'ERROR')
+if ($config{outdir} !~ /\S/);
 
 
 logmsg("\n", 'MISC');
-
-
  
 MainLoop;
 
@@ -418,15 +407,11 @@ MainLoop;
 
 sub fileDialog($ $)
 {
-    my $entry   = shift;
+    my $var_ref = shift;
     my $title   = shift;
 
     my $filename = $main->getOpenFile(-title => $title);
-
-    if ($filename) {
-        $entry->delete('0.0', 'end');
-        $entry->insert('0.0', $filename);
-    }
+    $$var_ref = $filename if ($filename);
 }
 
 
@@ -445,45 +430,55 @@ sub update_file_label_color($ $ $)
         return (1);
     }
 
-    if ($type eq "ROFILE") {
+    if ($type eq "URL") {
+        if ($filename =~ /^(?:http|ftp):\/\/.+\.tar\.gz$/) {
+            $label->configure(-background => "#00e000");
+        } elsif ($filename =~ /^(?:file:\/\/)*(.+\.tar\.gz)$/) {
+            my $file = $1;
+            if (-f "$file" && -r "$file") {
+                $label->configure(-background => "#00e000");
+            } else {
+                $label->configure(-background => 'red');
+            }
+        } else {
+            $label->configure(-background => 'red');
+        }
+    } elsif ($type eq "ROFILE") {
         if (-f "$filename" && -r "$filename") {
             $label->configure(-background => "#00e000");
         } else {
             $label->configure(-background => 'red');
         }
-        return (1);
     } elsif ($type eq "EXECFILE") {
         if (-f "$filename" && -x "$filename") {
             $label->configure(-background => "#00e000");
         } else {
             $label->configure(-background => 'red');
         }
-        return (1);
     } elsif ($type eq "WRFILE") {
         if (-f "$filename" && -w "$filename") {
             $label->configure(-background => "#00e000");
         } else {
             $label->configure(-background => 'red');
         }
-        return (1);
     } elsif ($type eq "RODIR") {
         if (-d "$filename" && -r "$filename") {
             $label->configure(-background => "#00e000");
         } else {
             $label->configure(-background => 'red');
         }
-        return (1);
     } elsif ($type eq "WRDIR") {
         if (-d "$filename" && -w "$filename") {
             $label->configure(-background => "#00e000");
         } else {
             $label->configure(-background => 'red');
         }
-        return (1);
     } else {
        print STDERR "incorrect type ($type)\n";
        exit;
     }
+
+    return (1);
 }
 
 
@@ -555,11 +550,12 @@ sub create_radiobutton($ $ $)
 
 
 # Create <label><entry><browsebutton> in given frame.
-sub create_fileSelectFrame($ $ $)
+sub create_fileSelectFrame($ $ $ $) 
 {
-    my $win  = shift;
-    my $name = shift;
-    my $type = shift;  # FILE|DIR
+    my $win     = shift;
+    my $name    = shift;
+    my $type    = shift;  # FILE|DIR|URL
+    my $var_ref = shift;
 
   # Create frame.
     my $frame = $win->Frame->pack(
@@ -578,8 +574,24 @@ sub create_fileSelectFrame($ $ $)
       -side       => 'left'
     );
 
-  # Create entry.
-    my $entry = $frame->Entry(
+my $entry;
+
+if ($type eq 'URL') {
+    $entry = $frame->BrowseEntry(
+      -textvariable    => $var_ref,
+      -background      => 'white',
+      -width           => '80',
+      -choices         => \@urls,
+      -validate        => 'key',
+      -validatecommand => sub { update_file_label_color($label, $_[0], $type) },
+    )->pack(
+      -side            => 'left',
+      -expand          => 'yes',
+      -fill            => 'x'
+   );
+} else {
+    $entry = $frame->Entry(
+      -textvariable    => $var_ref,
       -background      => 'white',
       -width           => '80',
       -validate        => 'key',
@@ -590,18 +602,22 @@ sub create_fileSelectFrame($ $ $)
       -fill            => 'x'
    );
 
+}
+
+
 
   # Create browse-button.
     my $but = $frame->Button(
       -text       => "browse ...",
       -background => "$actbutcolor",
       -command    => sub {
-                            fileDialog($entry, $name);
-                            update_file_label_color($label, $entry->get, $type);
+                            fileDialog($var_ref, $name);
                          }
     )->pack(
-      -side       => 'left'
+      -side       => 'left',
     );
+
+
 
     return ($frame, $label, $entry, $but);
 }
@@ -629,19 +645,17 @@ sub logmsg($ $)
 
 sub show_version()
 {
-    my $oinkmaster = $oinkscript_entry->get;
+    $config{oinkmaster} =~ s/^\s+//;
+    $config{oinkmaster} =~ s/\s+$//;
 
-    $oinkmaster =~ s/^\s+//;
-    $oinkmaster =~ s/\s+$//;
-
-    unless ($oinkmaster && -x "$oinkmaster") {
+    unless ($config{oinkmaster} && -x "$config{oinkmaster}") {
         logmsg("Location to oinkmaster.pl is not set correctly!\n\n", 'ERROR');
         return;
     }
 
-    my $cmd = "$oinkmaster -V";
+    my $cmd = File::Spec->rel2abs($config{oinkmaster}) . " -V";
     logmsg("$cmd:\n", 'EXEC');
-    my $output = `$cmd 2>&1`;
+    my $output = `$cmd 2>&1` || "Could not execute $config{oinkmaster}: $!\n";
     logmsg("$output", 'OUTPUT');
     logmsg("$version by Andreas Östling <andreaso\@it.su.se>\n\n", 'OUTPUT');
 }
@@ -650,19 +664,17 @@ sub show_version()
 
 sub show_help()
 {
-    my $oinkmaster = $oinkscript_entry->get;
+    $config{oinkmaster} =~ s/^\s+//;
+    $config{oinkmaster} =~ s/\s+$//;
 
-    $oinkmaster =~ s/^\s+//;
-    $oinkmaster =~ s/\s+$//;
-
-    unless ($oinkmaster && -x "$oinkmaster") {
+    unless ($config{oinkmaster} && -x "$config{oinkmaster}") {
         logmsg("Location to oinkmaster.pl is not set correctly!\n\n", 'ERROR');
         return;
     }
 
-    my $cmd = "$oinkmaster -h";
+    my $cmd = File::Spec->rel2abs($config{oinkmaster}) . " -h";
     logmsg("$cmd:\n", 'EXEC');
-    my $output = `$cmd 2>&1`;
+    my $output = `$cmd 2>&1` || "Could not execute $config{oinkmaster}: $!\n";
     logmsg("$output\n", 'OUTPUT');
 }
 
@@ -681,7 +693,7 @@ sub test_config()
             logmsg($_, 'OUTPUT');
         }
     } else {
-        open(STDERR, '>&', 'STDOUT') or die("could not redirect STDERR\n");
+        open(STDERR, '>&', 'STDOUT');
         exec(@cmd);
     }
     close(OINK);
@@ -715,7 +727,7 @@ sub update_rules()
             $main->update;
         }
     } else {
-        open(STDERR, '>&', 'STDOUT') or die("could not redirect STDERR\n");
+        open(STDERR, '>&', 'STDOUT');
         exec(@cmd);
     }
     close(OINK);
@@ -730,132 +742,106 @@ sub create_cmdline($)
 {
     my $cmd_ref = shift;
 
-    my $oinkmaster  = $oinkscript_entry->get;
-    my $config_file = $oinkconf_entry->get;
-    my $outdir      = $outdir_entry->get;
-    my $varfile     = $varfile_entry->get;
-    my $url         = $url_entry->get;
-    my $backupdir   = $backupdir_entry->get;
-
   # Clean leading/trailing whitespaces from all filenames.
-    foreach my $var_ref (\$oinkmaster, \$config_file, \$outdir, \$varfile, \$url, \$backupdir) {
-        $$var_ref =~ s/^\s+//;
-        $$var_ref =~ s/\s+$//;
+    my @filename_vars = qw(
+      oinkmaster oinkmaster_conf outdir varfile url backupdir
+    );
+
+    foreach my $var (@filename_vars) {
+        next unless (exists($config{$var}));
+        $config{$var} =~ s/^\s+//;
+        $config{$var} =~ s/\s+$//;
     }
  
-    unless ($oinkmaster && -x "$oinkmaster") {
+    unless ($config{oinkmaster} && -x "$config{oinkmaster}") {
         logmsg("Location to oinkmaster.pl is not set correctly!\n\n", 'ERROR');
         return (0);
     }
 
-    unless ($config_file) {
+    unless ($config{oinkmaster_conf}) {
         logmsg("Location to configuration file is not set correctly!\n\n", 'ERROR');
         return (0);
     }
 
-    unless ($outdir) {
+    unless ($config{outdir}) {
         logmsg("Output directory is not set!\n\n", 'ERROR');
         return (0);
     }
 
-    push(@$cmd_ref, $oinkmaster, "-C", "$config_file", "-o", "$outdir");
+    push(@$cmd_ref, 
+      File::Spec->rel2abs($config{oinkmaster}), 
+      "-C", "$config{oinkmaster_conf}", 
+      "-o", "$config{outdir}");
 
-    push(@$cmd_ref, "-c")               if ($gui_config{careful});
-    push(@$cmd_ref, "-e")               if ($gui_config{enable_all});
-    push(@$cmd_ref, "-r")               if ($gui_config{check_removed});
-    push(@$cmd_ref, "-q")               if ($gui_config{mode} eq "quiet");
-    push(@$cmd_ref, "-Q")               if ($gui_config{mode} eq "über-quiet");
-    push(@$cmd_ref, "-v")               if ($gui_config{mode} eq "verbose");
-    push(@$cmd_ref, "-u", "$url")       if ($url);
-    push(@$cmd_ref, "-U", "$varfile")   if ($varfile);
-    push(@$cmd_ref, "-b", "$backupdir") if ($backupdir);
+    push(@$cmd_ref, "-c")                       if ($config{careful});
+    push(@$cmd_ref, "-e")                       if ($config{enable_all});
+    push(@$cmd_ref, "-r")                       if ($config{check_removed});
+    push(@$cmd_ref, "-q")                       if ($config{mode} eq "quiet");
+    push(@$cmd_ref, "-Q")                       if ($config{mode} eq "über-quiet");
+    push(@$cmd_ref, "-v")                       if ($config{mode} eq "verbose");
+    push(@$cmd_ref, "-U", "$config{varfile}")   if ($config{varfile});
+    push(@$cmd_ref, "-b", "$config{backupdir}") if ($config{backupdir});
+
+
+  # Assume file:// if url prefix is missing.
+    if ($config{url}) {
+        my $url = $config{url};
+        $url = "file://$url" unless ($url =~ /(?:http|ftp|file):\/\//);
+        push(@$cmd_ref, "-u", "$url");
+    }
 
     return (1);
 }
 
 
 
-# Load $gui_config file into %gui_config hash.
+# Load $config file into %config hash.
 sub load_config()
 {
-    unless (defined($gui_config_file) && $gui_config_file) {
+    unless (defined($config_file) && $config_file) {
         logmsg("Unable to determine config file location, is your \$HOME set?\n\n", 'ERROR');
         return;
     }
 
-    unless (-e "$gui_config_file") {
-        logmsg("$gui_config_file does not exist, keeping current/default settings\n\n", 'MISC');
+    unless (-e "$config_file") {
+        logmsg("$config_file does not exist, keeping current/default settings\n\n", 'MISC');
         return;
     }
 
-    logmsg("Loading GUI settings from $gui_config_file\n\n", 'MISC');
+    logmsg("Loading GUI settings from $config_file\n\n", 'MISC');
 
-    unless (open(RC, "<$gui_config_file")) {
-        logmsg("Could not open $gui_config_file for reading: $!\n", 'ERROR');
+    unless (open(RC, "<$config_file")) {
+        logmsg("Could not open $config_file for reading: $!\n", 'ERROR');
         return;
     }
 
     while (<RC>) {
-        next unless (/^(\S+) = (\S+.*)/);
-        $gui_config{$1} = $2;
+        next unless (/^(\S+)=(.*)/);
+        $config{$1} = $2;
     }
 
     close(RC);
-
-  # Update entries.
-
-    $oinkscript_entry->delete(0.0, 'end');
-    $oinkscript_entry->insert(0.0, "$gui_config{oinkmaster}");
-    update_file_label_color($oinkscript_label, $oinkscript_entry->get, 'EXECFILE');    
-
-    $oinkconf_entry->delete(0.0, 'end');
-    $oinkconf_entry->insert(0.0, "$gui_config{oinkmaster_config_file}");
-    update_file_label_color($oinkconf_label, $oinkconf_entry->get, 'ROFILE');
-
-    $outdir_entry->delete(0.0, 'end');
-    $outdir_entry->insert(0.0, "$gui_config{outdir}");
-    update_file_label_color($outdir_label, $outdir_entry->get, 'WRDIR');
-
-    $url_entry->delete(0.0, 'end');
-    $url_entry->insert(0.0, "$gui_config{url}");
-    update_file_label_color($url_label, $url_entry->get, 'ROFILE');
-
-    $varfile_entry->delete(0.0, 'end');
-    $varfile_entry->insert(0.0, "$gui_config{varfile}");
-    update_file_label_color($varfile_label, $varfile_entry->get, 'WRFILE');
-
-    $backupdir_entry->delete(0.0, 'end');
-    $backupdir_entry->insert(0.0, "$gui_config{backupdir}");
-    update_file_label_color($backupdir_label, $backupdir_entry->get, 'WRDIR');
 }
 
 
 
-# Save %gui_config into file $gui_config.
+# Save %config into file $config.
 sub save_config()
 {
-    unless (defined($gui_config_file) && $gui_config_file) {
+    unless (defined($config_file) && $config_file) {
         logmsg("Unable to determine config file location, is your \$HOME set?\n\n", 'ERROR');
         return;
     }
 
-    logmsg("Saving current GUI settings to $gui_config_file\n\n", 'MISC');
+    logmsg("Saving current GUI settings to $config_file\n\n", 'MISC');
 
-    $gui_config{oinkmaster_config_file} =  $oinkconf_entry->get;    
-    $gui_config{oinkmaster}             =  $oinkscript_entry->get;
-    $gui_config{outdir}                 =  $outdir_entry->get;
-
-    $gui_config{url}                    =  $url_entry->get;
-    $gui_config{varfile}                =  $varfile_entry->get;
-    $gui_config{backupdir}              =  $backupdir_entry->get;
-
-    unless (open(RC, ">$gui_config_file")) {
-        logmsg("Could not open $gui_config_file for writing: $!\n", 'ERROR');
+    unless (open(RC, ">$config_file")) {
+        logmsg("Could not open $config_file for writing: $!\n", 'ERROR');
         return;
     }
 
-    foreach my $option (sort(keys(%gui_config))) {
-        print RC "$option = $gui_config{$option}\n";
+    foreach my $option (sort(keys(%config))) {
+        print RC "$option=$config{$option}\n";
     }
 
     close(RC);
