@@ -2,7 +2,7 @@
 
 # $Id$ #
 
-# Copyright (c) 2001-2004 Andreas Östling <andreaso@it.su.se>
+# Copyright (c) 2001-2005 Andreas Östling <andreaso@it.su.se>
 # All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or
@@ -347,7 +347,7 @@ Options:
 -s        Leave out details in rules results, just print SID, msg and filename
 -T        Config test - just check configuration file(s) for errors/warnings
 -u <url>  Download from this URL instead of URL(s) in the configuration file
-          (must be http://, https://, ftp://, file:// or scp:// ... .tar.gz)
+          (http://, https://, ftp://, file:// or scp:// ... .tar.gz|.gz)
           May be specified multiple times to grab multiple rules archives
 -U <file> Merge new variables from downloaded snort.conf into <file>
 -v        Verbose mode (debug)
@@ -707,7 +707,7 @@ sub sanity_check()
     $#{$config{url}} = -1;
     foreach my $url (@urls) {
         clean_exit("incorrect URL: \"$url\"")
-          unless ($url =~ /^((?:https*|ftp|file|scp):\/\/.+\.tar\.gz)$/);
+          unless ($url =~ /^((?:https*|ftp|file|scp):\/\/.+\.(?:tar\.gz|tgz))$/);
         push(@{$config{url}}, $1);
     }
 
@@ -962,13 +962,13 @@ sub unpack_rules_archive($ $ $)
         system("gzip", "-d", "$archive")
           and clean_exit("$url: unable to uncompress $archive.");
 
-      # Suffix has now changed from .tar.gz to .tar.
+      # Suffix has now changed from .tar.gz|.tgz to .tar.
         $archive =~ s/\.gz$//;
 
       # Make sure the .tar file now exists.
       # (Gzip may not return an error if it was not a gzipped file...)
         clean_exit("$url: failed to unpack gzip file (file transfer failed or ".
-                   "file in URL not in gzip format?).")
+                   "file in URL not in tar'ed gzip format?).")
           unless (-e  "$archive");
 
         my $stdout_file = "$tmpdir/tar_content.out";
