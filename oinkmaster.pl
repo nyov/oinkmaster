@@ -1457,10 +1457,11 @@ sub parse_mod_expr($ $ $ $)
     foreach my $sid (split(/\s*,\s*/, $sid_list)) {
         return (0) unless ($sid =~ /^\d+$/);
 
-     # Make sure the regexps doesn't generate invalid code.
-        my $repl_qq   = "qq/$repl/";
+     # Make sure the regexps don't generate invalid code.
+        my $repl_qq = "qq/$repl/";
+        my $dummy   = "foo";
 
-        eval '"foo" =~ s/$subst/$repl/ee';
+        eval '$dummy =~ s/$subst/$repl/ee';
 
         if ($@) {
             warn("Invalid regexp: $@");
