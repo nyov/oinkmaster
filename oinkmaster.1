@@ -1,5 +1,5 @@
 .\" $Id$
-.\" Copyright (c) 2004 Andreas Ostling <andreaso@it.su.se>
+.\" Copyright (c) 2004-2005 Andreas Ostling <andreaso@it.su.se>
 .\"
 .\" Command to generate the man page: groff -man -Tascii oinkmaster.1
 .\"
@@ -163,9 +163,12 @@ on the situation.
 Variables that exist in downloaded snort.conf but not in
 .I file
 will be added to this one, right after any other variables it may contain. 
-Modified variables are not merged, only new ones. This is usually your 
-production copy of snort.conf (which should not be a file that is
-updated by Oinkmaster the normal way).
+Modified existing variables are not merged, only new ones. This is usually
+your production copy of snort.conf (which should not be a file that is
+updated by Oinkmaster the normal way). This feature is to prevent Snort
+from breaking in case there are new variables added in the downloaded
+rules, as Snort can not start if the rules use variables that
+aren't defined anywhere.
 .IP "\fB-v
 Run in verbose mode.
 .IP "\fB-V
