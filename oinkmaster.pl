@@ -1341,7 +1341,11 @@ sub is_in_path($)
     my $file = shift;
 
     foreach my $dir (File::Spec->path()) {
-        return (1) if (-x "$dir/$file" || -x "$dir/$file.exe");
+        if (-x "$dir/$file" || -x "$dir/$file.exe") {
+            print STDERR "Found $file binary in $dir/\n"
+              if ($verbose);
+            return (1) 
+        }
     }
 
     return (0);
