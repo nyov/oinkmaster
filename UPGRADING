@@ -18,6 +18,11 @@ modules) and 1 by default on other system (i.e. keep old behavior).
 Add "use_external_bins = 0" or "use_external_bins = 1" to override the 
 default. See the new default oinkmaster.conf for more information.
 
+Since the layout of the Snort rules archives have changed on 
+www.snort.org, you must make sure that "url" is correctly set to point to 
+the right version for your version of Snort. See oinkmaster.conf for more 
+information.
+
 
 
 0.7 -> 0.8

@@ -13,13 +13,17 @@ o Put oinkmaster.pl in some suitable directory, for example
 o Edit oinkmaster.conf, or at least have a look at it to make sure 
   everything looks ok. There are some options you may want to change 
   before running Oinkmaster, although the defaults should work for most 
-  people. Here you will then also tell Oinkmaster which SIDs or files you 
-  want to disable/enable/modify. If you already have several rules 
-  commented out (or removed) in your current rules, you must add the 
-  SIDs of those to oinkmaster.conf so they don't get re-enabled after 
-  each update. Remember that after switching to Oinkmaster for updating 
-  the rules, all permanent modifications to the rules must be done by 
-  editing oinkmaster.conf, not by editing the rules files directly.
+  people. One particular option you should make sure is correctly set is 
+  "url", which specifices the location of the rules archive. What URL to 
+  use depends on which version of Snort you run.
+
+  In oinkmaser.conf you will then also tell Oinkmaster which SIDs or 
+  files you want to disable/enable/modify. If you already have several 
+  rules commented out (or removed) in your current rules, you must add the 
+  SIDs of those to oinkmaster.conf so they don't get re-enabled after each 
+  update. Remember that after switching to Oinkmaster for updating the 
+  rules, all permanent modifications to the rules must be done by editing 
+  oinkmaster.conf, not by editing the rules files directly.
 
 o Decide in which directory you want to put the new rules. Since you 
   probably already have Snort up and running, you should use the 
