@@ -11,7 +11,7 @@ sub parse_singleline_rule($ $ $);
 
 
 my $USAGE = << "RTFM";
-Usage: $0 <oinkmaster config file> <rules directory>
+Usage: $0 <oinkmaster config file> <rulesdir> [rulesdir2, ... ]
 
 The new config file will be printed to standard output, so you
 probably want to redirect the output to a file (NOT the same
@@ -34,8 +34,10 @@ my $SINGLELINE_RULE_REGEXP = '^\s*#*\s*(?:%ACTIONS%)'.
                              '\s.+;\s*\)\s*$'; # ';
 
 
-my $config   = shift || die($USAGE);
-my $rulesdir = shift || die($USAGE);
+my $config    = shift || die($USAGE);
+my @rulesdirs = @ARGV;
+
+die($USAGE) unless ($#rulesdirs > -1);
 
 my $verbose = 1;
 my (%sidmsgmap, %config);
@@ -53,21 +55,22 @@ my @config = <CONFIG>;
 close(CONFIG);
 
 
-# Read in *.rules in rulesdir and create %sidmsgmap ($sidmsgmap{sid} = msg).
-opendir(RULESDIR, "$rulesdir") or die("could not open $rulesdir: $!\n");
+# Read in *.rules in all rules dirs and create %sidmsgmap ($sidmsgmap{sid} = msg).
+foreach my $dir (@rulesdirs) {
+    opendir(RULESDIR, "$dir") or die("could not open $dir: $!\n");
+    while (my $file = readdir(RULESDIR)) {
+        next unless ($file =~ /\.rules$/);
 
-while (my $file = readdir(RULESDIR)) {
-    next unless ($file =~ /\.rules$/);
+        open(FILE, "<", "$dir/$file") or die("could not open $dir/$file: $!\n");
+        my @file = <FILE>;
+        close(FILE);
 
-    open(FILE, "<", "$rulesdir/$file") or die("could not open $rulesdir/$file: $!\n");
-    my @file = <FILE>;
-    close(FILE);
+        my ($single, $multi, $nonrule, $msg, $sid);
 
-    my ($single, $multi, $nonrule, $msg, $sid);
-
-    while (get_next_entry(\@file, \$single, \$multi, \$nonrule, \$msg, \$sid)) {
-        $sidmsgmap{$sid} = $msg
-          if (defined($single));
+        while (get_next_entry(\@file, \$single, \$multi, \$nonrule, \$msg, \$sid)) {
+            $sidmsgmap{$sid} = $msg
+              if (defined($single));
+        }
     }
 }
 
@@ -85,7 +88,7 @@ while ($_ = shift(@config)) {
             print "$_  # $sidmsgmap{$sid}\n";
 	} else {
             print "$_\n";
-	    print STDERR "WARNING: SID $sid not found in $rulesdir/*.rules\n";
+	    print STDERR "WARNING: SID $sid not found\n";
         }
     } else {
 	print;
