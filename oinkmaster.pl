@@ -707,7 +707,7 @@ sub make_backup($ $)
       or clean_exit("could not open directory $src_dir: $!");
 
     while ($_ = readdir(OLDRULES)) {
-        if (/$config{update_files}/ && !exists($config{file_ignore_list}{$_})) {
+        if (/$config{update_files}/) {
           copy("$src_dir/$_", "$bu_tmp_dir/")
             or warn("WARNING: error copying $src_dir/$_ to $bu_tmp_dir: $!")
 	}
