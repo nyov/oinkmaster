@@ -79,7 +79,7 @@ A3:  Yes! This can be done almost exactly like in the example above.
      add them here since they will be distributed to all your sensors),
      just leave out the SID and it will be filled in for you
      automatically. You can also use contrib/create-sidmap.pl to create
-     a new sig-msg.map from your rules.
+     a new sid-msg.map from your rules.
 
 
 
@@ -90,7 +90,8 @@ A4:  All the 'modifysid' will be processed first, then 'disablesid' and last
      So if you use both "enablesid 1" and "disablesid 1" in
      oinkmaster.conf (in any order), sid 1 will first be disabled and then
      enabled. So if sid 1 was enabled by default in the downloaded rules
-     archive, this is a NOOP.
+     archive, this is a NOOP. Disabling a disabled rule is also a NOOP, as
+     is enabling an enabled rule.
 
 
 
@@ -133,19 +134,22 @@ A7:  No. What you may want to consider instead is to use a separate
 
 
 Q8:  I want to copy the rules archive from a remote host to the sensor via scp 
-     (e.g. "oinkmaster -u scp://user@host:/foo/rules.tar.gz ...").
-     without having to supply a password or passphrase, but I also don't want
-     to give the sensors full access to that host. Can this be done?
+     (i.e. run "oinkmaster -u scp://user@foohost:/foo/rules.tar.gz ..." on 
+     the sensor to pull the rules from foohost) without having to supply a 
+     password or passphrase, but I also don't want to give the sensors 
+     full access to that host. Can this be done?
 
-A8:  Yes. The following instructions assumes OpenSSH on both client and server.
+A8:  Yes. You should really rely on the OpenSSH documentation on how to do
+     this, but an attempt at explaining how it could be done follows.
+     The instructions assumes OpenSSH on both client and server.
      If you want to automate the process of just copying a file with scp, you
      should never have to give one host full access to the other. One sollution
      is to generate a key pair where the private key has no passphrase and the
      public key has restrictions to only allow the copy. (If you don't plan on
-     running Oinkmaster unattended, it's of course recommended to use a passphrase
-     anyway, even though the public key should still be restricted.)
+     running Oinkmaster unattended, it's of course recommended to use a 
+     passphrase anyway, even though the public key should still contain
+     as many restrictions as possible.)
 
-     Example how to do this.
      First, generate the key pair on the sensor (i.e. the host that is
      going to run Oinkmaster, not the one that keeps the archive):
 
@@ -154,34 +158,36 @@ A8:  Yes. The following instructions assumes OpenSSH on both client and server.
      This will give you two files in the current directory, oinkmaster_scp
      (private key) and oinkmaster_scp.pub (public key). The public key
      must now be edited to add some restrictions to it.
-     Details about how to add restrictions to a host is described in sshd(8). 
-     Perhaps the most important restriction in this case is the 
-     command="command". You should also use as many other restrictions as 
-     possible, such as from="pattern-list" to only allow the sensor(s), 
-     no-pty to prevent pty allocation and also turn off all types of 
-     forwarding. You will see that the key begins with something
-     like "ssh-rsa AAAA...". To only add the command restrictions, modify
-     the key to say something like:
+     Details about how to add restrictions to a host is described in the
+     OpenSSH manual. Perhaps the most important restriction in this case 
+     is the command="command". You should also use as many other 
+     restrictions as possible, such as from="pattern-list" to only allow 
+     the sensor(s), no-pty to prevent pty allocation and also turn off all 
+     types of forwarding. You will see that the public key begins with 
+     something like "ssh-rsa AAAA...". To only add the command 
+     restrictions, modify the key to say something like:
 
      command="scp -f /etc/snort/snortrules.tar.gz" ssh-rsa AAAA...
 
-     This assumes that the tarball will be found as /etc/snort/snortrules.tar.gz
-     on the host you will be copy from, but change it to the location where
-     you store the tarball. Don't forget to add the other restrictions as
-     well. When you're done editing oinkmaster_scp.pub, copy it to the host
-     that keeps the rules and append it to ~/.ssh/authorized_keys of the
-     user that will be used to perform the copy. This should not be a
-     privileged user, the only requirement is that this user has read
+     This assumes that the tarball will be found as 
+     /etc/snort/snortrules.tar.gz on the host you will be copy from, but 
+     change it to the location where you store the tarball.
+     When you're done editing oinkmaster_scp.pub, copy it to the host that 
+     keeps the rules and append it to ~/.ssh/authorized_keys of the user 
+     that will be used to perform the copy. This should not be a 
+     privileged user, the only requirement is that this user has read 
      access to the rules archive.
 
      Now make sure that you put the private key (oinkmaster_scp) in a suitable
-     directory on the sensor. Then tell Oinkmaster to use this file by
+     directory on the sensor. Then tell Oinkmaster to use this key by
      specifying "scp_key = ..." in oinkmaster.conf,
-     You could use something like "scp_key = /home/oinkmaster/.ssh/oinkmaster_scp".
-     Or you can use ~/.ssh/config to specify the key as described in the OpenSSH
-     manual. Then you should be able to start Oinkmaster with something like:
+     You could use something like 
+     "scp_key = /home/oinkmaster/.ssh/oinkmaster_scp".
+     Or you can use ~/.ssh/config to specify the key as described in the 
+     OpenSSH manual. Then you should be able to start Oinkmaster with 
+     something like:
 
-     oinkmaster.pl -u scp://user@somehost:/etc/snort/snortrules.tar.gz -o rules
+     oinkmaster.pl -u scp://user@foohost:/etc/snort/snortrules.tar.gz -o rules
 
      It will copy the archive without asking for a password/passphrase.
      You should see something like:
