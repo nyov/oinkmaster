@@ -339,10 +339,10 @@ sub sanity_check()
 
   # Make sure all required binaries can be found.
   # (Wget is not required if user specifies file:// as url. That check is done below.)
-     foreach $_ (@req_binaries) {
-         clean_exit("\"$_\" could not be found in PATH")
-           unless (is_in_path($_));
-     }
+    foreach $_ (@req_binaries) {
+        clean_exit("\"$_\" could not be found in PATH")
+          unless (is_in_path($_));
+    }
 
   # Make sure $url is defined (either by -u <url> or url=... in the conf).
     clean_exit("incorrect URL or URL not specified in neither $config_file nor command line.")
