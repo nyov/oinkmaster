@@ -101,3 +101,18 @@ A6: No. This functionality does not belong in Oinkmaster since almost everyone
     for more information. If you really want to do an automatic restart, just
     write a little wrapper that does what you want, and remember to run snort -T
     first and refuse to restart if the test was not successful.
+
+
+
+Q7:  Can I tell Oinkmaster to not touch certain SIDs in sid-msg.map so the
+     entries I add for my local rules don't get deleted?
+
+A7:  No. What you may want to consider instead is to use a separate
+     sid-msg.map for your local rules (and not touch the map for the
+     official rules), and then join the two before feeding it to Barnyard.
+     Or, what is probably even better, is to regenerate the sid-msg.map
+     automatically after each update. There is one script in Snort's
+     contrib directory that does this, and there is also one that comes
+     with Oinkmaster (contrib/create-sidmap.pl). The latter handles
+     multiline rules and can also take an arbitrary number of rules
+     directories as argument.
