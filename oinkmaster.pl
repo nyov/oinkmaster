@@ -816,7 +816,7 @@ sub print_changes($ $)
 
   # Print list of added files.
     if (keys(%{$$ch_ref{added_files}})) {
-        print "\n[+] Added files (consider updating your snort.conf to include them): [+]\n";
+        print "\n[+] Added files (consider updating your snort.conf to include them): [+]\n\n";
         foreach my $added_file (sort({uc($a) cmp uc($b)} keys(%{$$ch_ref{added_files}}))) {
             print "    -> $added_file\n";
         }
@@ -830,7 +830,7 @@ sub print_changes($ $)
     if ($check_removed) {
         if (keys(%{$$ch_ref{removed_files}})) {
             print "\n[-] Files possibly removed from the archive ".
-                  "(consider removing them from your snort.conf): [-]\n";
+                  "(consider removing them from your snort.conf): [-]\n\n";
             foreach my $removed_file (sort({uc($a) cmp uc($b)} keys(%{$$ch_ref{removed_files}}))) {
                 print "    -> $removed_file\n";
 	    }
