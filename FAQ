@@ -772,11 +772,10 @@ A28: First of all, note that the Oinkmaster author has nothing do do
      2) Go to the Snort site and login, and choose to edit your user 
         profile.
      3) You will find the most current instructions under
-        "Oinkmaster Download Codes" on that page. Basically add the IP
-        address of the host(s) you're going to run Oinkmaster on (or 
-        more correctly, the IP address(es) that will be used to poll 
-        the Snort site). This will generate a code looking 
-        something like "5a081649c06a277e1022e1284bdc8fabda70e2a4".
+        "Oinkmaster Download Codes" on that page. Basically press the
+        "Get Code" button to generate a code.
+        This will generate a code looking something like
+        "5a081649c06a277e1022e1284bdc8fabda70e2a4".
         Then construct the url like this:
         http://www.snort.org/pub-bin/oinkmaster.cgi/<oinkcode>/<filename>
         The filename depends on which version of Snort you use, so you must
