@@ -846,7 +846,7 @@ sub process_rules($ $ $ $)
       unless ($quiet);
 
   # Warn on attempt at processing non-existent sids.
-    unless ($quiet) {
+    if ($verbose) {
         foreach my $sid (keys(%$modify_sid_ref)) {
             next unless ($sid =~ /^\d+$/);    # don't warn on wildcard match
             warn("WARNING: attempt to modify non-existent SID $sid\n")
