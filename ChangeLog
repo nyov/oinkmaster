@@ -9,6 +9,9 @@ o Slightly improved modifysid/template documentation and examples.
   updated. Thanks to Russell Fulton for this suggestion.
 o Suppress warnings about non-matching modifysid expressions when
   running in super quiet mode (-Q).
+o As requested by a few poeple, permit filename as argument to
+  modifysid (and use_template) to apply a substitution expression
+  on a per-file basis.
 
 
 
