@@ -6,12 +6,6 @@ o deleted.rules is skipped in default oinkmaster.conf ("skipfile deleted.rules")
 o A bunch of Win32/Cygwin fixes, mostly from Ueli Kistler <iuk@gmx.ch>
   To avoid problems when running under Win32/Cygwin, you should only use
   Cygwin-style paths (e.g. "/cygdrive/c/foo" instead of "c:\foo").
-o Setting check_non-rules = 0 in oinkmaster.conf will make it 
-  ignore added/removed non-rule lines, i.e. only care
-  about actual rules. Note that the rules files will not get
-  updated if there were only non-rule changes in them and this
-  feature is turned on. Default is to check for both rules and
-  non-rules, as usual.
 
 
 

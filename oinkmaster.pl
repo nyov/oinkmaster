@@ -108,9 +108,8 @@ unpack_rules_archive("$tmpdir/$outfile");
 # Create list of new files that we care about from the downloaded archive.
 # Filenames (with full path) will be stored as %new_files{filenme}.
 # Make sure there is at least one file to be updated.
-if (get_new_filenames(\%new_files, "$tmpdir/rules/") < 1) {
-    clean_exit("no rules files found in downloaded archive.");
-}
+clean_exit("no rules files found in downloaded archive.");
+  if (get_new_filenames(\%new_files, "$tmpdir/rules/") < 1);
 
 # Disable (#comment out) all sids listed in conf{sid_disable_list}
 # and modify sids listed in conf{sid_modify_list}.
@@ -145,6 +144,7 @@ if ($#modified_files > -1) {
       if (exists($config{backup_dir}) && !$quiet);
 }
 
+
 # Print changes.
 my $something_changed = 0;
 
@@ -160,6 +160,7 @@ if ($something_changed || !$quiet) {
 
 # Everything worked. Do a clean exit without any error message.
 clean_exit("");
+
 
 # END OF MAIN #
 
@@ -304,8 +305,6 @@ sub read_config($ $)
 	  $$cfg_ref{umask} = oct($1);
         } elsif (/^tmpdir\s*=\s*(.+)/i) {
           $$cfg_ref{tmpdir} = $1;                        # tmpdir
-        } elsif (/^check_non-rules\s*=\s*([01])/i) {
-          $$cfg_ref{"check_non-rules"} = $1;             # check_non-rules
         } else {                                         # invalid line
             warn("WARNING: line $linenum in $config_file is invalid, ignoring\n");
         }
@@ -503,9 +502,8 @@ sub disable_and_modify_rules($ $ $)
     my $newfiles_ref    = shift;
     my $num_disabled    = 0;
 
-    if (!$preserve_comments && !$quiet) {
-        warn("WARNING: all rules that are disabled by default will be re-enabled\n");
-    }
+    warn("WARNING: all rules that are disabled by default will be re-enabled\n")
+      if (!$preserve_comments && !$quiet);
 
     print STDERR "Disabling rules according to $config_file... "
       unless ($quiet);
@@ -561,6 +559,7 @@ sub disable_and_modify_rules($ $ $)
                 $mod =~ s/"$//;
 
                 my ($sub, $repl) = split(/"\s*\|\s*"/, $mod);
+
 		if ($multi =~ /\Q$sub\E/) {
   	            print STDERR "Modifying SID $sid with expression: $mod\n" .
                                  "Before: $multi\n"
@@ -998,18 +997,16 @@ sub get_changes($ $)
             }
         }
 
-      # Check for added/removed non-rule lines, unless check_non-rules is set to 0.
-        unless (exists($config{"check_non-rules"}) && $config{"check_non-rules"} == 0) {
-            foreach my $other_added (@{$$rh_ref{new}{other}{$file}}) {
-                unless (find_line($other_added, \@{$$rh_ref{old}{other}{"$file"}})) {
-	            push(@{$changes{other}{added}{$file}}, $other_added);
-                }
+      # Check for added/removed non-rule lines.
+        foreach my $other_added (@{$$rh_ref{new}{other}{$file}}) {
+            unless (find_line($other_added, \@{$$rh_ref{old}{other}{"$file"}})) {
+                push(@{$changes{other}{added}{$file}}, $other_added);
             }
+        }
 
-            foreach my $other_removed (@{$$rh_ref{old}{other}{$file}}) {
-                unless (find_line($other_removed, \@{$$rh_ref{new}{other}{"$file"}})) {
-	            push(@{$changes{other}{removed}{$file}}, $other_removed);
-                }
+        foreach my $other_removed (@{$$rh_ref{old}{other}{$file}}) {
+            unless (find_line($other_removed, \@{$$rh_ref{new}{other}{"$file"}})) {
+                push(@{$changes{other}{removed}{$file}}, $other_removed);
             }
         }
 
