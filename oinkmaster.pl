@@ -19,6 +19,7 @@ sub setup_rules_hash($ $ @);
 sub find_line($ @);
 sub print_changes($ $);
 sub do_backup;
+sub get_modified_files($ $);
 sub clean_exit($);
 
 my $VERSION           = 'Oinkmaster v0.7 by Andreas Östling <andreaso@it.su.se>';
@@ -48,7 +49,7 @@ my (
    );
 
 my (
-      %config, %new_files, %rh, %ch, %changes
+      %config, %new_files, %rh, %changes
    );
 
 
@@ -95,7 +96,7 @@ unpack_rules_archive("$TMPDIR/$outfile");
 opendir(NEWRULES, "$TMPDIR/rules")
   or clean_exit("Error: could not open directory $TMPDIR/rules: $!");
 
-# Read in list of new interesting rules files into %new_files.
+# Read in list of new interesting rules files (with full path) into %new_files.
 while ($_ = readdir(NEWRULES)) {
     $new_files{"$TMPDIR/rules/$_"}++
       if (/$config{update_files}/ && !exists($config{file_ignore_list}{$_}));
@@ -103,11 +104,13 @@ while ($_ = readdir(NEWRULES)) {
 closedir(NEWRULES);
 
 # Make sure there is at least one file to be updated.
-clean_exit("Error: found no files in archive matching \"$config{update_files}\".")
+clean_exit("Error: no file in archive matches the regexp \"$config{update_files}\".")
   if (keys(%new_files) < 1);
 
 # Disable (#comment out) all sids listed in conf{sid_disable_list}
 # and modify sids listed in conf{sid_modify_list}.
+# Will open each file listed in %new_files, make modifications, and
+# write back to the same file.
 disable_and_modify_rules(\%{$config{sid_disable_list}},
                          \%{$config{sid_modify_list}}, keys(%new_files));
 
@@ -119,14 +122,14 @@ setup_rules_hash(\%rh, $output_dir, keys(%new_files));
 # For each rule in the new file, check if the rule also exists
 # in the old file. If it does then check if it has been modified,
 # but if it doesn't, it must have been added.
-
+# XXX be a sub?
 print STDERR "Comparing new files to the old ones... "
   unless ($quiet);
 
 FILELOOP:foreach my $file_w_path (keys(%new_files)) {        # for each new file
     my $file = $file_w_path;
-    $file =~ s/.*\///;                                       # remove path
-    next FILELOOP if (exists($rh{added_files}{$file}));      # skip diff if it's an added file
+    $file =~ s/.*\///;                                      # remove path
+    next FILELOOP if (exists($rh{added_files}{$file}));     # skip diff if it's an added file
 
     foreach my $sid (keys(%{$rh{new}{rules}{$file}})) {     # for each sid in the new file
         my $new_rule = $rh{new}{rules}{$file}{$sid};
@@ -178,7 +181,7 @@ FILELOOP:foreach my $file_w_path (keys(%new_files)) {        # for each new file
 
 } # foreach new file
 
-
+# XXX be in same sub as the above junk?
 # Add list of possibly removed files into $removed_files if -r is specified.
 if ($check_removed) {
     opendir(OLDRULES, "$output_dir")
@@ -199,37 +202,26 @@ print STDERR "done.\n" unless ($quiet);
 # directory to the output directory, unless running in careful mode.
 # Create backup first, if requested.
 
-# Create list of modified files (with full path).
-# XXX be a sub, return @
-my %modified_files;
-foreach my $file_w_path (keys(%new_files)) {
-    my $file = $file_w_path;
-    $file =~ s/.*\///;                                       # remove path
+# Get list of modified files (with full path).
+my @modified_files = get_modified_files(\%changes, \%new_files);
 
-#    foreach my $type 
-
-    foreach my $type (keys(%{$changes{rules}})) {
-
-      if (exists($changes{rules}{"$type"}{"$file"})) {
-	  print "modified file: $file_w_path ($type)\n";
-      }
-
-    }
-
-
-#    $modified_files{$file_w_path}++
-#      if (exists($rh{added_files}) ||
-#         (exists($rh{new}{rules}) ||
+if ($#modified_files < 0) {
+    print "nothing changed!\n";
 }
 
+# XXX do backup somewhere
 
+# Move files listed in @modified_files into our output directory, unless careful mode.
+# XXX be a sub?
 
-
-# Move files listed in %added_files into our output directory unless careful mode.
 unless ($careful) {
-    foreach $_ (keys(%{$rh{added_files}})) {
-        move("$TMPDIR/rules/$_", "$output_dir/$_")
-          or clean_exit("Error: could not move $TMPDIR/rules/$_ to $output_dir/$_: $!")
+    foreach my $file_w_path (@modified_files) {
+
+        my $file = $file_w_path;
+        $file =~ s/.*\///;                                      # remove path
+
+        move("$file_w_path", "$output_dir/$file")
+          or clean_exit("Error: could not move $file_w_path to $file: $!")
     }
 }
 
@@ -463,7 +455,7 @@ sub unpack_rules_archive($)
     my $archive  = shift;
     my $ok_chars = 'a-zA-Z0-9_\.\-/\n :';   # allowed chars for filenames in the tar archive
 
-    (my $dir)   = ($archive =~ /(.*)\//);  # extract directory part of the filename
+    (my $dir)   = ($archive =~ /(.*)\//);   # extract directory part of the filename
     my $old_dir = getcwd or clean_exit("Could not get current directory: $!");
     chdir("$dir") or clean_exit("Could not change directory to \"$dir\": $!");
 
@@ -479,6 +471,7 @@ sub unpack_rules_archive($)
     $archive =~ s/\.gz$//;
 
   # Look for uncool stuff in the archive.
+  # XXX make sure all paths are relative?
     if (open(TAR,"-|")) {
         @_ = <TAR>;                       # read output of the "tar vtf" command into @_
     } else {
@@ -599,6 +592,7 @@ sub disable_and_modify_rules($ $ @)
 # Format for rules will be:     rh{old|new}{rules{filename}{sid} = rule
 # Format for non-rules will be: rh{old|new}{other}{filename}     = array of lines
 # List of added files will be stored as rh{added_files}{filename}
+# XXX shouldn't added files go to %changes instead?
 sub setup_rules_hash($ $ @)
 {
     my $rh_ref    = shift;
@@ -727,7 +721,7 @@ sub do_backup
 }
 
 
-
+# FIX ME PLEASE
 sub print_changes($ $)
 {
     print "changes: FIXME\n";
@@ -786,8 +780,39 @@ print "\n";
 
 
 
+# Return array of modified files (with full path).
+sub get_modified_files($ $)
+{
+    my $changes_ref   = shift;  # ref to hash with all changes
+    my $new_files_ref = shift;  # ref to hash with all new files (with full path)
 
+    my %modified_files;
 
+    foreach my $file_w_path (keys(%$new_files_ref)) {
+        my $file = $file_w_path;
+            $file =~ s/.*\///;                                       # remove path
+
+      # Get files with rules changes.
+        foreach my $type (keys(%{$changes{rules}})) {
+	     $modified_files{"$file_w_path"}++
+               if (exists($changes{rules}{"$type"}{"$file"}));
+        }
+
+      # Get files with non-rules changes.
+        foreach my $type (keys(%{$changes{other}})) {
+            $modified_files{"$file_w_path"}++
+              if (exists($changes{other}{"$type"}{"$file"}));
+        }
+
+      # Added files are also seen as modified (since we want to update (add) those as well).
+        foreach my $added_file (keys(%{$rh{added_files}})) {
+            $modified_files{"$file_w_path"}++
+              if ($added_file eq $file);
+        }
+    }
+
+    return(keys(%modified_files));
+}
 
 
 
