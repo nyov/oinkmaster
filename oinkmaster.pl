@@ -476,8 +476,8 @@ sub disable_and_modify_rules($ $ @)
 
 	      # Our regexp didn't match, but make a less strict check to see if
               # it's likely to be a Snort rule anyway. If it is, then print a warning
-              # message unless running in quiet mode.
-   	        if (!$quiet && $line =~ /^\s*#*\s*(?:alert|log|pass) .*msg.*;\)\n$/) {
+              # Only care about active rules to avoid false alarms.
+   	        if ($line =~ /^\s*(?:alert|log|pass) .*msg.*;\)\n$/) {
 		    $_ = $file;
                     $_ =~ s/.*\///;    # remove path
 		    warn("\nWARNING: I don't understand this rule in downloaded file $_ ".
