@@ -874,7 +874,7 @@ sub process_rules($ $ $ $)
         modified => 0,
     );
 
-    warn("WARNING: all rules that are disabled by default will be re-enabled\n")
+    warn("WARNING: all rules that are disabled by default will be enabled\n")
       if ($config{enable_all} && !$config{quiet});
 
     print STDERR "Processing downloaded rules... "
@@ -928,13 +928,13 @@ sub process_rules($ $ $ $)
                 $multi =~ s/\n#*/\n/g;
 	    }
 
+          # Modify rule if requested.
             my @all_mod = @{$$modify_sid_ref{'*'}}
               if (exists($$modify_sid_ref{'*'}));
 
             my @sid_mod = @{$$modify_sid_ref{$sid}}
               if (exists($$modify_sid_ref{$sid}));
 
-          # Modify rule if requested.
             foreach my $mod_expr (@sid_mod, @all_mod) {
 
                 my ($subst, $repl) = ($mod_expr->[0], $mod_expr->[1]);
@@ -1044,7 +1044,7 @@ sub setup_rules_hash($ $)
 	    }
 	}
 
-	# Also read in old file if it exists.
+	# Also read in old (aka local) file if it exists.
         # We do a sid dup check in these files.
         if (-f "$output_dir/$file") {
             open(OLDFILE, "<", "$output_dir/$file")
@@ -1064,7 +1064,7 @@ sub setup_rules_hash($ $)
 	            push(@{$rh{old}{other}{"$file"}}, $nonrule);
                 }
             }
-        } else {         # downloaded file did not exist in old rules dir
+        } else {
 	    $rh{added_files}{"$file"}++;
         }
     }
@@ -1149,10 +1149,10 @@ sub make_backup($ $)
     chdir("$tmpdir") or clean_exit("could not change directory to $tmpdir: $!");
 
     if ($config{use_external_bins}) {
-        clean_exit("tar command did not exit with status 0 when archiving backup files.\n")
+        clean_exit("tar command returned error when archiving backup files.\n")
           if (system("tar","cf","$backup_tarball","rules-backup-$date"));
 
-        clean_exit("gzip command did not exit with status 0 when compressing backup file.\n")
+        clean_exit("gzip command returned error when compressing backup file.\n")
           if (system("gzip","$backup_tarball"));
 
         $backup_tarball .= ".gz";
@@ -1376,7 +1376,7 @@ sub get_changes($ $ $)
   # but we'd rather want to have it in $changes{added_files} now.
     $changes{added_files} = $$rh_ref{added_files};
 
-  # Added files are also regarded as modified since we want to update
+  # New files are also regarded as modified since we want to update
   # (i.e. add) those as well. Here we want them with full path.
     foreach my $file (keys(%{$changes{added_files}})) {
         $changes{modified_files}{"$tmpdir/$rules_dir/$file"}++;
@@ -1391,7 +1391,7 @@ sub get_changes($ $ $)
             next if (/^\.\.?$/);
             $changes{removed_files}{"$_"}++
               if (/$config{update_files}/ && 
-                !exists($config{file_ignore_list}{$_}) && 
+                !exists($config{file_ignore_list}{$_}) &&
                 !-e "$tmpdir/$rules_dir/$_");
         }
 
@@ -1672,7 +1672,7 @@ sub get_next_entry($ $ $ $ $ $)
       # Do extra check and warn if it *might* be a rule anyway,
       # but that we just couldn't parse for some reason.
         warn("\nWARNING: line may be a rule but it could not be parsed ".
-             "(missing sid or msg?): $line\n")
+             "(missing sid?): $line\n")
           if ($config{verbose} && $line =~ /^\s*alert .+msg\s*:\s*".+"\s*;/);
 
         $$nonrule_ref = $line;
@@ -1704,7 +1704,7 @@ sub get_new_vars($ $ $)
       unless ($config{quiet});
 
 
-  # Read in variables from old file.
+  # Read in variable names from old file.
     open(LOCAL_CONF, "<", "$local_conf")
       or clean_exit("could not open $local_conf for reading: $!");
 
@@ -1736,7 +1736,7 @@ sub get_new_vars($ $ $)
 
 
 
-# Add variables to local snort.conf.
+# Add new variables to local snort.conf.
 sub add_new_vars($ $)
 {
     my $ch_ref  = shift;
@@ -1804,7 +1804,7 @@ sub parse_mod_expr($ $ $ $)
     foreach my $sid (split(/\s*,\s*/, $sid_list)) {
         return (0) unless ($sid =~ /^\d+$/ || $sid eq "*");
 
-      # Make sure the regexps don't generate invalid code.
+      # Make sure the regexp is valid.
         my $repl_qq = "qq/$repl/";
         my $dummy   = "foo";
 
@@ -1817,7 +1817,6 @@ sub parse_mod_expr($ $ $ $)
             return (0);
         }
 
-      # It's valid, so add to list.
         push(@{$$mod_list_ref{$sid}}, [$subst, $repl_qq]);
     }
 
@@ -1857,8 +1856,9 @@ sub approve_changes()
 
 
 
-# Check a string and return 1 if it's a valid snort rule, or otherwise 0.
-# Msg string is put in second arg, sid in third.
+# Check a string and return 1 if it's a valid single-line snort rule.
+# Msg string is put in second arg, sid in third (those are the only
+# required keywords, besides the leading rule actions).
 sub parse_singleline_rule($ $ $)
 {
     my $line    = shift;
