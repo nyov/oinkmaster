@@ -18,8 +18,8 @@ Oinkmaster is simple Perl script released under the BSD license that
 helps you keep your Snort rules current with little or no user 
 interaction. It has quite a few nifty features regarding rules management, 
 such as ability to enable, disable and modify specified rules after each 
-update. It will tell you the exact changes from the previous rules, so you 
-have total control of your rules.
+update. It will tell you the exact changes from your previous rules, so
+you have total control of them.
 
 Oinkmaster is most often used to grab the latest official rules tarball 
 from www.snort.org and apply a set of modifications to them (such as 
