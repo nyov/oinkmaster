@@ -230,9 +230,9 @@ Options:
 -u <url>   Download from this URL (http://, ftp:// or file:// ...tar.gz)
            instead of the URL specified in the configuration file
 -U <file>  Variables that exist in the distribution snort.conf but not in <file>
-           will be inserted at the top of it. This is probably your snort.conf.
+           will be added to this file (usually your production snort.conf).
 -v         Verbose mode
--V         Show version and exit;
+-V         Show version and exit
 
 RTFM
     exit;
@@ -708,6 +708,9 @@ sub setup_rules_hash($)
     my $new_files_ref = shift;
     my (%rh, %allsids);
 
+    print STDERR "Setting up rules structures... "
+      unless ($quiet);
+
     foreach my $file (sort(keys(%$new_files_ref))) {
         warn("WARNING: downloaded rules file $file is empty (maybe correct, maybe not)\n")
           if (!-s "$file" && $verbose);
@@ -759,6 +762,8 @@ sub setup_rules_hash($)
 	    $rh{added_files}{"$file"}++;
         }
     }
+
+    print STDERR "done.\n" unless ($quiet);
 
     return (%rh);
 }
@@ -1326,7 +1331,8 @@ get_new_vars($ $ $)
 
 
     unless (-e "$dist_conf") {
-        warn("WARNING: no $DIST_SNORT_CONF found in downloaded archive, ".
+        $_ = basename($dist_conf);
+        warn("WARNING: no $_ found in downloaded archive, ".
              "aborting check for new variables\n");
         return;
     }
