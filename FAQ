@@ -11,8 +11,8 @@ Q3:  Can Oinkmaster be useful for distributing rules locally to my
      sensors?
 Q4:  Can Oinkmaster be useful for distributing my homemade rules to my 
      sensors?
-Q5:  In which order will 'modifysid'/'disablesid'/'enablesid' be 
-     processed?
+Q5:  In which order will the localsid/modifysid/disablesid/enablesid 
+     configuration directives be processed?
 Q6:  How can the 'include' statement in oinkmaster.conf be useful?
 Q7:  Can Oinkmaster restart Snort after an update?
 Q8:  Can I tell Oinkmaster to not touch certain SIDs in sid-msg.map so 
@@ -38,6 +38,10 @@ Q19: I've been running Oinkmaster several times and it still says there
      www.snort.org updated?
 Q20: Can Oinkmaster send email or execute a command when the rules have
      been modified?
+Q21: What do I do if I need to locally customize (not disable) some 
+     rules (and so that those modifications become permanent)?
+Q22: I want to disable rules by editing the files directly and putting 
+     a "#" in front of the rules. How to these changes become permanent?
 
 --------------
 
@@ -146,15 +150,21 @@ A4:  Yes! This can be done almost exactly like in the example above.
 
 
 
-Q5:  In which order will 'modifysid'/'disablesid'/'enablesid' be processed?
+Q5:  In which order will the localsid/modifysid/disablesid/enablesid 
+     configuration directives be processed?
 
-A5:  All the 'modifysid' will be processed first, then 'disablesid' and last
-     'enablesid'. The order they appear in oinkmaster.conf does not matter.
-     So if you use both "enablesid 1" and "disablesid 1" in
-     oinkmaster.conf (in any order), SID 1 will first be disabled and then
-     enabled. So if SID 1 was enabled by default in the downloaded rules
-     archive, this is a NOOP. Disabling a disabled rule is also a NOOP, as
-     is enabling an enabled rule.
+A5:  localsid is processed first and if there is such a statement for a 
+     rule, no further processing of that rule is performed.
+     The order of processing for the others is:
+
+     modifysid -> disablesid -> enablesid
+
+     The order they appear in oinkmaster.conf does not matter. So if you 
+     use both "enablesid 1" and "disablesid 1" in oinkmaster.conf (in 
+     any order), SID 1 will first be disabled and then enabled. So if 
+     SID 1 was enabled by default in the downloaded rules archive, this 
+     is a NOOP. Disabling a disabled rule is also a NOOP, as is enabling 
+     an enabled rule.
 
 
 
@@ -238,11 +248,11 @@ A9:  Yes. You should really rely on the OpenSSH documentation on how to
 
      This assumes that the tarball will be found as 
      /etc/snort/snortrules.tar.gz on the master host, but change it to the 
-     location where you store the tarball there. When you're done editing 
-     oinkmaster_scp.pub, append the contents of it to the master host's
-     ~/.ssh/authorized_keys for the user that will be used to perform the 
-     copy. This should not be a privileged user, the only requirement is 
-     that this user has read access to the rules archive.
+     location where you store the tarball there. When you are done 
+     editing oinkmaster_scp.pub, append the contents of it to the master 
+     host's ~/.ssh/authorized_keys for the user that will be used to 
+     perform the copy. This should not be a privileged user, the only 
+     requirement is that this user has read access to the rules archive.
 
      Now make sure that you put the private key (oinkmaster_scp) in a 
      suitable directory on the sensor. Then tell Oinkmaster to use this 
@@ -305,9 +315,9 @@ A11: No, the Snort rules on www.whitehats.com has currently not been
      arachNIDS database is still a good source of information for older 
      rules. Use the rules on www.snort.org instead.
 
-     (And for Oinkmaster to work, the rules package must be a gzipped 
-     tar file that contains a directory called "rules", which holds
-     all the rules files.)
+     (And for Oinkmaster to work in a technical sense, the rules package 
+     must be a gzipped tar file that contains a directory called 
+     "rules", which holds all the rules files.)
 
 
 
@@ -369,37 +379,13 @@ A16: No! Permanent modifications in files that are updated by Oinkmaster
      must be done by editing oinkmaster.conf. If you edit a rules file
      directly, the next time you run Oinkmaster it will see that the file 
      is different than the downloaded one, and so your file becomes 
-     overwritten. (Remember that for simplicity, Oinkmaster works with 
-     whole files when updating, it does not try to merge changes by 
-     modifying individual entries.) There is no such thing as "if you edit 
-     a rule, it will be marked as locally customized and therefore 
+     overwritten. There is no such thing as "if you edit a rule, it 
+     will automatically be marked as locally customized and therefore 
      not automatically updated". This may be different than some other 
      rules updating tools, but it is the expected behavior as Oinkmaster 
-     was designed to work this way. 
-
-     Rules that need to be heavily customized are better kept in separate 
-     files that are not automatically updated (don't forget to disable the 
-     original rule though). For rules that you need to tweak by modifying 
-     them slightly, you can use the "modifysid" statement. Let's say you 
-     need to reverse $HOME_NET and $EXTERNAL_NET in a rule. You can use 
-     "modifysid" for this and still auto-update the rules file, as the 
-     modification will be applied after each download. This means that if 
-     the default version of this rule is later improved somehow in the new 
-     rules archive, you would automatically get the updated version while 
-     your customization would still apply (assuming your substitution 
-     expression still matches the new version of the rule, of course).
-
-     If you really want to disable rules by editing the rules files 
-     directly and putting a "#" in front of unwanted rules, you can use 
-     contrib/makesidex.pl to generate "disablesid" lines for those 
-     disabled rules and feed to Oinkmaster. You can for example use 
-     something like this to update this information automatically and 
-     redirect to a file included by Oinkmaster (we don't touch the main 
-     config file):
-
-     makesidex.pl /etc/snort/rules >autodisable.conf 2>/dev/null && \
-     oinkmaster.pl -C /etc/oinkmaster.conf -C autodisable.conf \
-     -o /etc/snort/rules
+     was designed to work this way. You can however use the "localsid"
+     keyword to achieve this behavior. See Q21 for recommendations how 
+     to handle local customization of the rules.
 
 
 
@@ -427,20 +413,22 @@ Q19: I've been running Oinkmaster several times and it still says there
      are no changes in the rules, how often are the rules tarballs on 
      www.snort.org updated?
 
-A19: The tarballs are generated from the CVS repository many times a day, 
-     but that does not mean there are always any changes in it.
-     My experience is that the rules are sometimes updated daily, and 
-     sometimes in bursts with several days/weeks apart (also depending on 
-     which rules tarball you use). If you run Oinkmaster for several days 
-     and it still says that nothing has changed, this does not 
-     automatically mean anything is wrong. You can verify this by doing 
-     some arbitrary modifications in some rules file in your rules 
-     directory and then run Oinkmaster. If those 'arbitrary changes' are 
-     noticed by Oinkmaster, everything probably works as expected.
-     If you're behind a web proxy, make sure it's not trying to be nice 
-     by caching the rules archive and always give you the old version 
-     instead of actually polling the Snort site for an updated version 
-     (see Q10).
+A19: The tarballs are currently generated from the CVS repository many 
+     times a day, but that does not mean there are always any changes in 
+     it. My experience is that the rules are sometimes updated daily, 
+     and sometimes in bursts with several days/weeks apart (also 
+     depending on which rules tarball you use). If you run Oinkmaster 
+     for several days and it still says that nothing has changed, this 
+     does not automatically mean anything is wrong. You can verify this 
+     by doing some arbitrary modifications in some rules file in your 
+     rules directory and then run Oinkmaster. If those 'arbitrary 
+     changes' are noticed by Oinkmaster, everything probably works as 
+     expected. If you are behind a web proxy, make sure it is not trying 
+     to be nice by caching the rules archive and always give you the old 
+     version instead of actually polling the Snort site for an updated 
+     version (see Q10). Check out http://www.snort.org/ for the latest
+     information about the rules and the rules release process 
+     (Oinkmaster and its author has nothing to do with this).
 
 
 
@@ -448,11 +436,11 @@ Q20: Can Oinkmaster send email or execute a command when the rules have
      been modified?
 
 A20: There is no build-in function in Oinkmaster to do that, because that
-     functionality does not belong there. However, it's very easy to do
+     functionality does not belong there. However, it is very easy to do
      it with a small wrapper. You can for example run Oinkmaster with the
      -q flag so it doesn't give any output unless the rules had changed,
      and redirect the output to a file. Then check the size of this file.
-     If it's empty, nothing had changed. If it has some content, 
+     If it is empty, nothing had changed. If it has some content, 
      something had changed. So then you can either send the content of 
      the file in an email and/or execute some command. Here is a basic
      wrapper script to show how you could do this. There is also an
@@ -473,3 +461,102 @@ A20: There is no build-in function in Oinkmaster to do that, because that
      fi
 
      rm $tmpfile
+
+
+
+Q21: What do I do if I need to locally customize (not disable) some 
+     rules (and so that those modifications become permanent)?
+
+A21: As seen in Q16 you can not just edit a local rules file and 
+     customize the rules, because they would become overwritten during 
+     the next update. There is however often a need of being able to do 
+     such modifications to the rules, and there are a few different 
+     ways you could do this with Oinkmaster. One way is often the best 
+     one and the other two are often less good, depending on the 
+     situation of course.
+
+     The often best way - modifysid (and templates)
+     ----------------------------------------------
+     If you need to modify rules slightly, this is definitely the way to 
+     go. For documentation about modifysid, see oinkmaster.conf (don't 
+     forget README.templates and template-examples.conf if you use 
+     modifysid a lot and want to simplify the process).
+
+     A modifysid statement is a way to apply a substitution expression 
+     on specified rules after each update. Here comes the whole point of 
+     why using this approach is often the best one: If the default 
+     version of this rule is later improved somehow in the new rules 
+     archive, you would automatically get the updated version while your 
+     customization would still apply (assuming your substitution 
+     expression still matches the new version of the rule, of course). 
+     This means that even rules that you need to customize can be 
+     continued to be automatically maintained!
+
+     Some typical examples where using modifysid is the best way to go 
+     is where you pretty much like the default rule and always want to 
+     use the latest version of it, but you want to change some detail
+     (such as switching $HOME_NET/$EXTERNAL_NET) or add something to it 
+     (such as a tag statement). Another point is that all these local 
+     customizations by using modifysid become kind of self-documenting,
+     which you will appreciate when looking at your rules and wonder 
+     what those local modifications you've done over the years actually 
+     are.
+
+     The sometimes less good way #1
+     ------------------------------
+     If you need to modify a rule heavily in such way that it becomes 
+     too complex and too meaningless to try to use and maintain a 
+     modifysid statement for it, you need to solve the problem in 
+     another way. I would recommend using a "disablesid" statement for 
+     that rule and then rewrite and copy it to some local rules file 
+     (one that is not updated by Oinkmaster) and change its SID to a
+     local one.
+
+     Note however that by doing this, the rule will no longer be 
+     automatically maintained! Be very careful so you don't end up with
+     lots of rules that become forgotten and not maintained, as this is 
+     the exact opposite of what Oinkmaster is created for.
+
+     A positive side-effect of using "disablesid" for these rules is 
+     that Oinkmaster keeps track of changes even in disabled rules in 
+     the official rules files. So you may want to pay attention to 
+     these - you might find an interesting change some day that you want 
+     to apply to your version of the rule as well.
+
+     The sometimes less good way #2
+     ------------------------------
+     As of Oinkmaster 1.1, you can use variant of the above as it 
+     introduced the "localsid" keyword.
+     
+     By using "localsid <sid>" in oinkmaster.conf, you mark this rule as 
+     being "locally modified" which means it will never get overwritten.
+     Instead, your local version of the rule is kept. Any updates in 
+     the official version of the rule is silently discarded, but if 
+     you run in verbose mode (-v) Oinkmaster will print the current 
+     difference between your version and the official version.
+
+     Again, be warned that all "localsid" rules will no longer be
+     automatically maintained! If you are using this feature more than 
+     in a very few cases, chances are that you are doing something wrong.
+
+
+
+Q22: I want to disable rules by editing the files directly and putting a 
+     "#" in front of the rules. How to these changes become permanent?
+
+A22: As can be read elsewhere in this FAQ, you shouldn't ever modify 
+     rules in anyway by editing the rules files directly. Normally, the 
+     right way to disable rules is to use the "disablesid" keyword. 
+     However, if you for some reason really want to disable rules by 
+     editing the rules files directly and putting a "#" in front of 
+     unwanted rules, you can use a little trick.
+
+     Use contrib/makesidex.pl to generate "disablesid" lines for those 
+     disabled rules and feed them to Oinkmaster. You can for example use 
+     something like this to update this information automatically and 
+     redirect to a file included by Oinkmaster (we don't touch the main 
+     config file):
+
+     makesidex.pl /etc/snort/rules >autodisable.conf 2>/dev/null && \
+     oinkmaster.pl -C /etc/oinkmaster.conf -C autodisable.conf \
+     -o /etc/snort/rules
