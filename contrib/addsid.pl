@@ -18,7 +18,7 @@ my $CLASSTYPE = "misc-attack";
 
 # If ADD_REV is set to 1, "rev: 1;" will be added to rule if it has no rev.
 # Set to 0 if you don't want to add it.
-my $ADD_REV = 0;
+my $ADD_REV = 1;
 
 # Minimum SID to add. Normally, the next available SID will be used,
 # unless it's below this value. Only SIDs >= 1000000 are reserved for
@@ -37,9 +37,9 @@ my $SINGLELINE_RULE_REGEXP = '^\s*#*\s*(?:%ACTIONS%)'.
 
 my $USAGE = << "RTFM";
 
-Parse *.rules in one or more directories and add "sid:<sid>;" to rules 
-that don't have any "sid" entry, starting with the next available SID 
-after parsing all rules files (but $MIN_SID at minumum).
+Parse *.rules in one or more directories and add "sid:<sid>;" to 
+active rules that don't have any "sid" entry, starting with the next 
+available SID after parsing all rules files (but $MIN_SID at minumum).
 Also, "rev:1;" is added to rules without a "rev" entry, and 
 "classtype:misc-attack;" is added to rules without a "classtype" entry
 (edit options at the top of $0 if you want to change this).
@@ -95,7 +95,7 @@ foreach my $dir (@rulesdirs) {
 
             $multi = $single unless (defined($multi));
 
-          # Don't care about inactive rules when adding sids.
+          # Don't care about inactive rules.
             if ($single =~ /^\s*#/) {
 	        print NEWFILE "$multi";
 	        next;
