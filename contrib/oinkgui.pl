@@ -12,6 +12,7 @@ use Tk::FileSelect;
 use Tk::NoteBook;
 use Tk::ROText;
 
+use constant CSIDL_DRIVES => 17;
 
 sub test_config();
 sub show_version();
@@ -42,7 +43,7 @@ my @oinkmaster_conf = qw(
 
 # Graphical editors to look for.
 my @editors = qw(
-    kwrite kate kedit gedit xemacs xedit wordpad notepad
+    kwrite kate kedit gedit xemacs xedit wordpad
 );
 
 
@@ -126,8 +127,9 @@ select STDOUT;
 $| = 1;
 
 # Find out if can use Win32::FileOp.
-my $use_fileop = 0;
+my $use_fileop = 1;
 $use_fileop = 1 if (eval "require Win32::FileOp");
+
 
 # Find out which oinkmaster.pl file to default to.
 foreach my $dir (File::Spec->path()) {
@@ -138,7 +140,7 @@ foreach my $dir (File::Spec->path()) {
     } elsif (-f "$file.pl" && (-x "$file" || $^O eq 'MSWin32')) {
         $config{oinkmaster} = "$file.pl";
         last;
-    } 
+    }
 }
 
 # Find out which oinkmaster config file to default to.
@@ -157,12 +159,12 @@ EDITOR:foreach my $ed (@editors) {
             $editor= $file;
             last EDITOR;
         }
-    } 
+    }
 }
 
 # Look for Perl binary.
 PERL:foreach my $dir (File::Spec->path()) {
-    my $file = "$dir/perl";
+    my $file = File::Spec->catfile("$dir", 'perl');
     if ((-f "$file" && -x "$file") || (-f "$file.exe" && -x "$file.exe")) {
         $perl = $file;
         last PERL;
@@ -222,7 +224,7 @@ my $filetypes = [
   ['All files',         '*'            ]
 ];
 
-my $oinkscript_frame = 
+my $oinkscript_frame =
   create_fileSelectFrame($req_tab, "oinkmaster.pl", 'EXECFILE', 
                          \$config{oinkmaster}, 'NOEDIT', $filetypes);
 
@@ -235,8 +237,8 @@ $filetypes = [
   ['All files',           '*'    ]
 ];
 
-my $oinkconf_frame = 
-  create_fileSelectFrame($req_tab, "oinkmaster.conf", 'ROFILE', 
+my $oinkconf_frame =
+  create_fileSelectFrame($req_tab, "oinkmaster.conf", 'ROFILE',
                          \$config{oinkmaster_conf}, 'EDIT', $filetypes);
 
 $balloon->attach($oinkconf_frame, -statusmsg => $help{oinkconf});
@@ -244,7 +246,7 @@ $balloon->attach($oinkconf_frame, -statusmsg => $help{oinkconf});
 
 # Create frame with output directory.
 my $outdir_frame =
-  create_fileSelectFrame($req_tab, "output directory", 'WRDIR', 
+  create_fileSelectFrame($req_tab, "output directory", 'WRDIR',
                          \$config{outdir}, 'NOEDIT', undef);
 
 $balloon->attach($outdir_frame, -statusmsg => $help{outdir});
@@ -277,7 +279,7 @@ $filetypes = [
 ];
 
 my $varfile_frame =
-  create_fileSelectFrame($opt_tab, "Variable file", 'WRFILE', 
+  create_fileSelectFrame($opt_tab, "Variable file", 'WRFILE',
                          \$config{varfile}, 'EDIT', $filetypes);
 
 $balloon->attach($varfile_frame, -statusmsg => $help{varfile});
@@ -285,7 +287,7 @@ $balloon->attach($varfile_frame, -statusmsg => $help{varfile});
 
 # Create frame with backup dir location.
 my $backupdir_frame =
-  create_fileSelectFrame($opt_tab, "Backup directory", 'WRDIR', 
+  create_fileSelectFrame($opt_tab, "Backup directory", 'WRDIR',
                          \$config{backupdir}, 'NOEDIT', undef);
 
 $balloon->attach($backupdir_frame, -statusmsg => $help{backupdir});
@@ -326,7 +328,7 @@ create_actionbutton($left_frame, "Save current settings", \&save_config);
 
 # Create "options" label at the top of the left frame.
 $left_frame->Label(
-  -text       => "Options:", 
+  -text       => "Options:",
   -background => "$color{label}"
 )->pack(side  => 'top',
         fill  => 'x'
@@ -352,7 +354,7 @@ $balloon->attach(
 
 # Create "mode" label.
 $left_frame->Label(
-  -text       => "Mode:", 
+  -text       => "Mode:",
   -background => "$color{label}"
 )->pack(side  => 'top',
         fill  => 'x'
@@ -368,8 +370,8 @@ create_radiobutton($left_frame, "verbose",    \$config{mode});
 
 # Create "activity messages" label.
 $main->Label(
-  -text       => "Output messages:", 
-  -width      => '100', 
+  -text       => "Output messages:",
+  -width      => '120',
   -background => "$color{label}"
 )->pack(
   -side       => 'top',
@@ -404,7 +406,7 @@ $left_frame->Label(
 # Create action buttons.
 
 $balloon->attach(
-  create_actionbutton($left_frame, "Show version", \&show_version), 
+  create_actionbutton($left_frame, "Show version", \&show_version),
   -statusmsg => $help{version}
 );
 
@@ -466,7 +468,7 @@ logmsg("No oinkmaster configuration file set, please select one above!\n\n", 'ER
 logmsg("Output directory is not set, please select one above!\n\n", 'ERROR')
 if ($config{outdir} !~ /\S/);
 
- 
+
 MainLoop;
 
 
@@ -485,7 +487,7 @@ sub fileDialog($ $ $ $)
 
     if ($type eq 'WRDIR') {
         if ($use_fileop) {
-            $dirname = Win32::FileOp::BrowseForFolder("$title");
+            $dirname = Win32::FileOp::BrowseForFolder("title", CSIDL_DRIVES);
         } else {
             my $fs = $main->FileSelect();
             $fs->configure(-verify => ['-d', '-w'], -title => $title);
@@ -597,7 +599,7 @@ sub create_actionbutton($ $ $)
 
     my $button = $frame->Button(
       -text       => "$name",
-      -command    => sub { &$func_ref }, 
+      -command    => sub { &$func_ref },
       -background => "$color{button}",
     )->pack(
       -fill       => 'x',
@@ -633,7 +635,7 @@ sub create_radiobutton($ $ $)
 
 
 # Create <label><entry><browsebutton> in given frame.
-sub create_fileSelectFrame($ $ $ $ $ $) 
+sub create_fileSelectFrame($ $ $ $ $ $)
 {
     my $win       = shift;
     my $name      = shift;
@@ -746,7 +748,7 @@ sub logmsg($ $)
     $out_frame->tag(qw(configure EXEC   -foreground bisque2));
 
     $out_frame->insert('end', "$text", "$type");
-    $out_frame->see('end'); 
+    $out_frame->see('end');
     $out_frame->update;
 }
 
@@ -757,7 +759,7 @@ sub show_version()
     $config{oinkmaster} =~ s/^\s+//;
     $config{oinkmaster} =~ s/\s+$//;
 
-    unless ($perl && -x "$perl") {
+    unless ($perl) {
         logmsg("Perl binary not found in PATH!\n\n", 'ERROR');
         return;
     }
@@ -781,7 +783,7 @@ sub show_help()
     $config{oinkmaster} =~ s/^\s+//;
     $config{oinkmaster} =~ s/\s+$//;
 
-    unless ($config{oinkmaster} && -x "$perl") {
+    unless ($perl) {
         logmsg("Perl binary not found in PATH!\n\n", 'ERROR');
         return;
     }
@@ -832,7 +834,7 @@ sub test_config()
 {
     my @cmd;
 
-    unless ($perl && -x "$perl") {
+    unless ($perl) {
         logmsg("Perl binary not found in PATH!\n\n", 'ERROR');
         return;
     }
@@ -919,7 +921,7 @@ sub create_cmdline($)
       if ($oinkmaster);
 
   # Clean leading/trailing whitespaces, also add leading/trailing "" if win32.
-    foreach my $var_ref (\$oinkmaster, \$oinkmaster_conf, \$outdir, 
+    foreach my $var_ref (\$oinkmaster, \$oinkmaster_conf, \$outdir,
                          \$varfile, \$url, \$backupdir) {
         $$var_ref =~ s/^\s+//;
         $$var_ref =~ s/\s+$//;
@@ -928,7 +930,7 @@ sub create_cmdline($)
         }
     }
 
-    unless ($perl && -x "$perl") {
+    unless ($perl) {
         logmsg("Perl binary not found in PATH!\n\n", 'ERROR');
         return (0);
     }
@@ -948,9 +950,13 @@ sub create_cmdline($)
         return (0);
     }
 
-    push(@$cmd_ref, 
+  # Replace \ with / to avoid problems on win32.
+    $outdir    =~ s/\\/\//g;
+    $backupdir =~ s/\\/\//g;
+
+    push(@$cmd_ref,
       "$perl", "$oinkmaster",
-      "-C", "$oinkmaster_conf", 
+      "-C", "$oinkmaster_conf",
       "-o", "$outdir");
 
     push(@$cmd_ref, "-c")               if ($config{careful});
