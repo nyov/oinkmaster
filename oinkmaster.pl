@@ -69,7 +69,10 @@ my $SINGLELINE_RULE_REGEXP = '^\s*#*\s*(?:alert|drop|log|pass|reject|sdrop)'.
 # Regexp to match the start (the first line) of a possible multi-line rule.
 my $MULTILINE_RULE_REGEXP  = '^\s*#*\s*(?:alert|drop|log|pass|reject|sdrop)'.
                              '\s.*\\\\\s*\n$'; # ';
-        
+
+# Match var line where var name goes into $1.
+my $VAR_REGEXP = '^\s*var\s+(\S+)\s+\S+';
+
 # Set default temporary base directory.
 my $tmp_basedir = $ENV{TMP} || $ENV{TMPDIR} || $ENV{TEMPDIR} || '/tmp';
 
@@ -526,8 +529,9 @@ sub download_rules($ $)
             clean_exit("unable to download rules from $url (got error code from wget).")
               if (system("wget","-nv","-O","$localfile","$url"));        # normal mode
         }
-    } elsif ($url =~ /^file/) {   # grab file from local filesystem
-        $url =~ s/^file:\/\///;   # remove "file://", the rest is the filename
+  # Grab file from local filesystem if file://...
+    } elsif ($url =~ /^file/) {
+        $url =~ s/^file:\/\///;
 
 	clean_exit("the file $url does not exist.")
           unless (-e "$url");
@@ -1406,10 +1410,6 @@ sub get_new_vars($ $ $)
     my @new_vars;
     my %old_vars;
 
-  # Match var line where var name goes into $1.
-    my $var_regexp = '^\s*var\s+(\S+)\s+\S+';
-
-
     unless (-e "$dist_conf") {
         $_ = basename($dist_conf);
         warn("WARNING: no $_ found in downloaded archive, ".
@@ -1428,7 +1428,7 @@ sub get_new_vars($ $ $)
     my @local_conf = <LOCAL_CONF>;
 
     foreach $_ (@local_conf) {
-        $old_vars{lc($1)}++ if (/$var_regexp/i);
+        $old_vars{lc($1)}++ if (/$VAR_REGEXP/i);
     }
 
     close(LOCAL_CONF);
@@ -1440,7 +1440,7 @@ sub get_new_vars($ $ $)
 
     while ($_ = <DIST_CONF>) {
         push(@new_vars, $_)
-          if (/$var_regexp/i && !exists($old_vars{lc($1)}));
+          if (/$VAR_REGEXP/i && !exists($old_vars{lc($1)}));
     }
 
     close(DIST_CONF);
@@ -1470,7 +1470,8 @@ sub add_new_vars($ $)
     open(NEW_LOCAL_CONF, ">$varfile")
       or clean_exit("could not open $varfile for writing: $!");
 
-    my @old_vars = grep(/^\s*var\s+\S+\s+\S+/i, @old_content);
+    my @old_vars = grep(/$VAR_REGEXP/i, @old_content);
+
 
   # If any vars exist in old file, find last one before inserting new ones.
     if ($#old_vars > -1) {
