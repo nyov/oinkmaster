@@ -44,7 +44,8 @@ my $SNORT_RULE_REGEXP = '^\s*#*\s*(?:alert|log|pass) .+msg\s*:\s*"(.+?)"\s*;.+si
 
 use vars qw
    (
-      $opt_b $opt_c $opt_C $opt_e $opt_h $opt_o $opt_q $opt_r $opt_u $opt_v
+      $opt_b $opt_c $opt_C $opt_e $opt_h $opt_o
+      $opt_q $opt_r $opt_u $opt_v $opt_V
    );
 
 my (
@@ -96,10 +97,10 @@ unpack_rules_archive("$TMPDIR/$outfile");
 
 # Add filenames to update from the downloaded archive to the list of new
 # files, unless filename exists in %config{file_ignore_list}.
+# Filenames (with full path) will be stored as %new_files{filenme}.
 opendir(NEWRULES, "$TMPDIR/rules")
   or clean_exit("Error: could not open directory $TMPDIR/rules: $!");
 
-# Read in list of new interesting rules files (with full path) into %new_files.
 while ($_ = readdir(NEWRULES)) {
     $new_files{"$TMPDIR/rules/$_"}++
       if (/$config{update_files}/ && !exists($config{file_ignore_list}{$_}));
@@ -126,7 +127,7 @@ my %changes = get_changes(\%rh, keys(%new_files));
 # Get list of modified files (with full path to the new file).
 my @modified_files = get_modified_files(\%changes, \%new_files);
 
-# Update files listed in %modified_files (move the new files from the temporary
+# Update files listed in @modified_files (move the new files from the temporary
 # directory into our output directory), unless we're running in careful mode.
 # Create backup first if running with -b.
 if ($#modified_files > -1) {
@@ -155,13 +156,14 @@ if ($something_changed || !$quiet) {
     print_changes(\%changes, \%rh);
 }
 
-# Everything worked. Do a clean exit (without an error message).
+# Everything worked. Do a clean exit without any error message.
 clean_exit("");
 
 # END OF MAIN #
 
 
 
+# Show usage information and exit.
 sub show_usage()
 {
     print STDERR << "RTFM";
@@ -176,19 +178,21 @@ Note that your current files will be overwritten by the new ones
 if they had been modified.
 
 Options:
--C <cfg>   Use this config file instead of the default ($config_file)
--b <dir>   Backup old rules into <dir> if anything had changed
--u <url>   Download from this URL (http://, ftp:// or file:// ...tar.gz)
-           instead of the URL specified in $config_file
+-b <dir>   Backup old rules into <dir> before overwriting them
 -c         Careful mode - only check for changes, but do not update anything
+-C <cfg>   Use this config file instead of $config_file
 -e         Re-enable all rules that are disabled by default in the rules
            distribution (they are disabled for a reason so use with care)
+-h         Show this usage information
+
+-q         Quiet mode - no output unless changes were found
 -r         Check for rules files that exist in the output directory
            but not in the downloaded rules archive (i.e. files that may
            have been removed from the distribution archive)
--q         Quiet mode - no output unless changes were found
+-u <url>   Download from this URL (http://, ftp:// or file:// ...tar.gz)
+           instead of the URL specified in the configuration file
 -v         Verbose mode
--h         Show usage help
+-V         Show version and exit
 
 RTFM
     exit;
@@ -196,9 +200,10 @@ RTFM
 
 
 
+# Parse the command line arguments and exit if we don't like them.
 sub parse_cmdline()
 {
-    my $cmdline_ok = getopts('b:cC:eho:pqru:v');
+    my $cmdline_ok = getopts('b:cC:eho:pqru:vV');
 
     $backup_dir    = $opt_b if (defined($opt_b));
     $config_file   = $opt_C if (defined($opt_C));
@@ -209,25 +214,28 @@ sub parse_cmdline()
     $check_removed     = 1  if (defined($opt_r));
     $verbose           = 1  if (defined($opt_v));
     show_usage()            if (defined($opt_h));
+    die("$VERSION\n")       if (defined($opt_V));
+
     show_usage unless ($cmdline_ok);
 
-    if (defined($opt_o)) {       # -o <dir>, the only required option.
+  # -o <dir> is the only required option in normal usage.
+    if (defined($opt_o)) {
         $output_dir = $opt_o;
     } else {
         show_usage();
     }
 
-  # Don't accept additional (i.e. invalid) arguments.
+  # Don't accept additional arguments, since they're invalid.
     $_ = shift(@ARGV) && show_usage();
 
-  # Remove possible trailing slash (just for cosmetic reasons).
+  # Remove possible trailing slashes (just for cosmetic reasons).
     $output_dir =~ s/\/+$//;
     $backup_dir =~ s/\/+$// if (defined($backup_dir));
 }
 
 
 
-# Read stuff from the configuration file.
+# Read in stuff from the configuration file.
 sub read_config($ $)
 {
     my $config_file = shift;
@@ -247,9 +255,10 @@ sub read_config($ $)
 	s/^\s*//;
 	s/\s*$//;
 
-        next unless (/\S/);   # skip blank lines
+      # Skip blank lines.
+        next unless (/\S/);
 
-        if (/^disablesids*\s+(\d.*)/i) {                   # disablesid
+        if (/^disablesids*\s+(\d.*)/i) {                   # disablesid <SID[,SID, ...]>
 	    my $args = $1;
 	    foreach $_ (split(/\s*,\s*/, $args)) {
   	        if (/^\d+$/) {
@@ -258,9 +267,9 @@ sub read_config($ $)
                     warn("WARNING: line $linenum in $config_file is invalid, ignoring\n")
 	        }
 	    }
-        } elsif (/^modifysid\s+(\d+)\s+(.*)/i) {           # modifysid <sid> <regexp>
+        } elsif (/^modifysid\s+(\d+)\s+(.*)/i) {         # modifysid <SID> <regexp>
             push(@{$$cfgref{sid_modify_list}{$1}}, $2);
-       } elsif (/^skipfiles*\s+(.*)/i) {                   # skipfile
+        } elsif (/^skipfiles*\s+(.*)/i) {                # skipfile <file[,file, ...]>
 	    my $args = $1;
 	    foreach $_ (split(/\s*,\s*/, $args)) {
 	        if (/^\S.*\S$/) {
@@ -271,7 +280,8 @@ sub read_config($ $)
 		}
 	    }
 	} elsif (/^url\s*=\s*(.*)/i) {                   # URL to use
-	    $$cfgref{url} = $1 unless (exists($$cfgref{url}));   # may already be defined by -u <url>
+	    $$cfgref{url} = $1
+              unless (exists($$cfgref{url}));            # may already be defined by -u <url>
 	} elsif (/^path\s*=\s*(.*)/i) {                  # $PATH to be used
 	    $$cfgref{path} = $1;
 	} elsif (/^update_files\s*=\s*(.*)/i) {          # regexp of files to be updated
@@ -286,7 +296,7 @@ sub read_config($ $)
 
 
 # Make a few basic tests to make sure things look ok.
-# Will also set a new (temporary) PATH as defined in the config file.
+# Will also set a new PATH as defined in the config file.
 sub sanity_check()
 {
    my @req_config   = qw (path update_files);  # Required parameters in oinkmaster.conf.
@@ -296,13 +306,13 @@ sub sanity_check()
     clean_exit("Both quiet mode and verbose mode at the same time doesn't make sense.")
       if ($quiet && $verbose);
 
-  # Make sure all required variables is defined in the config file.
+  # Make sure all required variables are defined in the config file.
     foreach $_ (@req_config) {
         clean_exit("The required parameter \"$_\" is not defined in $config_file")
           unless (exists($config{$_}));
     }
 
-  # We now know a path was defined in the config, so set it.
+  # We now know a path was defined in the config, so set it. Also reset IFS.
     $ENV{"PATH"} = $config{path};
     $ENV{'IFS'}  = '';
 
@@ -310,48 +320,48 @@ sub sanity_check()
   # (Wget is not required if user specifies file:// as url. That check is done below.)
     foreach $_ (@req_binaries) {
         clean_exit("\"$_\" binary not found ".
-            "(perhaps you must edit $config_file and change 'path')\nExiting")
+                   "(perhaps you must edit $config_file and change 'path')")
           if (system("which \"$_\" >/dev/null 2>&1"));
     }
 
   # Make sure $url is defined (either by -u <url> or url=... in the conf).
     clean_exit("Incorrect URL or URL not specified in neither $config_file nor command line.")
-      unless (exists($config{'url'}) && $config{'url'}
-        =~ /^(?:http|ftp|file):\/\/\S+.*\.tar\.gz$/);
+      unless (exists($config{'url'}) &&
+        $config{'url'}  =~ /^(?:http|ftp|file):\/\/\S+.*\.tar\.gz$/);
 
   # Wget must be found if url is http:// or ftp://.
     clean_exit("\"wget\" binary not found ".
-        "(perhaps you must edit $config_file and change 'path')\nExiting")
-          if ($config{'url'} =~ /^(http|ftp):/ && system("which \"wget\" >/dev/null 2>&1"));
+               "(perhaps you must edit $config_file and change 'path')")
+      if ($config{'url'} =~ /^(http|ftp):/ && system("which \"wget\" >/dev/null 2>&1"));
 
   # Make sure the output directory exists and is readable.
     clean_exit("The output directory \"$output_dir\" doesn't exist or isn't readable by you.")
       if (!-d "$output_dir" || !-x "$output_dir");
 
   # Make sure the output directory is writable unless running in careful mode.
-   clean_exit("The output directory \"$output_dir\" isn't writable by you.")
+    clean_exit("The output directory \"$output_dir\" isn't writable by you.")
       if (!$careful && !-w "$output_dir");
 
-  # Make sure the backup directory exists and is writable, if running with -b.
+  # Make sure the backup directory exists and is writable if running with -b.
     clean_exit("The backup directory \"$backup_dir\" doesn't exist or isn't writable by you.")
       if (defined($backup_dir) && (!-d "$backup_dir" || !-w "$backup_dir"));
 }
 
 
 
-# Pull down the rules archive.
+# Download the rules archive.
 sub download_rules($ $)
 {
     my $url       = shift;
     my $localfile = shift;
 
-    if ($url =~ /^(?:http|ftp)/) {     # Use wget if URL starts with "http" or "ftp"
+    if ($url =~ /^(?:http|ftp)/) {     # use wget if URL starts with "http" or "ftp"
         print STDERR "Downloading rules archive from $url...\n"
           unless ($quiet);
         if ($quiet) {
-            clean_exit("Error: unable to download rules.\n".
+            clean_exit("Error: unable to download rules (got error code from wget).\n".
                        "Consider running in non-quiet mode if the problem persists.")
-              if (system("wget","-q","-nv","-O","$localfile","$url"));   # quiet mode
+              if (system("wget","-q","-O","$localfile","$url"));         # quiet mode
         } elsif ($verbose) {
             clean_exit("Error: unable to download rules.")
               if (system("wget","-v","-O","$localfile","$url"));         # verbose mode
@@ -359,14 +369,14 @@ sub download_rules($ $)
             clean_exit("Error: unable to download rules.")
               if (system("wget","-nv","-O","$localfile","$url"));        # normal mode
         }
-    } else {                                # Grab file from local filesystem.
-        $url =~ s/^file:\/\///;             # Remove "file://", the rest is the actual filename.
+    } elsif ($url =~ /^file/) {        # grab file from local filesystem
+        $url =~ s/^file:\/\///;        # remove "file://", the rest is the actual filename
 	clean_exit("Error: the file $url does not exist.\n")
           unless (-e "$url");
         print STDERR "Copying rules archive from $url... "
           unless ($quiet);
         copy("$url", "$localfile")
-          or cleann_exit("Error: unable to copy $url to $localfile: $!");
+          or clean_exit("Error: unable to copy $url to $localfile: $!");
         print STDERR "done.\n" unless ($quiet);
     }
 
@@ -379,12 +389,12 @@ sub download_rules($ $)
 
 
 
-# Make a few checks on the rules archive and then uncompress/untar
-# it if everything looked ok.
+# Make a few basic sanity checks on the rules archive and then 
+# uncompress/untar it if everything looked ok.
 sub unpack_rules_archive($)
 {
     my $archive  = shift;
-    my $ok_lead  = 'a-zA-Z0-9_';         # allowed leading char in filenames in the tar archive
+    my $ok_lead  = 'a-zA-Z0-9_\.';       # allowed leading char in filenames in the tar archive
     my $ok_chars = 'a-zA-Z0-9_\.\-/';    # allowed chars in filenames in the tar archive
 
     my ($dir) = ($archive =~ /(.*)\//);  # extract directory part of the filename
@@ -403,9 +413,9 @@ sub unpack_rules_archive($)
   # Suffix has now changed from .tar.gz to .tar.
     $archive =~ s/\.gz$//;
 
-  # Look for uncool stuff in the archive.
+  # Read output from "tar tf $archive" into @_.
     if (open(TAR,"-|")) {
-        @_ = <TAR>;                       # read output of the tar command into @_
+        @_ = <TAR>;
     } else {
         exec("tar","tf","$archive")
           or die("Unable to execute untar/unpack command: $!\nExiting");
@@ -420,7 +430,7 @@ sub unpack_rules_archive($)
           unless (/^[$ok_lead]/);
 
       # We don't want to have any weird characters anywhere in the filename.
-       clean_exit("Error: forbidden characters in filename in tar archive. Offending file/line:\n$_")
+        clean_exit("Error: forbidden characters in filename in tar archive. Offending file/line:\n$_")
           if (/[^$ok_chars]/);
 
       # We don't want to unpack any "../../" junk.
@@ -428,7 +438,7 @@ sub unpack_rules_archive($)
           if (/\.\./);
     }
 
-  # Looks good. Now we can finally untar it.
+  # Looks good. Now we can untar it.
     print STDERR "Archive successfully downloaded, unpacking... "
       unless ($quiet);
     clean_exit("Error: failed to untar $archive.")
@@ -443,8 +453,8 @@ sub unpack_rules_archive($)
 
 
 
-# Open all rules files in temporary directory and disable (#comment out) all rules
-# in conf{sid_disable_list}. All files will still be left in the temporary directory.
+# Open all rules files in the temporary directory and disable (#comment out)
+# all rules in listed in the disable list and then write back to the same files.
 sub disable_and_modify_rules($ $ @)
 {
     my $disable_sid_ref = shift;
@@ -457,8 +467,10 @@ sub disable_and_modify_rules($ $ @)
         warn("Warning: all rules that are disabled by default will be re-enabled\n");
     }
 
-    print STDERR "Disabling rules according to $config_file... " unless ($quiet);
-    print STDERR "\n" if ($verbose);
+    print STDERR "Disabling rules according to $config_file... "
+      unless ($quiet);
+    print STDERR "\n"
+      if ($verbose);
 
     foreach my $file (@newfiles) {
         open(INFILE, "<$file")
@@ -469,6 +481,7 @@ sub disable_and_modify_rules($ $ @)
       # Write back to the same file.
 	open(OUTFILE, ">$file")
           or clean_exit("Error: could not open $file for writing: $!");
+
 	RULELOOP:foreach my $line (@_) {
 
           # Only care about snort rules we understand.
@@ -485,11 +498,13 @@ sub disable_and_modify_rules($ $ @)
                          "(perhaps bad syntax or missing SID etc?):\n$line");
                 }
 
+              # Write this non-rule line right back to the same file.
 	        print OUTFILE $line;
 		next RULELOOP;
 	    }
 
-	    my ($msg, $sid) = ($1, $2);
+          # We've got a valid snort rule. Grab msg and sid.
+   	    my ($msg, $sid) = ($1, $2);
 
           # Remove leading/trailing whitespaces and whitespaces next to the leading #.
 	    $line =~ s/^\s*//;
@@ -508,31 +523,38 @@ sub disable_and_modify_rules($ $ @)
 		}
 	    }
 
-          # Modify rule, if requested.
+          # Modify rule if requested.
             foreach my $regexp (@{$$modify_sid_ref{$sid}}) {
-	        print STDERR "Modifying sid $sid with expression: $regexp\n  Before:$line"
+	        print STDERR "Modifying sid $sid with expression: $regexp\n  Before: $line"
 		  if ($verbose);
 		eval "\$line =~ $regexp";
 		warn("WARNING: error in expression \"$regexp\": $@\n")
 		  if ($@);
-		print STDERR "  After:$line\n"
+		print STDERR "  After: $line\n"
                   if ($verbose);
 	    }
 
-          # Disable rule, if requested.
+          # Disable rule if requested.
             if (exists($$disable_sid_ref{"$sid"})) {
-                print STDERR "Disabling sid $sid: $msg\n" if ($verbose);
+                print STDERR "Disabling sid $sid: $msg\n"
+                  if ($verbose);
                 $line = "#$line" unless ($line =~ /^#/);
                 $num_disabled++;
 	    }
 
+	  # Make sure the rule ends with a \n. 
+          # (User may have screwed up with a modifysid.)
 	    chomp($line);
 	    $line .= "\n";
-            print OUTFILE $line;       # Write rule back to the rules file.
+
+          # Write rule back to the same rules file.
+            print OUTFILE $line;
         }
+
         close(OUTFILE);
     }
-    print STDERR "$num_disabled rules disabled.\n" unless ($quiet)
+    print STDERR "$num_disabled rules disabled.\n"
+      unless ($quiet)
 }
 
 
@@ -554,17 +576,17 @@ sub setup_rules_hash($ $ @)
         open(NEWFILE, "<$file")
           or clean_exit("Error: could not open $file for reading: $!");
 
-      # From now on, we don't care about the path, so remove it.
+      # From now on we don't care about the path, so remove it.
 	$file =~ s/.*\///;
 
 	while (<NEWFILE>) {
-	    if (/$SNORT_RULE_REGEXP/) {
+	    if (/$SNORT_RULE_REGEXP/) {        # add rule line to hash
 	        my $sid = $2;
 		warn("WARNING: duplicate SID in downloaded rules archive in file ".
                      "$file: SID $sid\n")
-		  if (exists($$rh_ref{new}{rules}{"$file"}{"$sid"}) && !$quiet);
+		  if (exists($$rh_ref{new}{rules}{"$file"}{"$sid"}));
 		$$rh_ref{new}{rules}{"$file"}{"$sid"} = $_;
-	    } else {
+	    } else {                           # add non-rule line to hash
 	        push(@{$$rh_ref{new}{other}{"$file"}}, $_);
 	    }
 	}
@@ -581,10 +603,11 @@ sub setup_rules_hash($ $ @)
 		    my $sid = $2;
 		    s/^\s*//;         # remove leading whitespaces
 		    s/\s*\n$/\n/;     # remove trailing whitespaces
-		    s/^#+\s*/#/;      # make sure comment syntax is how we like it
+		    s/^#+\s*/#/;      # remove whitespaces next to the leading #
+
 		    warn("WARNING: duplicate SID in your local rules in file ".
                          "$file: SID $sid\n")
-	  	      if (exists($$rh_ref{old}{rules}{"$file"}{"$sid"}) && !$quiet);
+	  	      if (exists($$rh_ref{old}{rules}{"$file"}{"$sid"}));
 	  	    $$rh_ref{old}{rules}{"$file"}{"$sid"} = $_;
                 } else {
 	            push(@{$$rh_ref{old}{other}{"$file"}}, $_);
@@ -592,7 +615,7 @@ sub setup_rules_hash($ $ @)
             }
 
             close(OLDFILE);
-        } else {
+        } else {                      # downloaded file did not exist in old rules dir
 	    $$rh_ref{added_files}{"$file"}++;
         }
     }
@@ -623,13 +646,14 @@ sub find_line($ $)
 # Backup files in $output_dir matching $config{update_files} into $backup_dir.
 sub make_backup($ $)
 {
-    my $src_dir  = shift;  # dir with the rules to be backed up
-    my $dest_dir = shift;  # where to put the tarball containing the backed up rules
+    my $src_dir  = shift;    # dir with the rules to be backed up
+    my $dest_dir = shift;    # where to put the tarball containing the backed up rules
 
-    my $date    = strftime("%Y%m%d-%H%M", localtime);
+    my $date       = strftime("%Y%m%d-%H%M", localtime);
     my $bu_tmp_dir = "$TMPDIR/rules-backup-$date";
 
-    print STDERR "Creating backup of old rules..." unless ($quiet);
+    print STDERR "Creating backup of old rules..."
+      unless ($quiet);
 
     mkdir("$bu_tmp_dir", 0700)
       or clean_exit("Error: could not create temporary backup directory $bu_tmp_dir: $!");
@@ -637,11 +661,13 @@ sub make_backup($ $)
   # Copy all rules files from the rules dir to the temporary backup dir.
     opendir(OLDRULES, "$src_dir")
       or clean_exit("Error: could not open directory $src_dir: $!");
+
     while ($_ = readdir(OLDRULES)) {
         copy("$src_dir/$_", "$bu_tmp_dir/")
           or warn("WARNING: error copying $src_dir/$_ to $bu_tmp_dir: $!")
             if (/$config{update_files}/ && !exists($config{file_ignore_list}{$_}));
     }
+
     closedir(OLDRULES);
 
   # Change directory to $TMPDIR (so we'll be right below the directory where
@@ -658,7 +684,7 @@ sub make_backup($ $)
     warn("WARNING: gzip command did not exit with status 0 when compressing backup file.\n")
       if (system("gzip","rules-backup-$date.tar"));
 
-  # Change back to old directory (so it will work with -b <directory> as either
+  # Change back to old directory. (so it will work with -b <directory> as either
   # an absolute or a relative path.
     chdir("$old_dir") or clean_exit("Error: could not change directory back to $old_dir: $!");
 
@@ -672,6 +698,7 @@ sub make_backup($ $)
 
 
 
+# Print all changes.
 sub print_changes($ $)
 {
     my $ch_ref = shift;
@@ -685,19 +712,19 @@ sub print_changes($ $)
     foreach my $type (sort(keys(%{$$ch_ref{rules}}))) {
         print "\n  $type\n";
         foreach my $file (keys(%{$$ch_ref{rules}{"$type"}})) {
-            print "\n     file -> $file\n";
+            print "\n     -> File $file:\n";
             foreach my $sid (keys(%{$$ch_ref{rules}{"$type"}{"$file"}})) {
 
 	    # Print old and new if the rule was modified.
 	        if ($type =~ /modified/i) {
-	            print "     old: $rh{old}{rules}{$file}{$sid}";
-	            print "     new: $rh{new}{rules}{$file}{$sid}";
-	    # print only the new one if the rule was added, enabled or disabled.
+	            print "        old: $rh{old}{rules}{$file}{$sid}";
+	            print "        new: $rh{new}{rules}{$file}{$sid}";
+	    # Print only the new one if the rule was added, enabled or disabled.
 	        } elsif ($type =~ /added/i || $type =~ /enabled/i || $type =~ /disabled/i) {
-	            print "     $rh{new}{rules}{$file}{$sid}";
-	    # print only the old one if the rule was removed.
+	            print "        $rh{new}{rules}{$file}{$sid}";
+	    # Print only the old one if the rule was removed.
 		} elsif ($type =~ /removed/i) {
-	            print "     $rh{old}{rules}{$file}{$sid}";
+	            print "        $rh{old}{rules}{$file}{$sid}";
 		}
   	    }
         }
@@ -710,11 +737,11 @@ sub print_changes($ $)
 
   # Print added non-rule lines.
     if (keys(%{$$ch_ref{other}{added}}) > 0) {
-        print "\n  [+++]       Added lines:       [+++]\n\n";
+        print "\n  [+++]       Added lines:       [+++]\n";
         foreach my $file (keys(%{$$ch_ref{other}{added}})) {
-            print "    -> File \"$file\":\n";
+            print "\n     -> File $file:\n";
             foreach my $other (@{$$ch_ref{other}{added}{$file}}) {
-	        print "       $other";
+	        print "        $other";
             }
         }
     }
@@ -723,9 +750,9 @@ sub print_changes($ $)
     if (keys(%{$$ch_ref{other}{removed}}) > 0) {
         print "\n  [---]      Removed lines:      [---]\n";
         foreach my $file (keys(%{$$ch_ref{other}{removed}})) {
-            print "    -> File \"$file\":\n";
+            print "\n     -> File $file:\n";
             foreach my $other (@{$$ch_ref{other}{removed}{$file}}) {
-	        print "       $other";
+	        print "        $other";
             }
         }
     }
@@ -764,31 +791,35 @@ sub print_changes($ $)
 
 
 
-# Return array of modified files (with full path).
+# Return list of modified files (with full path).
 sub get_modified_files($ $)
 {
-    my $changes_ref   = shift;  # ref to hash with all changes
-    my $new_files_ref = shift;  # ref to hash with all new files (with full path)
+    my $changes_ref   = shift;    # ref to hash with all changes
+    my $new_files_ref = shift;    # ref to hash with all new files (with full path)
 
     my %modified_files;
 
+  # For each new rules file...
     foreach my $file_w_path (keys(%$new_files_ref)) {
         my $file = $file_w_path;
             $file =~ s/.*\///;    # remove path
 
-      # Get files with rules changes.
+      # Check if there were any rules changes in this file.
         foreach my $type (keys(%{$changes{rules}})) {
 	     $modified_files{"$file_w_path"}++
                if (exists($changes{rules}{"$type"}{"$file"}));
         }
 
-      # Get files with non-rules changes.
+      # Check if there were any non-rule changes in this file.
         foreach my $type (keys(%{$changes{other}})) {
             $modified_files{"$file_w_path"}++
               if (exists($changes{other}{"$type"}{"$file"}));
         }
 
-      # Added files are also seen as modified (since we want to update (add) those as well).
+      # Added files are also regarded as modified
+      # since we want to update (add) those as well.
+      # We only have a list of added files without the full path,
+      # so that's why we have to do the special check below.
         foreach my $added_file (keys(%{$rh{added_files}})) {
             $modified_files{"$file_w_path"}++
               if ($added_file eq $file);
@@ -825,6 +856,7 @@ sub get_changes($ $)
               if (/$config{update_files}/ && !exists($config{file_ignore_list}{$_}) && 
                   !-e "$TMPDIR/rules/$_");
         }
+
         closedir(OLDRULES);
     }
 
@@ -880,6 +912,7 @@ sub get_changes($ $)
 	        push(@{$changes{other}{removed}{$file}}, $other_removed);
             }
         }
+
     } # foreach new file
 
     print STDERR "done.\n" unless ($quiet);
