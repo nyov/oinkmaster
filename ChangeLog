@@ -93,7 +93,7 @@ Oinkmaster v0.8 - 20030902
 o Experimental multi-line rule support.
 o Make contrib/addsid.pl and contrib/addmsg.pl handle multi-line rules as well.
 o Added create-sidmap.pl to contrib section. It's a script that generates 
-  a SID map from a directory with rules files. (Like snort's regen-sidmap,
+  a SID map from a directory with rules files. (Like Snort's Regen-sidmap,
   but this one handles multi-line rules).
 o The 'modifysid' keyword now regards the arguments as regular expressions.
   So if you already use this function, you may have to adjust the arguments.
@@ -144,12 +144,12 @@ o Support file://<filename> syntax in URL specification.
   Suggested by aidan.carty@entropy.ie.
 o sid-msg.map will now be updated by default.
 o Warn instead of exit in case of invalid lines in the config file.
-o Added possibility to modify sids, using the "modifysid" keyword
+o Added possibility to modify SIDs, using the "modifysid" keyword
   in the config file (use with care).
 o Added makesidex.pl by Jerry Applebaum <JApplebaum@APTEGRITY.com>
   to contrib section. Useful to new Oinkmaster users who already
   have many rules commented out and don't want to create oinkmaster.conf
-  manually from scratch. It strips out the sids from everything you've
+  manually from scratch. It strips out the SIDs from everything you've
   commented out and writes them out in a format that can be appended to
   oinkmaster.conf.
 o Added addmsg.pl (by myself) to contrib section.
@@ -196,7 +196,7 @@ Oinkmaster v0.4 - 20020422
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 o More or less rewritten from scratch.
 o The file rules.ignore has been renamed to oinkmaster.conf, which contains
-  more than just the sids to disable (have a look at it).
+  more than just the SIDs to disable (have a look at it).
 o Slightly improved error checking.
 o Better output format (or at least it has changed).
 o Oinkmaster will now also update other files (and print changes in them) than

@@ -26,7 +26,7 @@ information.
 The GUI is written in Perl and requires the Perl Tk module.
 You must also make sure the Perl binary (at least 5.6.1) is in your PATH.
 If you're on UNIX and don't have the Tk module already, install the 
-latesty version from http://www.cpan.org/authors/id/NI-S/. At the time of 
+latest version from http://www.cpan.org/authors/id/NI-S/. At the time of 
 writing, http://www.cpan.org/authors/id/NI-S/Tk-800.024.tar.gz is probably 
 the one you'll want. Unpack it and run "perl Makefile.pl && make && make 
 install" and you should then be able to start the GUI by executing
