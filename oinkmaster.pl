@@ -172,7 +172,7 @@ umask($config{umask}) if exists($config{umask});
 # Download the rules archive. Will exit if it fails.
 download_file("$config{url}", "$tmpdir/$OUTFILE");
 
-# Verify and unpack archive. This should will us with a directory
+# Verify and unpack archive. This will leave us with a directory
 # called $RULES_DIR in the same directory as the archive, containing the
 # new rules. Will exit if something fails.
 unpack_rules_archive("$tmpdir/$OUTFILE", $RULES_DIR);
@@ -281,23 +281,18 @@ Options:
 -b <dir>   Backup your old rules into <dir> before overwriting them
 -c         Careful mode - only check for changes and do not update anything
 -C <cfg>   Use this configuration file instead of the default
-           (@DEFAULT_CONFIG_FILES)
            May be specified multiple times to load multiple files
--e         Re-enable all rules that are disabled by default in the rules
-           distribution (they are disabled for a reason, so use with care)
+-e         Enable all rules that are disabled by default
 -h         Show this usage information
 -i         Interactive mode - you will be asked to approve the changes (if any)
 -q         Quiet mode - no output unless changes were found
 -Q         über-quiet mode (like -q but even more quiet when printing results)
 -r         Check for rules files that exist in the output directory
-           but not in the downloaded rules archive (i.e. files that may
-           have been removed from the distribution archive)
+           but not in the downloaded rules archive
 -T         Test configuration and then exit
 -u <url>   Download from this URL (must be http://, https://, ftp://, file://
            or scp:// ...tar.gz) instead of the URL in the configuration file
--U <file>  Variables that exist in downloaded snort.conf but not in <file>
-           will be added to this file, which must exist and not be updated
-           by Oinkmaster (it's usually your production snort.conf)
+-U <file>  Merge new variables from downloaded snort.conf into <file>
 -v         Verbose mode
 -V         Show version and exit
 
