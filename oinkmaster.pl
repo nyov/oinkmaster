@@ -147,7 +147,7 @@ FILELOOP:foreach $file (keys(%new_files)) {                  # for each new file
                     } elsif ($old_rule eq "#$new_rule") {                     # rule enabled?
 			fix_fileinfo("added_ena", $file);
                         $changes{added_ena}         .= "       $new_rule";
-                    } elsif ($old_rule =~ /^\s*#/ && $new_rule !~ /^\s*#/) {  # rule enabled and  modified?
+                    } elsif ($old_rule =~ /^\s*#/ && $new_rule !~ /^\s*#/) {  # rule enabled and modified?
 			fix_fileinfo("added_ena_mod", $file);
                         $changes{added_ena_mod}     .= "       Old: $old_rule       New: $new_rule";
                     } elsif ($old_rule !~ /^\s*#/ && $new_rule =~ /^\s*#/) {  # rule disabled and modified?
@@ -165,7 +165,7 @@ FILELOOP:foreach $file (keys(%new_files)) {                  # for each new file
 	    } else {    # sid not found in old file
 	        $rules_changed = 1;
  		fix_fileinfo("added_new", $file);
-	        $changes{added_new} .= "   $new_rule";
+	        $changes{added_new} .= "       $new_rule";
 	    }
     } # foreach sid
 
