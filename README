@@ -52,8 +52,8 @@ It should work on most UNIX-like systems with Perl 5.6.1 or later.
 You also need either the binaries tar, gzip and wget, or the Perl modules
 Archive::Tar, IO::Zlib and LWP::UserAgent. See oinkmaster.conf for more
 information about this. So far it has been successfully tested on 
-OpenBSD, FreeBSD, NetBSD, Linux, AIX, Solaris, Mac OS X and Microsoft 
-Windows.
+OpenBSD, FreeBSD, NetBSD, Linux, AIX, Solaris, Mac OS X, QNX and
+Microsoft Windows.
 
 Again, use it at your own risk!
 
