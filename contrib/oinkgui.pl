@@ -741,7 +741,7 @@ sub show_version()
         return;
     }
 
-    my $cmd = File::Spec->rel2abs($config{oinkmaster}) . " -V";
+    my $cmd = "perl -T $config{oinkmaster} -V";
     logmsg("$cmd:\n", 'EXEC');
     my $output = `$cmd 2>&1` || "Could not execute $config{oinkmaster}: $!\n";
     logmsg("$output", 'OUTPUT');
@@ -760,7 +760,7 @@ sub show_help()
         return;
     }
 
-    my $cmd = File::Spec->rel2abs($config{oinkmaster}) . " -h";
+    my $cmd = "perl -T $config{oinkmaster} -h";
     logmsg("$cmd:\n", 'EXEC');
     my $output = `$cmd 2>&1` || "Could not execute $config{oinkmaster}: $!\n";
     logmsg("$output\n", 'OUTPUT');
@@ -874,7 +874,7 @@ sub create_cmdline($)
     }
 
     push(@$cmd_ref, 
-      $oinkmaster, 
+      "perl", "-T", "$oinkmaster",
       "-C", "$oinkmaster_conf", 
       "-o", "$outdir");
 
