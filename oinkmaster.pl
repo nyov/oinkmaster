@@ -12,6 +12,7 @@ sub show_usage;
 sub parse_cmdline;
 sub read_config;
 sub sanity_check;
+sub download_rules;
 sub unpack_rules_archive;
 sub disable_rules;
 sub setup_rule_hashes;
@@ -70,26 +71,9 @@ sanity_check;  # will also set a new PATH
 mkdir("$tmpdir", 0700)
   or die("Could not create temporary directory $tmpdir: $!\nExiting");
 
-# Pull down the rules archive.
-if ($url =~ /^(?:http|ftp)/) {     # Use wget if URL starts with http:// or ftp://
-    print STDERR "Downloading rules archive from $url...\n" unless ($quiet);
-    if ($quiet) {
-        clean_exit("Unable to download rules.\n".
-                   "Consider running in non-quiet mode if the problem persists.")
-          if (system("wget","-q","-nv","-O","$tmpdir/$outfile","$url"));   # quiet mode
-    } elsif ($verbose) {
-        clean_exit("Unable to download rules.")
-          if (system("wget","-v","-O","$tmpdir/$outfile","$url"));         # verbose mode
-    } else {
-        clean_exit("Unable to download rules.")
-          if (system("wget","-nv","-O","$tmpdir/$outfile","$url"));        # normal mode
-    }
-} else {                           # Grab file from local filesystem.
-    $url =~ s/^file:\/\///;        # Remove file://, the rest is the actual filename.
-    print STDERR "Copying rules archive from $url...\n" unless ($quiet);
-    copy("$url", "$tmpdir/$outfile") or clean_exit("Unable to copy $url: $!");
-}
-
+# Download the rules archive.
+# This will leave us with the file $tmpdir/$outfile (/tmp/oinkmaster.$$/snortrules.tar.gz).
+download_rules;
 
 # Verify and unpack archive. This will leave us with a directory
 # called "rules/" in the temporary directory, containing the new rules.
@@ -472,6 +456,32 @@ sub sanity_check
     die("The backup directory \"$backup_dir\" doesn't exist or isn't writable by you.\nExiting")
       if (defined($backup_dir) && (! -d "$backup_dir" || ! -w "$backup_dir"));
 }
+
+
+
+# Pull down the rules archive.
+sub download_rules
+{
+    if ($url =~ /^(?:http|ftp)/) {     # Use wget if URL starts with http:// or ftp://
+        print STDERR "Downloading rules archive from $url...\n" unless ($quiet);
+        if ($quiet) {
+            clean_exit("Unable to download rules.\n".
+                       "Consider running in non-quiet mode if the problem persists.")
+              if (system("wget","-q","-nv","-O","$tmpdir/$outfile","$url"));   # quiet mode
+        } elsif ($verbose) {
+            clean_exit("Unable to download rules.")
+              if (system("wget","-v","-O","$tmpdir/$outfile","$url"));         # verbose mode
+        } else {
+            clean_exit("Unable to download rules.")
+              if (system("wget","-nv","-O","$tmpdir/$outfile","$url"));        # normal mode
+        }
+    } else {                           # Grab file from local filesystem.
+        $url =~ s/^file:\/\///;        # Remove file://, the rest is the actual filename.
+        print STDERR "Copying rules archive from $url...\n" unless ($quiet);
+        copy("$url", "$tmpdir/$outfile") or clean_exit("Unable to copy $url: $!");
+    }
+}
+
 
 
 # Make a few checks on $outfile (the downloaded rules archive) and then unpack it.
