@@ -552,7 +552,7 @@ sub disable_rules
 
     $num_disabled = 0;
 
-    if ($preserve_comments) {
+    unless ($preserve_comments) {
         print STDERR "Warning: rules that are disabled by default will be enabled\n";
     }
 
