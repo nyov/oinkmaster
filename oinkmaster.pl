@@ -296,10 +296,12 @@ sub read_config($ $)
 	    $$cfg_ref{path} = $1;
 	} elsif (/^update_files\s*=\s*(.*)/i) {          # regexp of files to be updated
 	    $$cfg_ref{update_files} = $1;
-        } elsif (/^umask\s*=\s*([0-7]{3,4})$/) {         # umask
+        } elsif (/^umask\s*=\s*([0-7]{3,4})$/i) {        # umask
 	  $$cfg_ref{umask} = oct($1);
-        } elsif (/^tmpdir\s*=\s*(.+)/) {
+        } elsif (/^tmpdir\s*=\s*(.+)/i) {
           $$cfg_ref{tmpdir} = $1;                        # tmpdir
+        } elsif (/^check_non-rules\s*=\s*([01])/i) {
+          $$cfg_ref{"check_non-rules"} = $1;             # check_non-rules
         } else {                                         # invalid line
             warn("WARNING: line $linenum in $config_file is invalid, ignoring\n");
         }
@@ -992,17 +994,18 @@ sub get_changes($ $)
             }
         }
 
-      # Check for added non-rule lines.
-        foreach my $other_added (@{$$rh_ref{new}{other}{$file}}) {
-            unless (find_line($other_added, \@{$$rh_ref{old}{other}{"$file"}})) {
-	        push(@{$changes{other}{added}{$file}}, $other_added);
+      # Check for added/removed non-rule lines, unless check_non-rules is set to 0.
+        unless (exists($config{"check_non-rules"}) && $config{"check_non-rules"} == 0) {
+            foreach my $other_added (@{$$rh_ref{new}{other}{$file}}) {
+                unless (find_line($other_added, \@{$$rh_ref{old}{other}{"$file"}})) {
+	            push(@{$changes{other}{added}{$file}}, $other_added);
+                }
             }
-        }
 
-      # Check for removed non-rule lines.
-        foreach my $other_removed (@{$$rh_ref{old}{other}{$file}}) {
-            unless (find_line($other_removed, \@{$$rh_ref{new}{other}{"$file"}})) {
-	        push(@{$changes{other}{removed}{$file}}, $other_removed);
+            foreach my $other_removed (@{$$rh_ref{old}{other}{$file}}) {
+                unless (find_line($other_removed, \@{$$rh_ref{new}{other}{"$file"}})) {
+	            push(@{$changes{other}{removed}{$file}}, $other_removed);
+                }
             }
         }
 
