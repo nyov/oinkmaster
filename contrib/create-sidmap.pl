@@ -42,7 +42,7 @@ foreach my $rulesdir (@rulesdirs) {
         next unless ($file =~ /\.rules$/);
 
         open(OLDFILE, "$rulesdir/$file") or die("could not open $rulesdir/$file: $!\n");
-        print STDERR "Processing $file\n";
+        print "Processing $file\n";
         my @file = <OLDFILE>;
         close(OLDFILE);
 
