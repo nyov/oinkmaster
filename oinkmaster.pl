@@ -540,12 +540,6 @@ sub disable_and_modify_rules($ $ $)
           # Even if it was a single-line rule, we want to have a copy in $multi now.
 	    $multi = $single unless (defined($multi));
 
-          # Remove unwanted whitespaces.
-          # XXX do this stuff in get_next_entry() for all rules + non-rules?
-            $multi =~ s/^\s*//;
-            $multi =~ s/\s*\n$/\n/;
-            $multi =~ s/^#+\s*/#/;
-
           # Some rules may be commented out by default. Enable them if -e is specified.
 	    if ($multi =~ /^#/) {
 		if ($preserve_comments) {
@@ -615,30 +609,27 @@ sub setup_rules_hash($)
         warn("WARNING: downloaded rules file $file is empty (maybe correct, maybe not)\n")
           if (!-s "$file" && $verbose);
 
-        open(NEWFILE, "<$file")
-          or clean_exit("could not open $file for reading: $!");
+        open(NEWFILE, "<$file") or clean_exit("could not open $file for reading: $!");
+	my @infile = <NEWFILE>;
+        close(NEWFILE);
 
       # From now on we don't care about the path, so remove it.
 	$file =~ s/.*\///;
 
-	while (my $newline = <NEWFILE>) {
-            $newline =~ s/\s*\n$/\n/;                # remove trailing whitespaces (for rules and non-rules)
+        my ($single, $multi, $nonrule);
 
-	    if ($newline =~ /$SNORT_RULE_REGEXP/) {  # add rule line to hash
+	RULELOOP:while (get_next_entry(\@infile, \$single, \$multi, \$nonrule)) {
+	    if (defined($single)) {
+	        $single =~ /$SNORT_RULE_REGEXP/;
 	        my $sid = $2;
-  	        $newline =~ s/^\s*//;                # remove leading whitespaces
-		$newline =~ s/^#+\s*/#/;             # remove whitespaces next to the leading #
-
 		warn("WARNING: duplicate SID in downloaded rules archive in file ".
                      "$file: SID $sid\n")
 		  if (exists($rh{new}{rules}{"$file"}{"$sid"}));
-		$rh{new}{rules}{"$file"}{"$sid"} = $newline;
+		$rh{new}{rules}{"$file"}{"$sid"} = $single;
 	    } else {                                 # add non-rule line to hash
-	        push(@{$rh{new}{other}{"$file"}}, $newline);
+	        push(@{$rh{new}{other}{"$file"}}, $nonrule);
 	    }
 	}
-
-	close(NEWFILE);
 
 	# Also read in old file if it exists.
         if (-f "$config{output_dir}/$file") {
@@ -1091,6 +1082,7 @@ sub is_in_path($)
 }
 
 
+
 # XXX document
 sub get_next_entry($ $ $ $)
 {
@@ -1125,13 +1117,14 @@ sub get_next_entry($ $ $ $)
 
               # First line of broken multi-line rule will be returned as a non-rule line.
                 $$nonrule_ref = shift(@_) . "\n";
+		$$nonrule_ref =~ s/\s*\n$/\n/;            # remove trailing whitespaces
 
               # The rest is put back to the array again.
                 foreach $_ (reverse((@_))) {
                     unshift(@$arr_ref, "$_\n");
                 }
 
-                return (1);
+                return (1);   # return non-rule
             }
 
             $$single_ref .= $line;
@@ -1141,9 +1134,19 @@ sub get_next_entry($ $ $ $)
       # Single-line version should now be a valid rule.
       # If not, it wasn't a valid multi-line rule after all.
         if ($$single_ref =~ /$SNORT_RULE_REGEXP/) {
-            return (1);
+
+            $$single_ref =~ s/^\s*//;                # remove leading whitespaces
+	    $$single_ref =~ s/^#+\s*/#/;             # remove whitespaces next to the leading #
+	    $$single_ref =~ s/\s*\n$/\n/;            # remove trailing whitespaces
+
+            $$multi_ref  =~ s/^\s*//;
+            $$multi_ref  =~ s/\s*\n$/\n/;
+            $$multi_ref  =~ s/^#+\s*/#/;
+
+            return (1);   # return multi
+
         } else {
-            print "invalid multi:\n$$single_ref";             # XXX debug
+            print "invalid multi:\n$$single_ref";    # XXX debug
 
             @_ = split(/\n/, $$multi_ref);
 
@@ -1152,21 +1155,26 @@ sub get_next_entry($ $ $ $)
 
           # First line of broken multi-line rule will be returned as a non-rule line.
             $$nonrule_ref = shift(@_) . "\n";
+ 	    $$nonrule_ref =~ s/\s*\n$/\n/;            # remove trailing whitespaces
 
           # The rest is put back to the array again.
             foreach $_ (reverse((@_))) {
                 unshift(@$arr_ref, "$_\n");
             }
 
-            return (1);
+            return (1);   # return non-rule
         }
 
-    } elsif ($line =~ /$SNORT_RULE_REGEXP/) {                   # single-line rule?
+    } elsif ($line =~ /$SNORT_RULE_REGEXP/) {    # single-line rule?
         $$single_ref = $line;
-        return (1);
-    } else {                                                    # non-rule line?
+        $$single_ref =~ s/^\s*//;                # remove leading whitespaces
+	$$single_ref =~ s/^#+\s*/#/;             # remove whitespaces next to the leading #
+	$$single_ref =~ s/\s*\n$/\n/;            # remove trailing whitespaces
+        return (1);   # return single
+    } else {                                     # non-rule line?
         $$nonrule_ref = $line;
-        return (1);
+	$$nonrule_ref =~ s/\s*\n$/\n/;           # remove trailing whitespaces
+        return (1);   # return non-rule
     }
 }
 
