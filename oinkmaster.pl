@@ -235,7 +235,7 @@ clean_exit("not enough rules files in downloaded archive (is it broken?)\n".
 my %rh_tmp = setup_rules_hash(\%new_files, $config{output_dir});
 
 # Disable/modify/clean downloaded rules.
-my $num_rules = process_rules(\%{$config{sid_modify_list}},
+my $num_rules = process_rules(\@{$config{sid_modify_list}},
                               \%{$config{sid_disable_list}},
                               \%{$config{sid_enable_list}},
                               \%{$config{sid_local_list}},
@@ -524,7 +524,7 @@ sub read_config($ $)
         } elsif (/^modifysids*\s+(\S+.*)\s+"(.+)"\s+\|\s+"(.*)"\s*(?:#.*)*$/i) {
             my ($sid_list, $subst, $repl) = ($1, $2, $3);
             warn("WARNING: line $linenum in $config_file is invalid, ignoring\n")
-              unless(parse_mod_expr(\%{$$cfg_ref{sid_modify_list}},
+              unless(parse_mod_expr(\@{$$cfg_ref{sid_modify_list}},
                                     $sid_list, $subst, $repl));
 
       # disablesid <SID[,SID, ...]>
@@ -1189,12 +1189,6 @@ sub process_rules($ $ $ $ $ $)
   # Warn on attempt at processing non-existent sids/files, unless quiet mode.
     if ($config{verbose}) {
 
-        foreach my $sid (keys(%$modify_sid_ref)) {
-            next unless ($sid =~ /^\d+$/);    # don't warn on wildcard or filename match
-            warn("WARNING: attempt to use \"modifysid\" on non-existent SID $sid\n")
-              unless (exists($sids{$sid}));
-        }
-
         foreach my $sid (keys(%$enable_sid_ref)) {
             warn("WARNING: attempt to use \"enablesid\" on non-existent SID $sid\n")
               unless (exists($sids{$sid}));
@@ -1210,12 +1204,25 @@ sub process_rules($ $ $ $ $ $)
               unless (exists($sids{$sid}));
         }
 
+
         my %new_files;
         foreach my $file (sort(keys(%$newfiles_ref))) {
             $new_files{basename($file)} = 1;
         }
 
-        foreach my $file (keys(%{$$modify_sid_ref{file}})) {
+        my %mod_tmp;
+        foreach my $mod_expr (@$modify_sid_ref) {
+            my ($type, $arg) = ($mod_expr->[2], $mod_expr->[3]);
+            $mod_tmp{$type}{$arg} = 1;
+        }
+
+
+        foreach my $sid (keys(%{$mod_tmp{sid}})) {
+            warn("WARNING: attempt to use \"modifysid\" on non-existent SID $sid\n")
+              unless (exists($sids{$sid}));
+        }
+
+        foreach my $file (keys(%{$mod_tmp{file}})) {
             warn("WARNING: attempt to use \"modifysid\" on non-existent file $file\n")
               unless(exists($new_files{$file}));
         }
@@ -1262,55 +1269,33 @@ sub process_rule($ $ $ $ $ $ $ $)
   # modifysid that's no good since we don't know where in the
   # rule the trailing backslashes and newlines are going to be
   # and we don't want them to affect the regexp.
-    my @all_mod = @{$$modify_sid_ref{sid}{'*'}}
-      if (exists($$modify_sid_ref{sid}{'*'}));
+    foreach my $mod_expr (@$modify_sid_ref) {
+        my ($subst, $repl, $type, $arg) =
+          ($mod_expr->[0], $mod_expr->[1], $mod_expr->[2], $mod_expr->[3]);
 
-    my @sid_mod = @{$$modify_sid_ref{sid}{$sid}}
-      if (exists($$modify_sid_ref{sid}{$sid}));
+        if ($type eq "wildcard" || ($type eq "sid" && $sid eq $arg) || ($type eq "file" && $filename eq $arg)) {
 
-  # Wildcard or SID-specific substitutions.
-    foreach my $mod_expr (@sid_mod, @all_mod) {
-        my ($subst, $repl) = ($mod_expr->[0], $mod_expr->[1]);
+            if ($single =~ /$subst/si) {
+                print STDERR "Modifying rule, SID=$sid, filename=$filename, match type=$type, subst=$subst, ".
+                             "repl=$repl\nBefore: $single"
+                  if ($print_messages && $config{verbose});
 
-        if ($single =~ /$subst/si) {
-            print STDERR "Modifying SID $sid, subst=$subst, ".
-                         "repl=$repl\nBefore: $single\n"
-	      if ($print_messages && $config{verbose});
+              # Do the substitution on the single-line version and put it
+              # back in $multi.
+                $single =~ s/$subst/$repl/eei;
+                $multi = $single;
 
-          # Do the substitution on the single-line version and put it
-          # back in $multi.
-            $single =~ s/$subst/$repl/eei;
-            $multi = $single;
+      	        print STDERR "After:  $single\n"
+                  if ($print_messages && $config{verbose});
 
-  	    print STDERR "After:  $single\n"
-              if ($print_messages && $config{verbose});
-
-            $$stats_ref{modified}++;
-        } else {
-            if (!$config{super_quiet} && $print_messages && !exists($$modify_sid_ref{sid}{'*'})) {
-                print STDERR "WARNING: SID $sid does not match ".
-                             "modifysid expression \"$subst\", skipping.\n".
-                             "SID $sid: $single\n";
+                $$stats_ref{modified}++;
+            } else {
+                if (!$config{super_quiet} && $print_messages && $type eq "sid") {
+                    print STDERR "WARNING: SID $sid does not match ".
+                                 "modifysid expression \"$subst\", skipping.\n".
+                                 "SID $sid: $single\n";
+                }
             }
-        }
-    }
-
-  # Filename-specific substitutions. Same as above but no warnings about non-matching expressions.
-    foreach my $mod_expr (@{$$modify_sid_ref{file}{$filename}}) {
-        my ($subst, $repl) = ($mod_expr->[0], $mod_expr->[1]);
-
-        if ($single =~ /$subst/si) {
-            print STDERR "Modifying globally in $filename, SID $sid, subst=$subst, ".
-                         "repl=$repl\nBefore: $single\n"
-	      if ($print_messages && $config{verbose});
-
-            $single =~ s/$subst/$repl/eei;
-            $multi = $single;
-
-  	    print STDERR "After:  $single\n"
-              if ($print_messages && $config{verbose});
-
-            $$stats_ref{modified}++;
         }
     }
 
@@ -2218,10 +2203,13 @@ sub parse_mod_expr($ $ $ $)
     $sid_arg_list =~ s/\s+$//;
 
     foreach my $sid_arg (split(/\s*,\s*/, $sid_arg_list)) {
-        my $is_file = 0;
-        $is_file = 1 if ($sid_arg =~ /^\S+.*\.\S+$/);
+        my $type = "";
 
-        return (0) unless ($sid_arg =~ /^\d+$/ || $is_file || $sid_arg eq "*");
+        $type = "sid"      if ($sid_arg =~ /^\d+$/);
+        $type = "file"     if ($sid_arg =~ /^\S+.*\.\S+$/);
+        $type = "wildcard" if ($sid_arg eq "*");
+
+        return (0) unless ($type);
 
       # Make sure the regexp is valid.
         my $repl_qq = "qq/$repl/";
@@ -2236,11 +2224,7 @@ sub parse_mod_expr($ $ $ $)
             return (0);
         }
 
-        if ($is_file) {
-            push(@{$$mod_list_ref{file}{$sid_arg}}, [$subst, $repl_qq]);
-        } else {
-            push(@{$$mod_list_ref{sid}{$sid_arg}}, [$subst, $repl_qq]);
-        }
+        push(@$mod_list_ref, [$subst, $repl_qq, $type, $sid_arg]);
     }
 
     return (1);
