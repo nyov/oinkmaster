@@ -1,1 +1,186 @@
-Working on it...
+Introduction
+------------
+
+There are three known ways to run Oinkmaster under Windows:
+
+- ActivePerl
+
+- Cygwin from within a Cygwin shell
+
+- Cygwin but not from within a Cygwin shell (i.e. standalone)
+
+Which method you choose is mostly a matter of taste.
+You can find installation instructions for each one of these below, 
+followed by a few general useful notes about Oinkmaster/Windows.
+
+
+
+ActivePerl
+----------
+
+- Install Oinkmaster as usual by following the INSTALL file.
+
+- Download ActiveState's ActivePerl from 
+  http://www.activestate.com/Products/ActivePerl/ and do a regular
+  installation. It contains all required Perl modules.
+
+- You need a few GNU utilities compiled for native Win32.
+  The required binaries are "rm.exe", "gzip.exe", "tar.exe", and "wget.exe".
+  The easiest may be to download the latest package from 
+  http://unxutils.sourceforge.net/ which contains all of these, among 
+  others. Simply copy the previously mentioned  binaries from this package 
+  into a suitable directory.
+
+- Edit oinkmaster.conf and modify the 'path' option so it at least
+  contains the directory with the GNU utilities you installed above,
+  and optionally the path to the ActivePerl perl.exe binary.
+  The path should be specified as regular msdos style, so comment out the 
+  unix style path (which is active by default) and add something like this:
+
+  path = c:\perl\bin;c:\oink\gnu-bin\
+
+  But of course change the paths so they point to whatever your 
+  directories are called.
+
+- Done!
+
+Now you should be able to run Oinkmaster. (You probably want to start a 
+cmd.exe shell first so you see what's going on.) You run it by calling 
+perl.exe with oinkmaster.pl and its options as argument, for example:
+
+c:\perl\bin\perl c:\oink\oinkmaster.pl -C c:\oink\oinkmaster.conf -o c:\oink\rules
+
+Again, your paths may be different.
+
+
+
+Cygwin from within a Cygwin shell
+---------------------------------
+
+- Install Oinkmaster as usual by following the INSTALL file.
+
+- Download and install Cygwin from www.cygwin.com.
+  Make sure to also include the packages gzip, Perl, tar and wget.
+
+- Done!
+
+Now you should be able to run Oinkmaster.
+You run it by first starting Cygwin (i.e. executing a shell like bash)
+and then simply calling oinkmaster.pl with the requested arguments.
+Assuming that Oinkmaster and the rules directory is in /etc/snort/, 
+you can use something like:
+
+/etc/snort/oinkmaster.pl -o /etc/snort/rules
+
+Or if you need to specify a path that is not inside the Cygwin directory
+structure, just use something like:
+
+/etc/snort/oinkmaster.pl -o "c:\snort\rules"
+
+Or the same but using Cygwin style:
+
+/etc/snort/oinkmaster.pl -o /cygdrive/c/rules
+
+
+
+Cygwin but not from within a Cygwin shell (i.e. standalone)
+-----------------------------------------------------------
+
+This assumes that you want to run Oinkmaster using Cygwin, but
+without first starting a Cygwin shell.
+
+- Install Oinkmaster as usual by following the INSTALL file.
+
+- You need several Cygwin files.
+  The easiest is probably to do a regular Cygwin installation from 
+  www.cygwin.com (make sure to also include the packages gzip, Perl, 
+  tar and wget). and then copy the required files from the Cygwin 
+  installation into the directory where you want to have Oinkmaster.
+
+  Assuming that you want to install Oinkmaster in c:\oink, here is what
+  that directory structure could look like:
+
+  c:\oink\
+  c:\oink\bin\
+  c:\oink\bin\tar.exe
+  c:\oink\bin\gzip.exe
+  c:\oink\bin\wget.exe
+  c:\oink\bin\rm.exe
+  c:\oink\file\
+  c:\oink\file\spec\
+  c:\oink\file\spec\unix.pm
+  c:\oink\file\basename.pm
+  c:\oink\file\copy.pm
+  c:\oink\file\spec.pm
+  c:\oink\warnings\
+  c:\oink\warnings\register.pm
+  c:\oink\getopt\
+  c:\oink\getopt\std.pm
+  c:\oink\exporter\
+  c:\oink\exporter\heavy.pm
+  c:\oink\cygwin1.dll
+  c:\oink\perl.exe
+  c:\oink\libperl5_6_1.dll   (your version may be different)
+  c:\oink\strict.pm
+  c:\oink\cwd.pm
+  c:\oink\carp.pm
+  c:\oink\exporter.pm
+  c:\oink\base.pm
+  c:\oink\warnings.pm
+  c:\oink\vars.pm
+  c:\oink\oinkmaster.pl
+  c:\oink\oinkmaster.conf
+  c:\oink\rules\
+
+  All these files exist somewhere in your Cygwin installation, so just search
+  for them and then copy them into the Oinkmaster directory.
+
+- Make sure the 'path' option in oinkmaster.conf includes the directories
+  containing the required binarie. You can specify the path as
+  either msdos style or Cygwin style, e.g.:
+
+  path = c:\oink;c:\oink\bin
+
+  or the same but as Cygwin style:
+
+  path = /cygdrive/c/oink:/cygdrive/c/oink/bin
+
+- Done!
+
+Now you should be able to run Oinkmaster. (You probably want to start a 
+cmd.exe shell first so you see what's going on.) You run it by first 
+changing to the Oinkmaster directory and then calling perl.exe with 
+oinkmaster.pl and its options as argument, for example:
+
+cd \oink
+perl oinkmaster.pl -C oinkmaster.conf -o rules
+
+
+
+A few useful notes regarding Oinkmaster and Win32
+-------------------------------------------------
+
+o It's best to start Oinkmaster by calling the Perl interpreter
+  with oinkmaster.pl and it's options as argument. 
+  Depending on your setup, it may also work by simply calling oinkmaster.pl
+  directly though.
+
+o You must always specify the -C argument and point to your oinkmaster.conf 
+  file since it's looked for in a UNIX directory by default.
+
+o When using Cygwin (standalone or from within a Cygwin shell) you should
+  be able to use both msdos style paths (i.e. c:\foo) or Cygdrive style
+  paths (i.e. /cygdrive/c/foo) for everything, but remember that backslashes
+  needs to be quoted ("c:\foo") or escaped (c:\\foo) when starting from a 
+  Cygwin shell.
+
+o You will probably need an editor that can handle UNIX style
+  newlines (i.e. \n and not \r\n) to edit the Oinkmaster-related files.
+
+o You may want to consider downloading EagleX from Engage Security
+  (http://www.engagesecurity.com/products/eaglex/)
+  which among many other things contains Oinkmaster (ready to run as a 
+  standalone Cygwin program) and a graphical interface to it. 
+
+o Oinkmaster is not as well tested on Windows as on UNIX, 
+  so please report any issues you may find.
