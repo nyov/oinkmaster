@@ -3,7 +3,6 @@
 # $Id$ #
 
 use strict;
-use Cwd;
 use File::Basename;
 use File::Copy;
 use File::Spec;
@@ -636,8 +635,7 @@ sub unpack_rules_archive($)
 {
     my $archive  = shift;
 
-    my $old_dir = getcwd or clean_exit("could not get current directory: $!");
-    $old_dir = untaint_path($old_dir);
+    my $old_dir = untaint_path(File::Spec->rel2abs(File::Spec->curdir()));
 
     my $dir = dirname($archive);
     chdir("$dir") or clean_exit("could not change directory to \"$dir\": $!");
@@ -936,10 +934,6 @@ sub make_backup($ $)
 
     my $backup_tmp_dir = "$tmpdir/rules-backup-$date";
 
-  # Get current directory and untaint it.
-    my $old_dir = getcwd or clean_exit("could not get current directory: $!");
-    $old_dir = untaint_path($old_dir);
-
     print STDERR "Creating backup of old rules..."
       unless ($quiet);
 
@@ -965,6 +959,8 @@ sub make_backup($ $)
         copy("$config{varfile}", "$backup_tmp_dir/variable-file.conf")
           or warn("WARNING: error copying $config{varfile} to $backup_tmp_dir: $!")
     }
+
+    my $old_dir = untaint_path(File::Spec->rel2abs(File::Spec->curdir()));
 
   # Change directory to $tmpdir (so we'll be right below the directory where
   # we have our rules to be backed up).
