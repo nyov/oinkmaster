@@ -610,7 +610,7 @@ sub setup_rules_hash($)
           if (!-s "$file" && $verbose);
 
         open(NEWFILE, "<$file") or clean_exit("could not open $file for reading: $!");
-	my @infile = <NEWFILE>;
+        my @newfile = <NEWFILE>;
         close(NEWFILE);
 
       # From now on we don't care about the path, so remove it.
@@ -618,7 +618,7 @@ sub setup_rules_hash($)
 
         my ($single, $multi, $nonrule);
 
-	RULELOOP:while (get_next_entry(\@infile, \$single, \$multi, \$nonrule)) {
+	while (get_next_entry(\@newfile, \$single, \$multi, \$nonrule)) {
 	    if (defined($single)) {
 	        $single =~ /$SNORT_RULE_REGEXP/;
 	        my $sid = $2;
@@ -633,39 +633,24 @@ sub setup_rules_hash($)
 
 	# Also read in old file if it exists.
         if (-f "$config{output_dir}/$file") {
+
             open(OLDFILE, "<$config{output_dir}/$file")
               or clean_exit("could not open $config{output_dir}/$file for reading: $!");
+	    my @oldfile = <OLDFILE>;
+            close(OLDFILE);
 
-	    while (my $oldline = <OLDFILE>) {
-	        $oldline =~ s/\s*\n$/\n/;          # remove trailing whitespaces (for rules and non-rules)
-
-	        if ($oldline =~ /^\s*(?:alert|log|pass) .*\\\n$/) {
-	            my $multiline = $oldline;
-
-  	  	    while ($multiline =~ /\\\n$/) {
-                        $multiline =~ s/\\\n//;
-		        $multiline .= <OLDFILE>;       # XXX || last?
-		    }
-
-		    $oldline = $multiline;
-                }
-
-
-                if ($oldline =~ /$SNORT_RULE_REGEXP/) {  # add rule line to hash
+	    while (get_next_entry(\@oldfile, \$single, \$multi, \$nonrule)) {
+	        if (defined($single)) {
+	            $single =~ /$SNORT_RULE_REGEXP/;
 		    my $sid = $2;
-		    $oldline =~ s/^\s*//;                # remove leading whitespaces
-		    $oldline =~ s/^#+\s*/#/;             # remove whitespaces next to the leading #
-
 		    warn("WARNING: duplicate SID in your local rules in file ".
                          "$file: SID $sid\n")
 	  	      if (exists($rh{old}{rules}{"$file"}{"$sid"}));
-	  	    $rh{old}{rules}{"$file"}{"$sid"} = $oldline;
+	  	    $rh{old}{rules}{"$file"}{"$sid"} = $single;
                 } else {                     # add non-rule line to hash
-	            push(@{$rh{old}{other}{"$file"}}, $oldline);
+	            push(@{$rh{old}{other}{"$file"}}, $nonrule);
                 }
             }
-
-            close(OLDFILE);
         } else {                             # downloaded file did not exist in old rules dir
 	    $rh{added_files}{"$file"}++;
         }
@@ -1103,7 +1088,7 @@ sub get_next_entry($ $ $ $)
 
       # Keep on reading as long as line ends with "\".
         while ($line =~ /\\\s*\n$/) {
-            $$single_ref =~ s/\s*\\\s*\n//;    # remove "\" for single-line version
+            $$single_ref =~ s/\\\s*\n//;    # remove "\" for single-line version
 
           # If there are no more lines, this can not be a valid multi-line rule.
             if (!($line = shift(@$arr_ref)) || $line =~ /^\s*#/) {
