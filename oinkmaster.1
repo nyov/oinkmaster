@@ -134,13 +134,26 @@ Possible warning messages are printed as well.
 Download the rules archive from
 .I url
 instead of the location specified in the configuration file.
-It must start with file://, ftp://, http://, https:// or scp:// and
-end with ".tar.gz". The archive must contain a directory called "rules".
-holding all the rules files. 
-For the official Snort rules, the URL you should 
-use depends on the version of Snort you run. Visit the rules download 
-section at the Snort web site to find the right URL. It may need to be 
-updated when upgrading to a new major version of Snort.
+It must start with file://, ftp://, http://, https:// or scp:// and end 
+with ".tar.gz". The archive must contain a directory called "rules",
+holding all the rules files. For the official Snort rules, the URL you 
+should use depends on the version of Snort you run. Visit the rules 
+download section at the Snort web site to find the right URL. It may need 
+to be updated when upgrading to a new major version of Snort.
+
+You may specify multiple
+.B -u
+.I url
+to grab multiple rules archives 
+from different locations. All rules files in the archives will be put in 
+the same output directory so if the same filename exists in multiple 
+archives, Oinkmaster will print an error message and exit. That's why it's 
+usually recommended to instead run Oinkmaster once for each URL and use 
+separate output directories. If
+.B -u
+.I url
+is specified, it overrides 
+any URLs specified in the configuration file(s).
 .IP "\fB-U \fIfile\fP
 Variables that exist in downloaded snort.conf but not in
 .I file
