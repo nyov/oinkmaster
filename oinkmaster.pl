@@ -427,9 +427,13 @@ sub read_config($ $)
     LINE:while ($_ = shift(@conf)) {
         $linenum++;
 
-      # Leading whitespaces and comment-only lines are removed.
-	s/^\s*//;
-        s/^#.*//;
+      # Remove leading whitespaces and comment-only lines unless
+      # we're in the middle of reading a multi-line rule.
+        unless ($multi) {
+            s/^\s*//;
+            s/^#.*//;
+        }
+
         next unless /\S/;
 
       # Multi-line start/continuation?
