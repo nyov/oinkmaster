@@ -21,6 +21,8 @@ o A fully featured graphical multi-platform front-end to Oinkmaster
   written in Perl/Tk is included in the contrib directory (oinkgui.pl). 
   See README.gui for more information. Screenshots are available on
   Oinkmaster's homepage.
+o threshold.conf is ignored (with a "skipfile threshold.conf") in the 
+  default oinkmaster.conf.
 o Slightly improved multi-line rule parsing.
 o A bunch of other minor improvements.
 o Major documentation updates.
