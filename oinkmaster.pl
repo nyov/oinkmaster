@@ -34,7 +34,7 @@ my $check_removed     = 0;
 my $preserve_comments = 1;
 
 # Regexp to match a snort rule line.
-# The msg string will go into $1, and the sid will go into $2.
+# The msg string will go into $1 and the sid will go into $2.
 my $snort_rule_regexp = '^\s*#*\s*(?:alert|log|pass) .+msg\s*:\s*"(.+?)"\s*;.+sid\s*:\s*(\d+)\s*;';
 
 use vars qw
@@ -62,10 +62,18 @@ select(STDOUT); $| = 1;
 
 $start_date = scalar(localtime);
 
+# Parse command line arguments. Will exit if something is wrong.
 parse_cmdline;
+
+# Why would anyone want to run as root?
 die("Don't run as root!\nExiting") if (!$>);
+
+# Read in $config_file. Will exit if something is wrong.
 read_config;
-sanity_check;  # will also set a new PATH
+
+# Do some basic sanity checking and exit if something fails.
+# A new PATH will be set.
+sanity_check;
 
 # Create empty temporary directory.
 mkdir("$tmpdir", 0700)
@@ -484,7 +492,8 @@ sub download_rules
 
 
 
-# Make a few checks on $outfile (the downloaded rules archive) and then unpack it.
+# Make a few checks on $outfile (the downloaded rules archive)
+# and then uncompress/untar it if everything looked ok.
 sub unpack_rules_archive
 {
     my ($old_dir, $ok_chars, $tmpoutfile);
@@ -511,12 +520,6 @@ sub unpack_rules_archive
   # Suffix has now changed from .tar.gz to .tar.
     $tmpoutfile =~ s/\.gz$//;
 
-  # Run integrity check on the tar file by doing a "tar tf"
-  # on it and checking the return value.
-    clean_exit("Integrity check on tar file failed (file transfer failed or ".
-               "file in URL not a compressed tar file?)")
-      if (system("tar tf \"$tmpoutfile\" >/dev/null"));
-
   # Look for uncool stuff in the archive.
     if (open(TAR,"-|")) {
         @_ = <TAR>;                       # read output of the "tar vtf" command into @_
@@ -538,7 +541,7 @@ sub unpack_rules_archive
           if (/->/ || /=>/ || /==/);
     }
 
-  # Looks good. Now we can finally untar it.
+  # Looks good. Now we can finally untar it for real.
     print STDERR "Archive successfully downloaded, unpacking... "
       unless ($quiet);
     clean_exit("Failed to untar $tmpoutfile.")
@@ -546,7 +549,6 @@ sub unpack_rules_archive
     clean_exit("No \"rules/\" directory found in tar file.")
       unless (-d "rules");
 
-  # Change back to old dir.
     chdir("$old_dir") or clean_exit("Could not change directory back to $tmpdir: $!");
 
     print STDERR "done.\n" unless ($quiet);

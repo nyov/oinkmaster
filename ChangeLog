@@ -5,6 +5,7 @@ o "-p" is now not just obsolete, but invalid.
 o Support file://... in URL. File will be copied from the
   local filesystem. Suggested by aidan.carty@entropy.ie.
 o sid-msg.map will now be updated by default.
+o A few minor cleanups.
 
 
 
