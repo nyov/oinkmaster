@@ -16,10 +16,9 @@ Q6:  Can Oinkmaster restart Snort after an update?
 Q7:  Can I tell Oinkmaster to not touch certain SIDs in sid-msg.map so 
      the entries I add for my local rules don't get deleted?
 Q8:  I want to copy the rules archive from a remote host to the sensor 
-     via scp (i.e. run "oinkmaster -u scp://user@foohost:/foo/rules.tar.gz 
-     ..." on the sensor to pull the rules from foohost) without having to 
-     supply a password or passphrase, but I also don't want to give the 
-     sensors full access to that host. Can this be done?
+     via scp without having to supply a password or passphrase, but I also 
+     don't want to give the sensors full access to that host. Can this be 
+     done?
 Q9:  How do I setup proxy configuration?
 Q10: Can Oinkmaster be used to update rules from www.whitehats.com?
 Q11: Will Oinkmaster fail when new keywords are introduced in the rules?
@@ -163,10 +162,9 @@ A7:  No. What you may want to consider instead is to use a separate
 
 
 Q8:  I want to copy the rules archive from a remote host to the sensor 
-     via scp (i.e. run "oinkmaster -u scp://user@foohost:/foo/rules.tar.gz 
-     ..." on the sensor to pull the rules from foohost) without having to 
-     supply a password or passphrase, but I also don't want to give the 
-     sensors full access to foohost. Can this be done?
+     via scp without having to supply a password or passphrase, but I also 
+     don't want to give the sensors full access to that host. Can this be 
+     done?
 
 A8:  Yes. You should really rely on the OpenSSH documentation on how to 
      do this as it is well documented there, but an attempt at 
@@ -370,15 +368,14 @@ A16: No! Permanent modifications in files that are updated by Oinkmaster
      rules updating tools, but it is the expected behavior as Oinkmaster 
      was designed to work this way. 
 
-     Rules that need to be heavily customized are better kept in 
-     separate files that are not automatically updated (don't forget to 
-     disable the original rule though). For rules that you need to tweak 
-     by modifying them slightly, you can use the "modifysid" statement. 
-     Let's say you need to reverse $HOME_NET and $EXTERNAL_NET in a rule. 
-     You can use "modifysid" for this and still auto-update the rules 
-     file, as the modification will be applied after each download. This 
-     means that if the default version of this rule is later improved 
-     somehow in the new rules archive, you would automatically get the 
-     updated version while your customization, i.e. HOME_NET/EXTERNAL_NET 
-     switch in this case, would still apply (assuming your substitution 
+     Rules that need to be heavily customized are better kept in separate 
+     files that are not automatically updated (don't forget to disable the 
+     original rule though). For rules that you need to tweak by modifying 
+     them slightly, you can use the "modifysid" statement. Let's say you 
+     need to reverse $HOME_NET and $EXTERNAL_NET in a rule. You can use 
+     "modifysid" for this and still auto-update the rules file, as the 
+     modification will be applied after each download. This means that if 
+     the default version of this rule is later improved somehow in the new 
+     rules archive, you would automatically get the updated version while 
+     your customization would still apply (assuming your substitution 
      expression still matches the new version of the rule, of course).
