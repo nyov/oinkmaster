@@ -77,11 +77,6 @@ my @oinkmaster_conf = qw(
     /usr/local/etc/oinkmaster.conf
 );
 
-# Graphical editors to look for.
-my @editors = qw(
-    kwrite kate kedit gedit xemacs xedit wordpad
-);
-
 # List of URLs that will show up in the URL BrowseEntry.
 my @urls = qw(
     http://www.snort.org/dl/rules/snortrules-snapshot-2_0.tar.gz
@@ -117,6 +112,7 @@ my %config = (
     url              => "",
     varfile          => "",
     backupdir        => "",
+    editor           => "",
 );
 
 my %help = (
@@ -133,6 +129,7 @@ my %help = (
                      'this file will be added to it. Leave empty to skip.',
     backupdir     => 'Directory to put tarball of old rules before overwriting them. '.
                      'Leave empty to skip backup.',
+    editor        => 'The editor to execute when pressing the "edit" button',
 
   # Checkbuttons.
     careful       => 'In careful mode, Oinkmaster will just check for changes, '.
@@ -158,7 +155,6 @@ my %help = (
 
 my $gui_config_file = "";
 my $perl            = "";
-my $editor          = "";
 my $use_fileop      = 0;
 
 
@@ -192,17 +188,6 @@ foreach my $file (@oinkmaster_conf) {
     if (-e "$file") {
         $config{oinkmaster_conf} = $file;
         last;
-    }
-}
-
-# Find out which editor to use.
-EDITOR:foreach my $ed (@editors) {
-    foreach my $dir (File::Spec->path()) {
-        my $file = "$dir/$ed";
-        if ((-f "$file" && -x "$file") || (-f "$file.exe" && -x "$file.exe")) {
-            $editor= $file;
-            last EDITOR;
-        }
     }
 }
 
@@ -342,6 +327,20 @@ my $backupdir_frame =
                          \$config{backupdir}, 'NOEDIT', undef);
 
 $balloon->attach($backupdir_frame, -statusmsg => $help{backupdir});
+
+
+# Create frame with editor location.
+$filetypes = [
+  ['executable files', ['.exe']],
+  ['All files',    '*'                           ]
+];
+
+my $editor_frame =
+  create_fileSelectFrame($opt_tab, "Editor", 'EXECFILE',
+                         \$config{editor}, 'NOEDIT', $filetypes);
+
+$balloon->attach($editor_frame, -statusmsg => $help{editor});
+
 
 
 $notebook->pack(
@@ -786,16 +785,15 @@ sub create_fileSelectFrame($ $ $ $ $ $)
                                      return;
                                  }
 
-                                 if ($editor) {
+                                 if ($config{editor}) {
                                      $main->Busy(-recurse => 1);
-                                     logmsg("Launching $editor. ".
-                                            "Close it to continue the GUI.\n\n", 'MISC');
+                                     logmsg("Launching " . $config{editor} .
+                                            " Close it to continue the GUI.\n\n", 'MISC');
                                      sleep(2);
-                                     system($editor, $$var_ref); # MainLoop will be put on hold...
+                                     system($config{editor}, $$var_ref); # MainLoop will be put on hold...
                                      $main->Unbusy;
                                  } else {
-                                     logmsg("No suitable editor found (looked for @editors ".
-                                            "in path)\n\n", 'ERROR');
+                                     logmsg("No editor set\n\n", 'ERROR');
                                  }
                              }
         )->pack(
