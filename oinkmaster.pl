@@ -1718,7 +1718,7 @@ sub catch_sigint()
 # of just exit(0).
 sub clean_exit($)
 {
-    if (defined($tmpdir)) {
+    if (defined($tmpdir) && $tmpdir =~ /\S/) {
         chdir(File::Spec->rootdir());
         rmtree("$tmpdir", 0, 1);
         undef($tmpdir);
