@@ -1,10 +1,13 @@
-v0.7 - 20021205
+v0.7 - 2003xxxx
 ~~~~~~~~~~~~~~~
 o oinkmaster.conf will now be searched for in /usr/local/etc/ by
   default (instead of in the current directory).
   You will have to put it there or use the -C argument.
 o Don't print warning when using "-e" in quiet mode.
 o "-p" ("preserve comments") is now not just obsolete, but invalid.
+o New argument, "-Q" to run in über-quiet mode.
+  Same as quiet mode except that it doesn't print the "None." stuff
+  when printing results.
 o Support file://<filename> syntax in URL specification.
   Rules archive will be copied directly from the local filesystem
   (which must have been put there ahead of time).
