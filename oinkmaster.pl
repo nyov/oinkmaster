@@ -1845,7 +1845,9 @@ sub untaint_path($)
 
     (($path) = $path =~ /^([$OK_PATH_CHARS]+)$/)
       or clean_exit("illegal character in path/filename ".
-                    "\"$orig_path\", allowed are $OK_PATH_CHARS\n");
+                    "\"$orig_path\", allowed are $OK_PATH_CHARS\n".
+                    "Fix this or set use_path_checks=0 in oinkmaster.conf ".
+                    "to disable this check completely if it is too strict.\n");
 
     return ($path);
 }
