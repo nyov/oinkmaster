@@ -593,7 +593,7 @@ sub create_checkbutton($ $ $)
     my $frame   = shift;
     my $name    = shift;
     my $var_ref = shift;
- 
+
     my $button = $frame->Checkbutton(
       -text       => $name,
       -background => $color{button},
@@ -638,7 +638,7 @@ sub create_radiobutton($ $ $)
     my $frame    = shift;
     my $name     = shift;
     my $mode_ref = shift;
- 
+
     my $button = $frame->Radiobutton(
       -text       => "$name",
       -background => "$color{button}",
@@ -794,7 +794,9 @@ sub show_version()
 
     my $cmd = "$perl $config{oinkmaster} -V";
     logmsg("$cmd:\n", 'EXEC');
+    $main->Busy(-recurse => 1);
     my $output = `$cmd 2>&1` || "Could not execute $config{oinkmaster}: $!\n";
+    $main->Unbusy;
     logmsg("$output", 'OUTPUT');
     logmsg("$version\n\n", 'OUTPUT');
 }
@@ -818,7 +820,9 @@ sub show_help()
 
     my $cmd = "$perl $config{oinkmaster} -h";
     logmsg("$cmd:\n", 'EXEC');
+    $main->Busy(-recurse => 1);
     my $output = `$cmd 2>&1` || "Could not execute $config{oinkmaster}: $!\n";
+    $main->Unbusy;
     logmsg("$output\n", 'OUTPUT');
 }
 
@@ -967,13 +971,13 @@ sub create_cmdline($)
         return (0);
     }
 
-    unless ($oinkmaster_conf) {
+    unless ($oinkmaster_conf && -e $oinkmaster_conf) {
         logmsg("Location to configuration file is not set correctly!\n\n", 'ERROR');
         return (0);
     }
 
-    unless ($outdir) {
-        logmsg("Output directory is not set!\n\n", 'ERROR');
+    unless ($outdir && -d "$outdir") {
+        logmsg("Output directory is not set correctly!\n\n", 'ERROR');
         return (0);
     }
 
