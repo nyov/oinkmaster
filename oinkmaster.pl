@@ -66,6 +66,7 @@ my %config = (
     update_vars        => 0,
     use_external_bins  => 1,
     verbose            => 0,
+    use_path_checks    => 1,
     rule_actions       => "alert|drop|log|pass|reject|sdrop|activate|dynamic",
     tmp_basedir        => $ENV{TMP} || $ENV{TMPDIR} || $ENV{TEMPDIR} || '/tmp',
 );
@@ -440,42 +441,44 @@ sub read_config($ $)
 		}
 	    }
 
-	} elsif (/^url\s*=\s*(.*)/i) {          # URL to use
+	} elsif (/^url\s*=\s*(.*)/i) {
 	    $$cfg_ref{url} = $1
-              unless ($$cfg_ref{cmdline_url});  # command line wins
+              unless ($$cfg_ref{cmdline_url});
 
-	} elsif (/^path\s*=\s*(.+)/i) {         # $PATH to be used
+	} elsif (/^path\s*=\s*(.+)/i) {
 	    $$cfg_ref{path} = $1;
 
-	} elsif (/^update_files\s*=\s*(.+)/i) { # regexp of files to be updated
+	} elsif (/^update_files\s*=\s*(.+)/i) {
 	    $$cfg_ref{update_files} = $1;
 
-	} elsif (/^rule_actions\s*=\s*(.+)/i) { # regexp of rule action keywords
+	} elsif (/^rule_actions\s*=\s*(.+)/i) {
 	    $$cfg_ref{rule_actions} = $1;
 
-        } elsif (/^umask\s*=\s*([0-7]{4})$/i) { # umask
+        } elsif (/^umask\s*=\s*([0-7]{4})$/i) {
 	    $$cfg_ref{umask} = oct($1);
 
-        } elsif (/^min_files\s*=\s*(\d+)/i) {   # min_files
+        } elsif (/^min_files\s*=\s*(\d+)/i) {
             $$cfg_ref{min_files} = $1;
 
-        } elsif (/^min_rules\s*=\s*(\d+)/i) {   # min_rules
+        } elsif (/^min_rules\s*=\s*(\d+)/i) {
             $$cfg_ref{min_rules} = $1;
 
-        } elsif (/^tmpdir\s*=\s*(.+)/i) {       # tmpdir
+        } elsif (/^tmpdir\s*=\s*(.+)/i) {
             $$cfg_ref{tmp_basedir} = $1;
 
         } elsif (/^use_external_bins\s*=\s*([01])/i) {
             $$cfg_ref{use_external_bins} = $1;
 
-        } elsif (/^scp_key\s*=\s*(.+)/i) {      # scp_key
+        } elsif (/^scp_key\s*=\s*(.+)/i) {
             $$cfg_ref{scp_key} = $1;
 
-        } elsif (/^include\s+(\S+.*)/i) {       # include <file>
+        } elsif (/^use_path_checks\s*=\s*([01])/i) {
+            $$cfg_ref{use_path_checks} = $1;
+
+        } elsif (/^include\s+(\S+.*)/i) {
              my $include = $1;
              read_config($include, $cfg_ref);
-
-        } else {                                # invalid line
+        } else {
             warn("WARNING: line $linenum in $config_file is invalid, ignoring\n");
         }
     }
@@ -817,7 +820,7 @@ sub unpack_rules_archive($ $)
       # We don't want to have any weird characters anywhere in the filename.
         clean_exit("illegal character in filename in tar archive. Allowed are ".
                    "$OK_PATH_CHARS\nOffending file/line:\n$filename")
-          if ($filename =~ /[^$OK_PATH_CHARS]/);
+          if ($config{use_path_checks} && $filename =~ /[^$OK_PATH_CHARS]/);
 
       # We don't want to unpack any "../../" junk (check is useless now though).
         clean_exit("filename in tar archive contains \"..\".\n".
@@ -1835,6 +1838,8 @@ sub untaint_path($)
 {
     my $path      = shift;
     my $orig_path = $path;
+
+    return $path unless ($config{use_path_checks});
 
     (($path) = $path =~ /^([$OK_PATH_CHARS]+)$/)
       or clean_exit("illegal character in path/filename ".
