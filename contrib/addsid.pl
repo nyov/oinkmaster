@@ -25,7 +25,9 @@ my $MULTILINE_RULE_REGEXP = '^\s*(?:alert|log|pass)\s.*\\\\\s*\n$'; # ';
 my $CLASSTYPE = "misc-attack";
 
 # If ADD_REV is set to 1, "rev: 1;" will be added to rule if it has no rev.
+# Set to 0 if you don't want to add it.
 my $ADD_REV = 1;
+
 
 # Minimum SID to add. Normally, the next available SID will be used,
 # unless it's below this value. Only SIDs >= 1000000 are reserved for

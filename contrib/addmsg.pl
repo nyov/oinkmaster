@@ -6,12 +6,20 @@ use strict;
 
 sub get_next_entry($ $ $ $);
 
-my $USAGE = "Usage: $0 <oinkmaster config file> <rules directory>\n\n".
-            "The new config file will be printed to standard output, so you\n".
-            "probably want to redirect the output to a file (NOT the same\n".
-            "file you used as input!), for example:\n".
-            "$0 oinkmaster.conf rules/ > oinkmaster.conf.new\n".
-            "If oinkmaster.conf.new looks ok, simply rename it to oinkmaster.conf.\n\n";
+
+my $USAGE = << "RTFM";
+Usage: $0 <oinkmaster config file> <rules directory>
+
+The new config file will be printed to standard output, so you
+probably want to redirect the output to a file (NOT the same
+file you used as input!), for example:
+
+$0 oinkmaster.conf rules/ > oinkmaster.conf.new
+
+If oinkmaster.conf.new looks ok, simply rename it to oinkmaster.conf.
+
+RTFM
+
 
 # Regexp to match a snort rule line.
 my $SINGLELINE_RULE_REGEXP = '^\s*#*\s*(?:alert|log|pass)\s.+msg\s*:\s*"(.+?)'.
