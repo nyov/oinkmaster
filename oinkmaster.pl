@@ -90,6 +90,9 @@ read_config($config_file, \%config);
 # A new PATH will be set.
 sanity_check();
 
+# Set new umask if one was specified in the config file.
+umask($config{umask}) if exists($config{umask});
+
 # Download the rules archive.
 # This will leave us with the file $TMPDIR/$outfile
 # (/tmp/oinkmaster.$$/snortrules.tar.gz). Will exit if download fails.
@@ -295,6 +298,8 @@ sub read_config($ $)
 	    $$cfg_ref{path} = $1;
 	} elsif (/^update_files\s*=\s*(.*)/i) {          # regexp of files to be updated
 	    $$cfg_ref{update_files} = $1;
+        } elsif (/^umask\s*=\s*([0-7]{3,4})$/) {         # umask
+	  $$cfg_ref{umask} = oct($1);
         } else {                                         # invalid line
             warn("WARNING: line $linenum in $config_file is invalid, ignoring\n");
         }
