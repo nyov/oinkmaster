@@ -6,6 +6,10 @@ o Support template-based modifysid expressions so you can define a
   template once and then use that one instead of repeating complex 
   modifysid expressions. Documentation for this is found in 
   README.templates and usage examples is found in template-examples.conf.
+o New option -s for summarized output (aka bmc mode) to leave out the
+  details when printing results for added/removed/modified rules.
+  Only the sid and msg string of the rules are printed, plus the
+  filename. Non-rule changes are printed as usual.
 o New option -m to minimize/simplify the resulting output for modified
   rules. This means that identical leading and trailing parts of the
   new and old rule are removed so the actual change is much easier to

@@ -100,6 +100,31 @@ printed).
 Check for rules files that exist in the output directory
 but not in the downloaded rules archive, i.e. files that may have been 
 removed from the distribution archive.
+.IP "\fB-s
+Leave out details when printing results (aka bmc mode).
+This means that the entire added / removed / modified rules will not
+be printed, just their SID and msg string, plus the filename.
+Non-rule changes are printed as usual. This output mode could be useful
+for example if you send the output by email to people who don't really
+care about the details of the rules, just the fact that they have been
+updated. Example output when running with
+.B -s
+.PP
+.nf
+       [+++]          Added rules:          [+++]
+
+           1607 - WEB-CGI HyperSeek hsx.cgi access (web-cgi.rules)
+           1775 - MYSQL root login attempt (mysql.rules)
+
+
+       [///]     Modified active rules:     [///]
+
+            302 - EXPLOIT Redhat 7.0 lprd overflow (exploit.rules)
+            304 - EXPLOIT SCO calserver overflow (exploit.rules)
+            305 - EXPLOIT delegate proxy overflow (exploit.rules)
+            306 - EXPLOIT VQServer admin (exploit.rules)
+.fi
+.PP
 .IP "\fB-T
 Test if the configuration file(s) seems to be in order and then exit.
 .IP "\fB-u \fIurl\fP
