@@ -30,7 +30,6 @@ o oinkmaster.conf will be searched for in /etc/ and /usr/local/etc/ by default.
 o Make contrib/create-sidmap.pl and contrib/addsid.pl take an arbtitrary number
   of directories as argument.
 o Added a FAQ.
-o Use ISO 8601 format for date string in backup filename.
 o wget is now always run in verbose mode, although the output is not displayed
   unless you run Oinkmaster in verbose mode as well, or if an error occurs (i.e.
   no more need to re-run in verbose mode just to get decent error messages).
