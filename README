@@ -30,12 +30,6 @@ for managing/distributing your homemade rules. Oinkmaster may be useful
 in conjunction with any program that can use Snort rules, like Snort (doh!)
 or Prelude-NIDS.
 
-You could say that Oinkmaster is a documented way of applying a set of 
-modifications to the new rules (such as disabling, enabling and modifying 
-them) after each download of the updated rules tarball before overwriting 
-your local rules files. This means that all permanent modifications should  
-be done using oinkmaster.conf, not by editing your rules files directly. 
-
 Oinkmaster is based on the (now extremely obsolete) arachNIDS snort rules 
 updater which was pretty much the same thing but for the arachNIDS Snort
 rules exports at http://www.whitehats.com/, which have not been maintained
@@ -75,22 +69,37 @@ to do it all over again. This is where Oinkmaster comes in - it will
 automatically do those boring modifications to the rules that you
 would usually have to do manually after each update.
 
+You could say that Oinkmaster is a documented way of applying a set of 
+modifications to the new rules (such as disabling, enabling and modifying 
+them) after each download of the updated rules tarball before overwriting 
+your local rules files. This means that all permanent modifications must 
+be done by editing oinkmaster.conf, not by editing your rules files directly. 
+
 
 
 How it works
 ~~~~~~~~~~~~
-It fetches the Snort rules archive from the specified URL, unpacks it, 
-looks for a directory called "rules" in it, and comments out/modifies 
-those rules as specified in the Oinkmaster configuration file.
-It then compares all those rules to the ones in your local rules directory 
-and prints possible changes. Your local rules are then overwritten by the 
-new ones.
+It's actually really simple. A step by step list of how a rules update
+with Oinkmaster works:
 
-Unwanted rules are specified in the file oinkmaster.conf. In this file you 
-can also tell Oinkmaster to skip entire files that you don't care about 
-(i.e. don't want to update or check for changes), or that some rules 
-should be modified after each update etc. See oinkmaster.conf for more 
-information. 
+1) It fetches the Snort rules archive from the specified location.
+
+2) It unpacks this archive and looks for a "rules" directory in it.
+   All rules files in here (i.e. files matching the "rules_update" regexp
+   specified in oinkmaster.conf) are read into memory.
+
+3) It processes these rules as you've told it to in oinkmaster.conf.
+   It basically opens each rules file, enables/disables/modifies rules
+   as requested, and writes the result back to the same file again (which are
+   still inside the temporary directory).
+
+4) These new files are now compared to the rules in your output directory 
+   (the one specified with "-o"). Files that are not identical are copied
+   from the temporary directory to the output directory.
+   Detailed result of the comparison is then printed.
+
+Optional features may of course activate additional procedure, but this
+is how the basic update works.
 
 This script should probably be run manually but can also be run as a cron job.
 But of course, be very careful when doing the latter. Think about what you're
