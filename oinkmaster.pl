@@ -500,6 +500,11 @@ sub disable_and_modify_rules($ $ $)
       if ($verbose);
 
     foreach my $file (keys(%$newfiles_ref)) {
+
+      # Make sure it's a regular file.
+        clean_exit("$file is not a regular file.")
+          unless (-f "$file" && ! -l "$file");
+
         open(INFILE, "<$file")
           or clean_exit("could not open $file for reading: $!");
 	@_ = <INFILE>;
