@@ -1856,7 +1856,7 @@ sub approve_changes()
         $answer = "y" unless ($answer =~ /\S/);
     }
 
-    return ($answer =~ /^y/);
+    return ($answer =~ /^y/i);
 }
 
 
