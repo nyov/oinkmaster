@@ -49,6 +49,9 @@ o By popular demand: support marking rules as locally modified to prevent
   documentation about "localsid". Do not use this unless you really have 
   to as it's very easy to end up with lots of sigs that aren't updated 
   anymore.
+o The default URL in oinkmaster.conf is now
+  http://www.snort.org/dl/rules/snortrules-snapshot-2_2.tar.gz as 2.2
+  is the latest stable version of Snort at the time of this release.
 o The FAQ has been updated, especially the sections about local 
   customization of rules.
 
