@@ -1,4 +1,4 @@
-Installation instructions for Oinkmaster v0.2
+Installation instructions for Oinkmaster v0.3
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 o Untar/unpack the distribution file in some temporary directory:
@@ -8,17 +8,25 @@ o Untar/unpack the distribution file in some temporary directory:
 o Move this directory to some suitable location, for example /usr/local/:
   mv oinkmaster-version /usr/local/
 
-o Check out the file rules.ignore.
-  SID 1, SID 2 and SID 3 are disabled by default, just as a demonstration.
-  Remove/comment these numbers, or simply create an empty rules.ignore file.
-  The entire file "local.rules" is also skipped by default.
-  (See README for more information)
+o Check out the file oinkmaster.conf.
+  Here you can put SIDs of the rules you want do disable after each update.
+  You can also skip entire files.
+  As you will see, the entire file "local.rules" is skipped by default.
+  See the README file (or the notes in oinkmaster.conf) for more information.
 
-o You can now grab the rulesets from the default URL by running:
+o Decide in which directory you want to put the new rules. Since you 
+  probably already have Snort up and running, you should use your existing
+  rules directory (consider using a separate directory for the rules from
+  snort.org though, unless you're already doing so).
+
+  If you for example have our Snort rules stored in 
+  /usr/local/snort/snort.org-rules/, you can now update those by running:
+
   cd /usr/local/oinkmaster-version
-  ./oinkmaster.pl -o /somewhere/snort.org-rules/
-  This will place the rulesets in the directory /somewhere/snort.org-rules/.
-  Don't forget to include these rules files from your Snort configuration file.
+  ./oinkmaster.pl -o /usr/local/snort/snort.org-rules/
+
+  Don't forget that these files must be included from your Snort configuration
+  file.
 
 o That's it!
   Now you can start figuring out which rules you want to disable (if any at all).

@@ -1,3 +1,19 @@
+v0.3 - 2002XXXXXXXXXX
+~~~~~~~~~~~~~~~
+o The file rules.ignore has been renamed to oinkmaster.conf.
+  ("rules.ignore" will no longer be searched for.)
+o Slightly improved error checking.
+o Better output format (or at least it has changed).
+o Oinkmaster will now also update other files (and print changes in them) than
+  *.rules and classification.conf. It's now *.rules, *.conf, *.config, *.txt
+  and *.map so we also update the MIB and sid-msg.map files for example.
+  Snort.conf is disabled in oinkmaster.conf by default though, so we don't overwrite
+  our own config.
+o Various minor bug fixes and tweaks.
+o Some documentation updates.
+
+
+
 v0.2 - 20010906
 ~~~~~~~~~~~~~~~
 o Added optional "-a <attempts>" argument (which is passed to wget's "-t" argument)
