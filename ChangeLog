@@ -1,0 +1,16 @@
+v0.2 - 20010906
+~~~~~~~~~~~~~~~
+o Added optional "-a <attempts>" argument (which is passed to wget's "-t" argument)
+  to configure maximum number of download retries before giving up.
+o Warning message will be printed if there is any invalid line in the ignore file.
+o Fixed a few stupid bugs.
+o Default URL is now http://www.snort.org/downloads/snortrules.tar.gz
+  PLEASE be aware of the following description of the rules in the above archive:
+  "This is a CVS snapshot of the snort signatures every 30 minutes.
+  NOTE: These signatures may only work with snort-current"
+
+
+
+v0.1 - 20010726
+~~~~~~~~~~~~~~~
+o Initial release.

@@ -1,0 +1,216 @@
+README for Oinkmaster v0.2
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+
+By?
+~~~
+Andreas Östling, andreaso@it.su.se.
+Feedback is of course appreciated.
+
+
+
+Where?
+~~~~~~
+http://nitzer.dhs.org/oinkmaster/
+
+
+
+What?
+~~~~~
+An oversized Perl script to update your Snort 1.8(+) rules
+and filter out the unwanted rules.
+It will also tell you what had changed since the last update.
+
+It's a variant of my arachNIDS snort rules updater
+(http://nitzer.dhs.org/arachnids_upd/) which is pretty much the same
+thing but for the arachNIDS Snort rules exports at www.whitehats.com.
+
+As of Oinkmaster 0.2 the default URL is now
+http://www.snort.org/downloads/snortrules.tar.gz
+
+PLEASE be aware of the following description of the rules in the above archive:
+"This is a CVS snapshot of the snort signatures every 30 minutes. 
+NOTE: These signatures may only work with snort-current"
+
+In other words, use with care and at your own risk.   
+Check out http://www.snort.org(/downloads.html) for more information
+about the rules.
+
+
+
+Works?
+~~~~~~
+It should work on most UNIX variants that have Perl and wget
+(ftp://ftp.gnu.org/gnu/wget/).
+I've tested it on OpenBSD, Linux and Solaris.
+
+I'm NOT responsible for what it does to your Snort machine.
+Again, use it at your own risk.
+
+
+
+How to install?
+~~~~~~~~~~~~~~~
+Check the INSTALL file.
+
+
+
+How does it work?
+~~~~~~~~~~~~~~~~~ 
+It fetches the new Snort ruleset from
+http://www.snort.org/downloads/snortrules.tar.gz, #comments out the
+unwanted rules and prints what have been added/removed/modified since the last
+update. Unwanted rules are specified in the file rules.ignore. In this file
+you can also tell Oinkmaster to skip entire files that you don't care about.
+If you don't want to #comment out any rules, the file rules.ignore must still
+exist but be empty.
+
+This script should probably be run manually but can also be run as a cron job.
+But of course, be very careful when doing the latter.
+Grabbing the rules as a cron job might sometimes be a good idea (for example
+when using the -c flag", but also restarting Snort automatically directly after
+that is a BAD idea! (no, actually it's a TERRIBLE idea). You should never ever
+do this if you only run one Snort box, and don't do it on all boxes if you
+have several. Automatic updating of Snort rules with automatic Snort restart
+this way is very dangerous and can easily disable/fool your NIDS. It usually
+doesn't take much for these automatic update scripts to fail, so things could
+easily get messed up from one day to another (because of URL changes, different
+layout in the rules archive, typo in a ruleset, etc etc...).
+You can't even be sure that the rules archive hadn't been modified anywhere
+on its way to your host, so you should always manually verify it before using it.
+Of course on a home network and similar not-so-important places,
+automatic updating of the rules followed by an automatic Snort restart
+might be neat.
+
+
+
+Usage information
+~~~~~~~~~~~~~~~~~
+First try ./oinkmaster.pl -h for more usage information and available options. 
+
+As a first test, you can create an empty rules directory, for example
+"/tmp/rules". Also create an empty "rules.ignore" file, for example
+"/tmp/rules.ignore". Then try:
+oinkmaster.pl -o /tmp/rules -i /tmp/rules.ignore
+Since your "rules/" directory is empty, all rules files in the new archive
+will be regarded as added, and copied to that directory.
+Then try "oinkmaster.pl -o /tmp/rules -i /tmp/rules.ignore" one more time.
+This time the files in the rules archive will be compared to the ones in
+your rules/ directory, and Oinkmaster will tell you if something has been
+updated.
+
+By default, all rules will be uncommented (yes, even those ones that are
+commented by default in the rules archive distribution, but please note that
+these are disabled on purpose and for a reason, so you probably want to
+consider disabling them again).
+Instead we let the file rules.ignore decide which rules that should be
+disabled. 
+
+You disable rules by adding "sid x" to the file rules.ignore, where x is
+the Snort rule ID (the "sid") of the rule in question. 
+So if you want to disable the rule with sid 123, you just do a "echo sid
+123 >> rules.ignore". When you update the rules the next time, this rule
+will be #commented, and Oinkmaster will notify you about that.
+
+You can also add entire files to be totally ignored by adding "file filename"
+to rules.ignore where "filename" is a file in the archive you don't care
+about at all. These files will not be checked for changes, and they will
+not be added/updated on your system. For example if you don't include the
+file icmp-info.rules in your snort.conf, and don't care about keeping it
+up to date, you can to a "echo file icmp-info.rules >> rules.ignore".
+Although its probably a better idea to track rule changes even for rule
+files you don't use.
+Who knows, you might find something interesting some day.
+
+Currently, the files *.rules och classification.config in the rule
+archive are the ones being checked for updates, and copied to your system
+unless they're already there.
+
+
+
+Usage examples
+~~~~~~~~~~~~~~
+To automagically update the rules every night 02:30 and make backup
+of the old ones in /snort/backup/ if there were any updates, and sending
+difference between the files to syslog, you could use something like this
+in your crontab (consider adding the -c flag...):
+
+30 2 * * * /snort/oinkmaster.pl -o /snort/rules/snort.org-rules/ -i /snort/rules.ignore -b /snort/backup 2>&1 | logger -t oinkmaster
+
+When you check your syslog the next time and see that a new rule has
+been added that you don't want, just add its SID to rules.ignore and it
+will always be #commented out in future updates. 
+(Or if a rule you have disabled has changed and you now decide that you want
+to use it again, just remove its SID from rules.ignore and it will be
+activated again in the next update). If you want the output to be sent to
+you in a mail instead, you could use something like:
+oinkmaster.pl ... | mail -s subject you@somewhere
+
+If you just want to check for changes in the new ruleset but not update
+your existing rules, you can use the -c flag for "checkout" mode. Its
+nice to combine -c with -q  and run as a cron job to silently check for
+updates (perhaps you just want to use this script to check for updates,
+but still want to do the actual rule updating by hand!).
+
+If there were any changes in any ruleset, Oinkmaster will print them to
+the screen. Here are what the different changes mean:
+
+o Added (new):
+  - New rule (the SID did not exist in the old ruleset).
+o Added (enabled):
+  - The rule (with this SID) was commented in the old ruleset, but is
+    now activated.
+o Added (enabled) and modified:
+  -  The rule (with this SID) was commented in the old ruleset, but
+     is now activated. The actual rule had also been modified.
+o Removed (deleted):
+  - The rule (with this SID) does no longer exist in any way.
+o Removed (disabled):
+  - The rule (with this SID) still exists but have now been commented.
+o Removed (disabled) and modified:
+  - The rule (with this SID) still exists but have now been commented.
+    The actual rule had also been modified.
+o Modified active:
+  - The rule (with this SID) have been modified and is an active rule.
+o Modified inactive:
+   -  The rule (with this SID) have been modified but is currently an
+      inactive (commented) rule.
+
+
+
+Example how it may look like when you run Oinkmaster:
+
+Rule changes since last update: 
+
+[---]         Removed (deleted):        [---]
+ -> File: web-cgi.rules:
+    alert tcp $EXTERNAL_NET any -> $HTTP_SERVERS 80 (msg:"WEB-CGI infosearch fname"; flags: A+; uricontent:
+"fname=|7c|";reference:arachnids,290;classtype:attempted-recon; sid:822; rev:1;)
+
+[///]          Modified active:         [///] 
+ -> File: dos.rules:
+    Old: alert tcp $EXTERNAL_NET any -> $HOME_NET 7070 (msg:"DOS Real Server template.html"; flags: A+;
+content:"/viewsource/template.html?"; nocase;reference:bugtraq,1288; classtype:attempted-dos; sid:277; rev:1;)
+    New: alert tcp $EXTERNAL_NET any -> $HOME_NET 7070 (msg:"DOS Real Server template.html"; flags: A+;
+content:"/viewsource/template.html?"; nocase; reference:cve,CVE-2000-0474; reference:bugtraq,1288;
+classtype:attempted-dos; sid:277; rev:2;)
+
+
+
+Hints
+~~~~~
+o It's a good idea to have a separate directory for your snort.org rules
+  on your snort machine. Why? Because if you have a local rule called
+  "coolstuff.rules" in the output directory (-o <dir>), and a file
+  called "coolstuff.rules" one day is added to the snortrules.tar.gz
+  distribution, your local file will be overwritten by that one. It could
+  also be a problem with the "local.rules" file if you use that one for
+  your local rules (in that case you probably don't want it to get
+  overwritten by the empty local.rules from the archive). That's why its
+  ignored by default in rules.ignore.
+
+o Oinkmaster never deletes any rules files from your system.
+  So if foo.rules is included in snortrules.tar.gz one day, it will be added
+  to your system if its not already there. But it is later removed from
+  snortrules.tar.gz, it will still be left on your system.
