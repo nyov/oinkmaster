@@ -27,7 +27,6 @@ INSTALL and README (and README.win32 of you're on Windows) for more
 information. 
 
 The GUI is written in Perl and requires the Perl Tk module.
-You must also make sure the Perl binary (at least 5.6.1) is in your PATH.
 If you're on UNIX and don't have the Tk module already, install the 
 latest version from http://www.cpan.org/authors/id/NI-S/. At the time of 
 writing, http://www.cpan.org/authors/id/NI-S/Tk-800.024.tar.gz is probably 
