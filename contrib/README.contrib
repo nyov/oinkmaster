@@ -1,8 +1,35 @@
 
-makesidex.pl by Jerry Applebaum <JApplebaum@APTEGRITY.com>:
+* makesidex.pl by Jerry Applebaum <JApplebaum@APTEGRITY.com>:
 
   It basicall reads all of your snort rules, strips out the sid's from everything
   you've commented out, and writes them out in a format that can be
-  appended to the oinkmaster.conf. Helpful for new Oinkmaster users.
+  appended to the oinkmaster.conf. Useful to new Oinkmaster users.
+
+  Usage: ./makesidex.pl <rules directory>
 
 
+
+* addmsg.pl by Andreas Östling <andreaso@it.su.se>:
+
+  A script that will parse your oinkmaster.conf for "disablesid" lines and
+  add to them their SID message. 
+  If your oinkmaster.conf looks like this before addmsg.pl has been run:
+
+    disablesid 286
+    disablesid 287
+    disablesid 288
+
+  It will look something like this afterwards:
+
+    disablesid 286             # POP3 EXPLOIT x86 bsd overflow
+    disablesid 287             # POP3 EXPLOIT x86 bsd overflow
+    disablesid 288             # POP3 EXPLOIT x86 linux overflow
+
+  addmsg.pl will not touch disablesid lines that already has a comment in them.
+
+  Usage: ./addmsg.pl <oinkmaster config file> <rules directory>
+
+  New config file will be printed to standard output so you
+  probably want to redirect the output to a file, for example:
+  ./addmsg.pl oinkmaster.conf rules/ > oinkmaster.conf.new
+  If oinkmaster.conf.new looks ok, simply rename it to oinkmaster.conf.

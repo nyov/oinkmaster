@@ -5,14 +5,17 @@ o "-p" is now not just obsolete, but invalid.
 o Support file://... in URL. File will be copied from the
   local filesystem. Suggested by aidan.carty@entropy.ie.
 o sid-msg.map will now be updated by default.
-o A few minor cleanups.
 o Warn instead of exit in case of invalid lines in the config file.
 o Added possibility to modify sids, using the "modifysid" keyword
   in the config file.
 o Added makesidex.pl by Jerry Applebaum <JApplebaum@APTEGRITY.com>
-  to contrib section that may be helpful to new users.
-  It strips out the sid's from everything you've commented out and
-  writes them out in a format that can be appended to the oinkmaster.con
+  to contrib section. It strips out the sid's from everything you've
+  commented out and writes them out in a format that can be appended to
+  the oinkmaster.conf. May be useful to new users.
+o Added addmsg.pl (by myself) to contrib section.
+  It's a script that will parse your oinkmaster.conf for "disablesid" lines
+  and add to them their SID message.
+o A few minor cleanups.
 
 
 
