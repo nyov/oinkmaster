@@ -89,10 +89,10 @@ If you already have several rules commented out (or removed) in your current
 rules, you need to add those SIDs to oinkmaster.conf manually, or they
 will be re-enabled after each update. Some rules may be commented out by
 default in the rules distribution, and as of Oinkmaster 0.6 they will stay
-that way. If you want to enable them you have to use "-e". Note that those
-rules are commented out for a reason (they may not even work!), so be careful.
-Also note that possible local modifications you've done inside the official
-Snort rules files will be lost since the files will be overwritten by the
+that way. If you want to enable them you have to use the "-e" switch. Note that 
+those rules are commented out for a reason (they may not even work!), 
+so be careful. Also note that possible local modifications you've done inside the 
+official Snort rules files will be lost since the files will be overwritten by the
 new versions from the downloaded rules archive after each update.
 
 You disable rules by adding "disablesid x" to the file oinkmaster.conf, where
@@ -254,7 +254,10 @@ o It's a really good idea to have a separate directory for your snort.org rules
   archive while keeping my customized copy intact. If there are added/removed 
   rules files in the archive or added/changed variables in snort.conf, you will
   have to edit your production copy of snort.conf manually and update as needed.
-  Oinkmaster does not do that kind of stuff.
+  Oinkmaster does not do that kind of stuff. Yes, this means that if there is
+  a new variable added to a rules file, your new rules will not even work 
+  until you define that very variable in your snort.conf manually.
+  Auto-updating with auto-restart is bad.
 
 o Oinkmaster also never deletes any rules files from your system.
   So if a file called foo.rules is usually included in the rules distribution
