@@ -300,3 +300,7 @@ o Don't depend too much on this script for the rules updating process.
   It's just intended to be a small help and you should always keep an eye
   on it. Manual reviewing of all your rules and configuration should always be
   done every now and then.
+
+o To avoid problems when running under Win32/Cygwin, you should only use
+  Cygwin-style paths (e.g. "/cygdrive/c/foo" instead of "c:\foo").
+
