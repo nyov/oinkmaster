@@ -44,11 +44,12 @@ separated with space.
 
 The "modifythis" | "withthis" stuff in define_template works just like 
 in a regular modifysid, but it has one more useful feature. The 
-modifysid substitution string can contain the special variable %ARGx% 
-string, where x is a number from 1 and up. Before the substitution on 
-the signature occurs, all the %ARGx% will be replaced with the 
-corresponding arguments to use_template. So %ARG1% will be replaced 
-with the first argument, %ARG2% with the second one, and so on.
+modifysid expression (the substitution string and/or the 
+replacement string) can contain the special string %ARGx%, where x is
+a number from 1 and up. Before the substitution on the signature
+occurs, all the %ARGx% will be replaced with the corresponding
+arguments to use_template. So %ARG1% will be replaced with the first
+argument, %ARG2% with the second one, and so on.
 This is useful when you for example want to add "tag" statements (or 
 thresholding/limiting or whatever) to rules using a modifysid template, 
 but where you want the number of seconds to tag to be different for 
