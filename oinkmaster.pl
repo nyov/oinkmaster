@@ -281,7 +281,7 @@ sub read_config($ $)
         } elsif (/^skipfiles*\s+(.*)/i) {                # skipfile <file[,file, ...]>
 	    my $args = $1;
 	    foreach $_ (split(/\s*,\s*/, $args)) {
-	        if (/^\S.*\S$/) {
+	        if (/^\S+$/) {
                     $verbose && print STDERR "Adding file to ignore list: $_.\n";
                     $$cfg_ref{file_ignore_list}{$_}++;
 		} else {
