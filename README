@@ -28,7 +28,7 @@ files, but it can just as well be used to manage/distribute both official
 and local local rules to multiple sensors with ability to fine-tune the 
 rules on each sensor or group of sensors. 
 
-Oinkmaster is based on the (now extremely obsolete) arachNIDS Snort rules 
+Oinkmaster is based on the now extremely obsolete arachNIDS Snort rules 
 updater which was pretty much the same thing but for the arachNIDS Snort
 rules exports at http://www.whitehats.com/ which have not been maintained
 for a very long time. It may be useful in conjunction with any 
@@ -49,8 +49,8 @@ Requirements
 
 It should work on most UNIX-like systems with a recent version of Perl 5.
 You also need either the binaries tar, gzip and wget, or the Perl modules
-Archive::Tar, IO::Zlib and LWP::UserAgent. (See oinkmaster.conf for more
-information about this.) So far it has been successfully tested on 
+Archive::Tar, IO::Zlib and LWP::UserAgent. See oinkmaster.conf for more
+information about this. So far it has been successfully tested on 
 OpenBSD, FreeBSD, NetBSD, Linux, AIX, Solaris, Mac OS X and Microsoft 
 Windows.
 
@@ -90,27 +90,28 @@ How it works
 ~~~~~~~~~~~~
 
 It's actually really simple. Here follows a step by step list of how a 
-rules update with Oinkmaster works. (Optional features may of course 
-activate additional procedures, but this is how the basic update works.)
+rules update with Oinkmaster works. Optional features may of course 
+activate additional procedures, but this is what the basics look like.
 
 
 1) It fetches the Snort rules archive from the specified location
-   (www.snort.org by default, but it could be anything really).
+   (www.snort.org by default, but it could be anything really)
+   and puts it in a temporary directory.
 
-2) It unpacks this archive and looks for a directory called "rules" in it.
-   All rules files in here (i.e. files matching the "rules_update" regexp
-   specified in oinkmaster.conf) are read into memory.
+2) It unpacks this archive and looks for a directory called "rules" in 
+   it. All rules files in here (i.e. files matching the "rules_update" 
+   regexp specified in oinkmaster.conf) are processed as specified in 
+   oinkmaster.conf. It basically opens each rules file, cleans some 
+   leading/trailing whitespaces from it, enables/disables/modifies rules 
+   as requested, and writes the result back to the same file again (which 
+   is still inside the temporary directory).
 
-3) It processes these rules as you've told it to in oinkmaster.conf.
-   It basically opens each rules file, cleans some leading/trailing 
-   whitespaces from it, enables/disables/modifies rules as requested, and 
-   writes the result back to the same file again (which are still inside 
-   the temporary directory).
-
-4) These new files are now compared to the rules in your output directory 
+3) These new files are now compared to the ones in your output directory 
    (the one specified with "-o"), file by file. All lines are compared, 
-   not just the actual rules. Files that are not identical are copied from 
-   the temporary directory to the output directory.
+   not just the actual rules, although a more complicated comparison is 
+   performed on the rules so that the we can later present a result that 
+   is easier to parse for a human. Files that are not identical are 
+   copied from the temporary directory to the output directory.
    Detailed result of the comparison is then printed.
 
 
