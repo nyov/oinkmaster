@@ -227,7 +227,8 @@ A7:  No. This functionality does not belong in Oinkmaster since almost
      README for more information. If you really want to do an automatic 
      restart, just write a little wrapper that does what you want, and 
      remember to run "snort -T" first and refuse to restart if the test 
-     is not successful.
+     is not successful. Of course, you should only restart Snort if
+     there actually were any changes in the rules.
 
 
 
@@ -710,7 +711,7 @@ A26: When using Barnyard, it's important that the sid-msg.map file is
      which is very important as the SIDs in those may collide with those 
      in a 3rd party rules archive. Just remember to run create-sidmap.pl 
      after each rules update, and also to to restart Barnyard/whatever to 
-     use the new SID map.
+     use the new SID map if there were any changes.
 
      A tiny example just to show the idea how an update wrapper could 
      look like when updating from multiple sources and then generating 
