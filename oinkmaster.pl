@@ -50,10 +50,10 @@ my $preserve_comments = 1;
 # Multiline rules are currently not handled, but at this time,
 # all of the official rules are one rule per line. The msg string
 # will go into $1 and the sid will go into $2 if the regexp matches.
-my $SNORT_RULE_REGEXP = '^\s*#*\s*(?:alert|log|pass)\s.+msg\s*:\s*"(.+?)"\s*;.+sid\s*:\s*(\d+)\s*;.*\)\s*$';
+my $SINGLELINE_RULE_REGEXP = '^\s*#*\s*(?:alert|log|pass)\s.+msg\s*:\s*"(.+?)"\s*;.+sid\s*:\s*(\d+)\s*;.*\)\s*$';
 
 # Regexp to match the start (the first line) of a possible multi-line rule.
-my $SNORT_MULTILINE_REGEXP = '^\s*#*\s*(?:alert|log|pass)\s.*\\\s*\n$';
+my $MULTILINE_RULE_REGEXP = '^\s*#*\s*(?:alert|log|pass)\s.*\\\s*\n$';
 
 
 use vars qw
@@ -534,7 +534,7 @@ sub disable_and_modify_rules($ $ $)
 	    }
 
           # We've got a valid snort rule. Grab msg and sid.
-	    $single =~ /$SNORT_RULE_REGEXP/oi;
+	    $single =~ /$SINGLELINE_RULE_REGEXP/oi;
    	    my ($msg, $sid) = ($1, $2);
 
           # Even if it was a single-line rule, we want to have a copy in $multi now.
@@ -626,7 +626,7 @@ sub setup_rules_hash($)
 
 	while (get_next_entry(\@newfile, \$single, \$multi, \$nonrule)) {
 	    if (defined($single)) {
-	        $single =~ /$SNORT_RULE_REGEXP/oi;
+	        $single =~ /$SINGLELINE_RULE_REGEXP/oi;
 	        my $sid = $2;
 		warn("WARNING: duplicate SID in downloaded rules archive in file ".
                      "$file: SID $sid\n")
@@ -647,7 +647,7 @@ sub setup_rules_hash($)
 
 	    while (get_next_entry(\@oldfile, \$single, \$multi, \$nonrule)) {
 	        if (defined($single)) {
-	            $single =~ /$SNORT_RULE_REGEXP/oi;
+	            $single =~ /$SINGLELINE_RULE_REGEXP/oi;
 		    my $sid = $2;
 		    warn("WARNING: duplicate SID in your local rules in file ".
                          "$file: SID $sid\n")
@@ -1097,7 +1097,7 @@ sub get_next_entry($ $ $ $)
 
     my $line = shift(@$arr_ref) || return(0);
 
-    if ($line =~ /$SNORT_MULTILINE_REGEXP/oi) {    # start multi-line rule?
+    if ($line =~ /$MULTILINE_RULE_REGEXP/oi) {    # start multi-line rule?
         $$single_ref = $line;
         $$multi_ref  = $line;
 
@@ -1134,7 +1134,7 @@ sub get_next_entry($ $ $ $)
 
       # Single-line version should now be a valid rule.
       # If not, it wasn't a valid multi-line rule after all.
-        if ($$single_ref =~ /$SNORT_RULE_REGEXP/oi) {
+        if ($$single_ref =~ /$SINGLELINE_RULE_REGEXP/oi) {
 
             $$single_ref =~ s/^\s*//;             # remove leading whitespaces
 	    $$single_ref =~ s/^#+\s*/#/;          # remove whitespaces next to the leading #
@@ -1164,7 +1164,7 @@ sub get_next_entry($ $ $ $)
             return (1);   # return non-rule
         }
 
-    } elsif ($line =~ /$SNORT_RULE_REGEXP/oi) {  # single-line rule?
+    } elsif ($line =~ /$SINGLELINE_RULE_REGEXP/oi) {  # single-line rule?
         $$single_ref = $line;
         $$single_ref =~ s/^\s*//;                # remove leading whitespaces
 	$$single_ref =~ s/^#+\s*/#/;             # remove whitespaces next to the leading #
