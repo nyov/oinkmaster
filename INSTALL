@@ -12,9 +12,10 @@ o Edit the file oinkmaster.conf. There are some options you may want to
   are disabled/ignored by default.
 
   If you already have several rules commented out (or removed) in your current
-  rules, you need to add those SIDs to oinkmaster.conf manually, or they  
-  will be re-enabled after each update. Some rules may be commented out by 
-  default in the rules distribution, and as of Oinkmaster 0.6 they will stay
+  rules, you need to add the SIDs of those to oinkmaster.conf manually (or check
+  out the contrib directory for a help script) or they will be re-enabled after
+  each update (check out the contrib/ directory). Some rules may be commented out 
+  by default in the rules distribution, and as of Oinkmaster 0.6 they will stay
   that way. If you want to enable them, you have to use "-e". Note that those
   rules are however commented out for a reason (they may not even work!), so be 
   careful. Also note that possible local modifications you've done inside the
