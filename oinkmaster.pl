@@ -576,7 +576,7 @@ sub disable_and_modify_rules($ $ $)
                 print STDERR "Disabling SID $sid: $msg\n"
                   if ($verbose);
 
-               unless ($multi =~ /\s*#/) {
+               unless ($multi =~ /^\s*#/) {
                    $multi = "#$multi";
                    $multi =~ s/\n(.+)/\n#$1/g;
 	       }
