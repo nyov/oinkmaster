@@ -249,7 +249,7 @@ $something_changed = 1
       || keys(%added_files) > 0 || defined($removed_files));
 
 if ($something_changed || !$quiet) {
-    print "\nNote: Oinkmaster is running in careful mode - no files on your system modified or added.\n"
+    print "\nNote: Oinkmaster is running in careful mode - not updating/adding anything.\n"
       if ($careful && $something_changed);
     print "\n[***] Results from Oinkmaster started $start_date [***]\n";
 
@@ -446,7 +446,8 @@ sub sanity_check
     }
 
   # We now know a path was defined in the config, so set it.
-    local $ENV{"PATH"} = $config{path};
+    $ENV{"PATH"} = $config{path};
+    $ENV{'IFS'} = '';
 
   # Make sure all required binaries are found.
     foreach $_ (@req_binaries) {
@@ -562,8 +563,9 @@ sub disable_rules
 	    }
 	    ($msg, $sid) = ($1, $2);
 
-          # Remove leading whitespaces and whitespaces next to the leading #.
+          # Remove leading/trailing whitespaces and whitespaces next to the leading #.
 	    $line =~ s/^\s*//;
+	    $line =~ s/\s*\n$/\n/;
 	    $line =~ s/^#+\s*/#/;
 
           # Some rules may be commented out by default, but we want our oinkmaster.conf to decide
@@ -571,10 +573,10 @@ sub disable_rules
 	    if ($line =~ /^#/) {
 		if ($preserve_comments) {
 		    print STDERR "Preserving disabed rule (sid $sid): $msg\n"
-		        if ($verbose && !exists($sid_disable_list{$sid}));
+		      if ($verbose && !exists($sid_disable_list{$sid}));
 		} else {
 		    print STDERR "Enabling disabled rule (sid $sid): $msg\n"
-		        if ($verbose && !exists($sid_disable_list{$sid}));
+		      if ($verbose && !exists($sid_disable_list{$sid}));
 		    $line =~ s/^#*//;
 		}
 	    }
@@ -623,6 +625,7 @@ sub setup_rule_hashes
                 if (/$snort_rule_regexp/) {
 		    $sid = $2;
 		    s/^\s*//;     # remove leading whitespaces
+		    s/\s*\n$/\n/; # remove trailing whitespaces
 		    s/^#+\s*/#/;  # make sure comment syntax is how we like it
 		    print STDERR "WARNING: duplicate SID in your local rules: SID $sid\n"
 		      if (exists($old_rules{"$file"}{"$sid"}));

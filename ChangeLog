@@ -1,7 +1,8 @@
-v0.5 - 20020503
+v0.5 - 20020504
 ~~~~~~~~~~~~~~~
 o Fixed bug where all filenames would not always be printed.
-o Document that using -p is highly recommended.
+o Fixed whitespace idiocy.
+o Document that using -p is recommended.
 
 
 
