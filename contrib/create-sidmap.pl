@@ -15,45 +15,46 @@ my $SINGLELINE_RULE_REGEXP = '^\s*(?:alert|drop|log|pass|reject|sdrop)\s.+msg\s*
 # Regexp to match the start (the first line) of a possible multi-line rule.
 my $MULTILINE_RULE_REGEXP  = '^\s*(?:alert|drop|log|pass|reject|sdrop)\s.*\\\\\s*\n$'; # ';
 
-
-
-my $USAGE    = "usage: $0 <rulesdir>\n";
-
-my $rulesdir = shift || die("$USAGE");
+my $USAGE = "usage: $0 <rulesdir> [rulesdir2, ...]\n";
 
 my $verbose  = 1;
 
 my %sidmap;
 
+my @rulesdirs = @ARGV;
 
-opendir(RULESDIR, "$rulesdir") or die("could not open $rulesdir: $!\n");
+die($USAGE) unless ($#rulesdirs > -1);
 
-while (my $file = readdir(RULESDIR)) {
-    next unless ($file =~ /\.rules$/);
+foreach my $rulesdir (@rulesdirs) {
+    opendir(RULESDIR, "$rulesdir") or die("could not open $rulesdir: $!\n");
 
-    open(OLDFILE, "$rulesdir/$file") or die("could not open $rulesdir/$file: $!\n");
-    print STDERR "Processing $file\n";
-    my @file = <OLDFILE>;
-    close(OLDFILE);
+    while (my $file = readdir(RULESDIR)) {
+        next unless ($file =~ /\.rules$/);
 
-    my ($single, $multi, $nonrule);
+        open(OLDFILE, "$rulesdir/$file") or die("could not open $rulesdir/$file: $!\n");
+        print STDERR "Processing $file\n";
+        my @file = <OLDFILE>;
+        close(OLDFILE);
 
-    while (get_next_entry(\@file, \$single, \$multi, \$nonrule)) {
-        if (defined($single)) {
+        my ($single, $multi, $nonrule);
 
-          # Grab sid and msg.
-            $single =~ /$SINGLELINE_RULE_REGEXP/oi;
-            my ($msg, $sid) = ($1, $2);
+        while (get_next_entry(\@file, \$single, \$multi, \$nonrule)) {
+            if (defined($single)) {
 
-            $sidmap{$sid} = "$sid || $msg";
+              # Grab sid and msg.
+                $single =~ /$SINGLELINE_RULE_REGEXP/oi;
+                my ($msg, $sid) = ($1, $2);
 
-          # Print all references. Borrowed from Brian Caswell's regen-sidmap script.
-            my $ref = $single;
-            while ($ref =~ s/(.*)reference\s*:\s*([^\;]+)(.*)$/$1 $3/) {
-                $sidmap{$sid} .= " || $2"
+                $sidmap{$sid} = "$sid || $msg";
+
+              # Print all references. Borrowed from Brian Caswell's regen-sidmap script.
+                my $ref = $single;
+                while ($ref =~ s/(.*)reference\s*:\s*([^\;]+)(.*)$/$1 $3/) {
+                    $sidmap{$sid} .= " || $2"
+                }
+
+                $sidmap{$sid} .= "\n";
             }
-
-            $sidmap{$sid} .= "\n";
         }
     }
 }
