@@ -135,7 +135,7 @@ if ($config_test_mode) {
 }
 
 $tmpdir = tempdir("oinkmaster.XXXXXXXXXX", DIR => $tmp_basedir)
-  or clean_exit("could not create temporary directory: $!");
+  or clean_exit("could not create temporary directory in $tmp_basedir: $!");
 
 umask($config{umask}) if exists($config{umask});
 
@@ -1718,7 +1718,7 @@ sub catch_sigint()
 # of just exit(0).
 sub clean_exit($)
 {
-    if (defined($tmpdir) && $tmpdir =~ /\S/) {
+    if (defined($tmpdir) && -d "$tmpdir") {
         chdir(File::Spec->rootdir());
         rmtree("$tmpdir", 0, 1);
         undef($tmpdir);
