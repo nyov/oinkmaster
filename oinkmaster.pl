@@ -36,8 +36,7 @@ my $snort_rule_regexp = '^\s*#*\s*(?:alert|log|pass) .+msg\s*:\s*"(.+?)"\s*;.+si
 
 use vars qw
    (
-      $opt_h $opt_v $opt_o $opt_q $opt_c $opt_b $opt_r $opt_u
-      $opt_C
+      $opt_b $opt_c $opt_C $opt_h $opt_o $opt_q $opt_r $opt_u $opt_v
    );
 
 my (
@@ -61,7 +60,7 @@ select(STDOUT); $| = 1;
 $start_date = scalar(localtime);
 
 parse_cmdline;
-# die("Don't run as root!\nExiting") if (!$>);
+die("Don't run as root!\nExiting") if (!$>);
 read_config;
 sanity_check;
 
@@ -69,22 +68,22 @@ sanity_check;
 local $ENV{"PATH"} = $config{path};
 
 # Create empty temporary directory.
-mkdir("$tmpdir", 0700) or die("Could not create temporary directory $tmpdir: $!\nExiting");
+mkdir("$tmpdir", 0700)
+  or die("Could not create temporary directory $tmpdir: $!\nExiting");
 
 # Pull down the rules archive.
 # Die if wget doesn't exit with status level 0.
 print STDERR "Downloading rules archive from $url...\n" unless ($quiet);
 if ($quiet) {
-    if (system("wget","-q","-nv","-O","$tmpdir/$outfile","$url")) {
-        clean_exit("Unable to download rules.\n".
-                   "Consider running in non-quiet mode if the problem persists.");
-    }
+    clean_exit("Unable to download rules.\n".
+               "Consider running in non-quiet mode if the problem persists.")
+      if (system("wget","-q","-nv","-O","$tmpdir/$outfile","$url"));   # quiet mode
 } elsif ($verbose) {
     clean_exit("Unable to download rules.")
-      if (system("wget","-v","-O","$tmpdir/$outfile","$url"));
+      if (system("wget","-v","-O","$tmpdir/$outfile","$url"));         # verbose mode
 } else {
     clean_exit("Unable to download rules.")
-      if (system("wget","-nv","-O","$tmpdir/$outfile","$url"));
+      if (system("wget","-nv","-O","$tmpdir/$outfile","$url"));        # normal mode
 }
 
 # Verify and unpack archive. This will leave us with a directory
@@ -93,7 +92,8 @@ unpack_rules_archive;
 
 # Add filenames to update from the downloaded archive to the list of new
 # files, unless filename exists in %file_ignore_list.
-opendir(NEWRULES, "$tmpdir/rules") or clean_exit("Could not open directory $tmpdir/rules: $!");
+opendir(NEWRULES, "$tmpdir/rules")
+  or clean_exit("Could not open directory $tmpdir/rules: $!");
 while ($_ = readdir(NEWRULES)) {
     $new_files{$_}++
       if (/$config{update_files}/ && !exists($file_ignore_list{$_}));
@@ -120,11 +120,11 @@ setup_rule_hashes;
 print STDERR "Comparing new files to the old ones... "
   unless ($quiet);
 
-FILELOOP:foreach $file (keys(%new_files)) {                      # for each new file
-    next FILELOOP if (exists($added_files{$file}));              # skip of its an added file
+FILELOOP:foreach $file (keys(%new_files)) {                  # for each new file
+    next FILELOOP if (exists($added_files{$file}));          # skip of its an added file
 
   # Skip diff if file maches skip_diff regexp.
-    if (exists($config{skip_diff})  && $file =~ /$config{skip_diff}/) {
+    if (exists($config{skip_diff}) && $file =~ /$config{skip_diff}/) {
 	$skip_diff_files .= "    -> $file";
 	$skip_diff_files .= " (local copy updated)" unless ($careful);
 	$skip_diff_files .= "\n";
@@ -160,7 +160,7 @@ FILELOOP:foreach $file (keys(%new_files)) {                      # for each new 
 	  	    }
 		}
 
-	    } else {  # sid not found in old file
+	    } else {    # sid not found in old file
 	        $rules_changed  = 1;
  		fix_fileinfo("added_new", $file);
 	        $changes{added_new} .= "   $new_rule";
@@ -196,14 +196,15 @@ FILELOOP:foreach $file (keys(%new_files)) {                      # for each new 
 
 } # foreach new file
 
-# Creaste list of possibly removed files if -r is specified.
+# Create list of possibly removed files if -r is specified.
 if ($check_removed) {
     opendir(OLDRULES, "$output_dir")
       or clean_exit("Could not open directory $output_dir: $!");
 
     while ($_ = readdir(OLDRULES)) {
         $removed_files .= "    -> $_\n"
-          if (/$config{update_files}/ && !exists($file_ignore_list{$_}) && !exists($new_files{$_}));
+          if (/$config{update_files}/ && !exists($file_ignore_list{$_})
+              && !exists($new_files{$_}));
     }
     closedir(OLDRULES);
 }
@@ -327,10 +328,10 @@ sub show_usage
                  "Note that your current files will be overwritten by the new ones\n".
                  "if they had been modified.\n".
                  "\nOptions:\n".
-		 "-C <cfg>   Use this config file instead of the default $config_file\n".
+		 "-C <cfg>   Use this config file instead of the default ($config_file)\n".
 		 "-b <dir>   Backup old rules into <dir> if anything had changed\n".
 		 "-u <url>   Download from this URL (http:// or ftp:// ...tar.gz)\n".
-                 "           Overrides URL= value in oinkmaster.conf\n".
+                 "           instead of the URL specified in $config_file\n".
 		 "-c         Careful mode. Don't update anything, just check for changes\n".
                  "-r         Check for rules files that exist in the output directory\n".
                  "           but not in the downloaded rules archive (i.e. files that may\n".
@@ -350,12 +351,11 @@ sub parse_cmdline
     $backup_dir    = $opt_b if (defined($opt_b));
     $config_file   = $opt_C if (defined($opt_C));
     $url           = $opt_u if (defined($opt_u));
-    $quiet         = 1      if (defined($opt_q));
-    $verbose       = 1      if (defined($opt_v));
     $careful       = 1      if (defined($opt_c));
+    $quiet         = 1      if (defined($opt_q));
     $check_removed = 1      if (defined($opt_r));
+    $verbose       = 1      if (defined($opt_v));
     show_usage              if (defined($opt_h));
-
     show_usage unless ($cmdline_ok);
 
     if (defined($opt_o)) {                # -o <dir>, the only required option.
@@ -363,10 +363,6 @@ sub parse_cmdline
     } else {
         show_usage;
     }
-
-  # Can't use both -q and -v.
-    die("Both quiet mode and verbose mode at the same time doesn't make sense.\nExiting")
-      if ($quiet && $verbose);
 }
 
 
@@ -412,7 +408,11 @@ sub sanity_check
    my @req_config   = qw (path update_files);
    my @req_binaries = qw (which wget gzip tar rm);
 
-  # Make sure all required variables was defined in the config file.
+  # Can't use both -q and -v.
+    die("Both quiet mode and verbose mode at the same time doesn't make sense.\nExiting")
+      if ($quiet && $verbose);
+
+  # Make sure all required variables is defined in the config file.
     foreach $_ (@req_config) {
         die("$_ not defined in $config_file\nExiting")
           unless (exists($config{$_}));
@@ -424,8 +424,8 @@ sub sanity_check
           if (system("which \"$_\" >/dev/null 2>&1"));
     }
 
-  # Make sure $url is defined (either by -u <url> or url=... in the conf.
-    die("Incorrect URL, or URL not specified in neither $config_file nor command line.\nExiting")
+  # Make sure $url is defined (either by -u <url> or url=... in the conf).
+    die("Incorrect URL or URL not specified in neither $config_file nor command line.\nExiting")
       unless (defined($url) && $url =~ /^(?:http|ftp):\/\/\S+.*\.tar\.gz$/);
 
   # Make sure the output directory exists and is writable.
@@ -438,7 +438,7 @@ sub sanity_check
 }
 
 
-# Make a few checks on $outfile (the rules archive) and then unpack it.
+# Make a few checks on $outfile (the downloaded rules archive) and then unpack it.
 sub unpack_rules_archive
 {
     my ($old_dir, $ok_chars, $filename);
@@ -465,15 +465,15 @@ sub unpack_rules_archive
   # Suffix has now changed from .tar.gz to .tar.
     $filename =~ s/\.gz$//;
 
-  # Run integrity check on the tar file (by doing a "tar tf"
-  # on it and checking the return value).
+  # Run integrity check on the tar file by doing a "tar tf"
+  # on it and checking the return value.
     clean_exit("Integrity check on tar file failed (file transfer failed or ".
                "file in URL not a compressed tar file?)")
       if (system("tar tf \"$filename\" >/dev/null"));
 
   # Look for uncool stuff in the archive.
     if (open(TAR,"-|")) {
-        @_ = <TAR>;                           # Read output of the "tar vtf" command into @_.
+        @_ = <TAR>;                       # read output of the "tar vtf" command into @_
     } else {
         exec("tar","vtf","$filename")
           or die("Unable to execute untar/unpack command: $!\nExiting");
@@ -486,7 +486,8 @@ sub unpack_rules_archive
       # We don't want to unpack any "../../" junk.
         clean_exit("File in tar archive contains \"..\" in filename.\nOffending file/line:\n$_")
           if (/\.\./);
-      # Links in the tar archive are not allowed (should be detected because of illegal chars above though).
+      # Links in the tar archive are not allowed 
+      # (should be detected because of illegal chars above though).
         clean_exit("File in tar archive contains link: refuse to unpack file.\nOffending file/line:\n$_")
           if (/->/ || /=>/ || /==/);
     }
@@ -507,8 +508,8 @@ sub unpack_rules_archive
 
 
 
-# Disable (#comment out) all rules listed in %sid_disable_list.
-# All files will still be left in the temporary directory.
+# Open all rules files in temporary directory and disable (#comment out) all rules
+# listed in %sid_disable_list. All files will still be left in the temporary directory.
 sub disable_rules
 {
     my ($num_disabled, $msg, $sid, $line, $file);
