@@ -10,9 +10,10 @@ o Put oinkmaster.pl in some suitable directory, for example /usr/local/bin/.
 
 o Make sure that the ownership/permission on the above files and your 
   rules directory are suitable for your environment. You must run Oinkmaster
-  as a user that has read/write access to your rules directory. It should not
-  be a privileged user. (The user you run Snort as, if different than the 
-  Oinkmaster user, usually only needs read access.)
+  as a user that has read/write access to your rules directory and all 
+  rules files in it. It should not be a privileged user. (The user you run 
+  Snort as, if different than the Oinkmaster user, usually only needs 
+  read access.)
 
 o Edit oinkmaster.conf, or at least have a look at it to make sure 
   everything looks ok. There are some options you may want to change 
