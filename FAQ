@@ -5,43 +5,67 @@ Oinkmaster FAQ
 
 Q1:  Oinkmaster says the file in URL does not exist (or it exists but
      doesn't work with my Snort).
+
 Q2:  Can I use an external utility to download the rules archive rather
      than one of the built-in methods?
+
 Q3:  Can Oinkmaster be useful for distributing rules locally to my 
      sensors?
+
 Q4:  Can Oinkmaster be useful for distributing my homemade rules to my 
      sensors?
+
 Q5:  In which order will the localsid/modifysid/disablesid/enablesid 
      configuration directives be processed?
+
 Q6:  How can the 'include' statement in oinkmaster.conf be useful?
+
 Q7:  Can Oinkmaster restart Snort after an update?
+
 Q8:  Can I tell Oinkmaster to not touch certain SIDs in sid-msg.map so 
      the entries I add for my local rules don't get deleted?
+
 Q9:  I want to copy the rules archive from a remote host to the sensor 
      via scp without having to supply a password or passphrase, but I also 
      don't want to give the sensors full access to that host. Can this be 
      done?
+
 Q10: How do I setup proxy configuration?
+
 Q11: Can Oinkmaster be used to update rules from www.whitehats.com?
+
 Q12: Will Oinkmaster fail when new keywords are introduced in the rules?
+
 Q13: Under what license are the official Snort rules released, and
      can I modify them without violating it?
+
 Q14: Is there a GUI for Oinkmaster?
+
 Q15: When starting Oinkmaster it says my Perl version is too old, or 
      gives me errors about "too many arguments for open".
+
 Q16: If I make a modification directly in a rules file that is updated by
      Oinkmaster, will that change be permanent?
+
 Q17: Should I run Oinkmaster as root?
+
 Q18: I get "/usr/bin/perl: bad interpreter" when starting.
+
 Q19: I've run Oinkmaster several times and it still says there are no
      changes in the rules, how often are the rules tarballs on 
      www.snort.org updated?
+
 Q20: Can Oinkmaster send email or execute a command when the rules have
      been modified?
+
 Q21: What do I do if I need to locally customize (not disable) some 
      rules (and so that those modifications become permanent)?
+
 Q22: I want to disable rules by editing the files directly and putting 
      a "#" in front of the rules. How do these changes become permanent?
+
+Q23: How do I update the rules from multiple sources, like the official 
+     ones from www.snort.org and the ones at www.bleedingsnort.com?
 
 --------------
 
@@ -572,3 +596,68 @@ A22: As can be read elsewhere in this FAQ, you shouldn't ever modify
      makesidex.pl /etc/snort/rules >autodisable.conf 2>/dev/null && \
      oinkmaster.pl -C /etc/oinkmaster.conf -C autodisable.conf \
      -o /etc/snort/rules
+
+
+
+Q23: How do I update the rules from multiple sources, like the official 
+     ones from www.snort.org and the ones at www.bleedingsnort.com?
+
+A23: You cannot update from multiple sources at the same time (i.e. in 
+     a single Oinkmaster run) as it would introduce too many potential 
+     problems. Instead, simply run Oinkmaster twice (or more correctly, 
+     one time for each rules archive) and point to different URLs. It 
+     may be convenient to use separate Oinkmaster configuration files 
+     but this is not a requirement. Note that it is strongly recommended 
+     to download each rules archive into a separate output directory, or 
+     you may get problems with filename collisions etc.
+
+     Note that if you run Barnyard (or any other program that use
+     unified logs) when using rules from multiple sources, you must make 
+     sure that your SID message map file (sid-msg.map) is up-to-date and
+     contains entries from all those sources, including your local 
+     rules if any. There are a few ways to do this.
+
+     One way is to assume that an updated sid-msg.map file is included 
+     in each rules archive and to update those along with the rules, and 
+     then merge them into a new file which you then feed to 
+     Barnyard/whatever. Note that for this to work, you must use 
+     separate output directories for each download source (which is a 
+     good idea anyway) and also make sure there is no
+     "skipfile sid-msg.map" entry in your Oinkmaster configuration 
+     file.
+
+     Another way (which I think is much better) is to ignore the 
+     sid-msg.map files in all the rules archives and instead generate 
+     it yourself after each rules update. Why is this better?
+     As you must run Oinkmaster one time for each rules archive rather 
+     than fetch rules from multiple sources at the same time, it is not 
+     able to check for duplicate SIDs across the different rules 
+     archives. There is a script in Oinkmaster's contrib directory, 
+     create-sidmap.pl, which can generate a sid-msg.map file from 
+     multiple rules directories. It will also warn you in case of 
+     duplicate SIDs, regardless of the file or directory.
+     This includes any local rules you may have written, which is 
+     very important as the SIDs in those may collide with those 
+     in a 3rd party rules archive. Just remember to run 
+     create-sidmap.pl after each rules update. Also remember to restart
+     Barnyard/whatever to use the new SID map. This should probably be 
+     done right before the Snort restart.
+
+     A tiny example just to show the idea how an update wrapper could 
+     look like when updating from multiple sources and then generating 
+     the sid-msg.map file:
+
+     #!/bin/sh
+
+     oinkmaster.pl -u http://www.bleedingsnort.com/... -o /etc/snort/rules/bleeding/  
+     oinkmaster.pl -u http://www.snort.org/... -o /etc/snort/rules/official/
+	
+     create-sidmap.pl /etc/snort/rules/official/ \ 
+                      /etc/snort/rules/bleeding/ \
+                      /etc/snort/rules/local/    \
+                      > /etc/snort/sid-msg.map
+
+     You may also want to put in some sanity checks like aborting in 
+     case of duplicate SIDs and restarting Barnyard/Snort if 
+     everything went ok and there were changes and so on, you get the 
+     point.
