@@ -31,7 +31,7 @@ my $ADD_REV = 1;
 # Minimum SID to add. Normally, the next available SID will be used,
 # unless it's below this value. Only SIDs >= 1000000 are reserved for
 # personal use.
-my $MIN_SID = 1000000;
+my $MIN_SID = 1000001;
 
 # Start in verbose mode.
 my $verbose = 1;
