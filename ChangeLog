@@ -1,10 +1,11 @@
-v0.6 - XXXXXXXX
+v0.6 - 20020706
 ~~~~~~~~~~~~~~~
 o Rules that are disabled by default in the rules distribution
   will now NOT be re-enabled by Oinkmaster by default, finally.
   I.e. "-p" is obsolete. If you want to enable those rules you now
   have to use "-e".
 o A couple of minor documentation updates.
+
 
 
 v0.5 - 20020506
