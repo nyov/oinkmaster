@@ -471,7 +471,7 @@ sub read_config($ $)
         } elsif (/^scp_key\s*=\s*(.+)/i) {      # scp_key
             $$cfg_ref{scp_key} = $1;
 
-        } elsif (/^include\s+(\S+.*)/) {        # include <file>
+        } elsif (/^include\s+(\S+.*)/i) {       # include <file>
              my $include = $1;
              read_config($include, $cfg_ref);
 
