@@ -221,7 +221,7 @@ $VERSION
 Usage: $0 -o <output dir> [options]
 
 <output dir> is where to put the new files.
-This should be the directory where you store the official snort rules.
+This should be the directory where you store the snort rules.
 
 Options:
 -b <dir>   Backup your old rules into <dir> before overwriting them
