@@ -5,30 +5,23 @@ Installation instructions for Oinkmaster v0.7
 
 o Put oinkmaster.pl in some suitable directory, for example /usr/local/bin/
   Put oinkmaster.conf in /usr/local/etc/ (this is where oinkmaster will search
-  for it by default).
+  for it by default). If you want to have oinkmaster.conf in some other
+  directory, you must run oinkmaster with the -C argument.
 
 o Edit the file oinkmaster.conf. There are some options you may want to
-  change before even starting. Here you will then also tell Oinkmaster which
-  SIDs or files you want to disable or ignore. As you will see, a few things
-  are disabled/ignored by default.
-
+  change before running Oinkmaster. Here you will then also tell Oinkmaster
+  which SIDs or files you want to disable or ignore. As you will see, a few
+  things are disabled/ignored by default (which you may not want).
   If you already have several rules commented out (or removed) in your current
-  rules, you need to add the SIDs of those to oinkmaster.conf manually (or check
-  out the contrib directory for a help script) or they will be re-enabled after
-  each update (check out the contrib/ directory). Some rules may be commented out 
-  by default in the rules distribution, and as of Oinkmaster 0.6 they will stay
-  that way. If you want to enable them, you have to use "-e". Note that those
-  rules are however commented out for a reason (they may not even work!), so be 
-  careful. Also note that possible local modifications you've done inside the
-  official Snort rules files will be lost since the files will be overwritten by
-  the new versions from the downloaded rules archive after each update.
+  rules, you need to add the SIDs of those to oinkmaster.conf so they don't get
+  re-enabled after each update. See the README.
 
 o Decide in which directory you want to put the new rules. Since you probably
   already have Snort up and running, you should use your existing rules
   directory. If you for example have the official Snort rules files stored in
   /snort/snort.org-rules/ you can now update those by running:
 
-  ./oinkmaster.pl -o /snort/snort.org-rules/
+  oinkmaster.pl -o /snort/snort.org-rules/
 
   You REALLY should check out the entire README before doing anything though.
   You may also run oinkmaster.pl -h for more usage information and options.
