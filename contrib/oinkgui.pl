@@ -2,6 +2,7 @@
 
 # $Id$ #
 
+# Copyright (C) 2004 Andreas Östling <andreaso@it.su.se>
 
 use strict;
 use File::Spec;

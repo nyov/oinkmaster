@@ -2,6 +2,8 @@
 
 # $Id$ #
 
+# Copyright (C) 2001-2004 Andreas Östling <andreaso@it.su.se>
+
 use strict;
 use File::Basename;
 use File::Copy;

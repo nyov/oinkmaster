@@ -2,6 +2,8 @@
 
 # $Id$ #
 
+# Copyright (C) 2004 Andreas Östling <andreaso@it.su.se>
+
 use strict;
 
 sub get_next_entry($ $ $ $ $ $);
