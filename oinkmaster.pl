@@ -108,7 +108,7 @@ unpack_rules_archive("$tmpdir/$outfile");
 # Create list of new files that we care about from the downloaded archive.
 # Filenames (with full path) will be stored as %new_files{filenme}.
 # Make sure there is at least one file to be updated.
-clean_exit("no rules files found in downloaded archive.");
+clean_exit("no rules files found in downloaded archive.")
   if (get_new_filenames(\%new_files, "$tmpdir/rules/") < 1);
 
 # Disable (#comment out) all sids listed in conf{sid_disable_list}
