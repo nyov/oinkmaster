@@ -22,7 +22,7 @@ my $SINGLELINE_RULE_REGEXP = '^\s*#*\s*(?:%ACTIONS%)'.
 my $USAGE = << "RTFM";
 
 Parse *.rules in one or more directories and look for all rules that are 
-disabled (i.e. begin with "#") and print "disable <sid>  # <msg>" to 
+disabled (i.e. begin with "#") and print "disablesid <sid>  # <msg>" to 
 standard output for all those rules. This output can be redirected to a 
 file, which will be understood by Oinkmaster.
 
