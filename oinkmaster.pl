@@ -137,8 +137,8 @@ $MULTILINE_RULE_REGEXP  =~ s/%ACTIONS%/$config{rule_actions}/;
 # If we're told not to use external binaries, load the required modules.
 unless ($config{use_external_bins}) {
     eval {
-        require Archive::Tar;
         require IO::Zlib;
+        require Archive::Tar;
         require LWP::UserAgent;
     };
 
@@ -635,7 +635,7 @@ sub download_file($ $)
 
   # Use LWP if URL starts with http[s] and use_external_bins=0.
     } elsif (!$config{use_external_bins} && $url =~ /^(?:https*|ftp)/) {
-        print STDERR "Downloading ril3 from $url... "
+        print STDERR "Downloading file from $url... "
           unless ($config{quiet});
 
         my $ua = LWP::UserAgent->new();
