@@ -215,6 +215,8 @@ output unless there were updates available or if there were warning/error
 messages. You should of course change directories and subject/e-mail 
 addresses in the examples above as appropriate.
 
+More usage examples can be found in the Oinkmaster manual page.
+
 
 
 Oinkmaster output
