@@ -80,7 +80,7 @@ $config{backupdir}       = "";
 my $gui_config_file      = "";
 my $editor               = "";
 
-my $animate = 0;
+my $animate = 1;
 
 my %help = (
 
@@ -741,7 +741,7 @@ sub show_version()
         return;
     }
 
-    my $cmd = "perl -T $config{oinkmaster} -V";
+    my $cmd = "perl $config{oinkmaster} -V";
     logmsg("$cmd:\n", 'EXEC');
     my $output = `$cmd 2>&1` || "Could not execute $config{oinkmaster}: $!\n";
     logmsg("$output", 'OUTPUT');
@@ -760,7 +760,7 @@ sub show_help()
         return;
     }
 
-    my $cmd = "perl -T $config{oinkmaster} -h";
+    my $cmd = "perl $config{oinkmaster} -h";
     logmsg("$cmd:\n", 'EXEC');
     my $output = `$cmd 2>&1` || "Could not execute $config{oinkmaster}: $!\n";
     logmsg("$output\n", 'OUTPUT');
@@ -771,7 +771,7 @@ sub show_help()
 sub execute_oinkmaster(@) {
     my @cmd = @_;
 
-    logmsg("@cmd:\n", 'EXEC');
+    logmsg("\n@cmd:\n", 'EXEC');
 
     if ($^O eq 'MSWin32') {
         open(OINK, "@cmd 2>&1|");
@@ -791,7 +791,7 @@ sub execute_oinkmaster(@) {
         close(OINK);
     }
 
-    logmsg("\n", 'MISC');
+    logmsg("done.\n", 'EXEC');
 }
 
 
@@ -874,7 +874,7 @@ sub create_cmdline($)
     }
 
     push(@$cmd_ref, 
-      "perl", "-T", "$oinkmaster",
+      "perl", "$oinkmaster",
       "-C", "$oinkmaster_conf", 
       "-o", "$outdir");
 
