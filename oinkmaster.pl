@@ -247,8 +247,8 @@ Options:
            but not in the downloaded rules archive (i.e. files that may
            have been removed from the distribution archive)
 -T         Test configuration and then exit
--u <url>   Download from this URL (http://, ftp:// or file:// ...tar.gz)
-           instead of the URL specified in the configuration file
+-u <url>   Download from this URL (must be http://, https://, ftp://, file://
+           or scp:// ...tar.gz) instead of the URL in the configuration file
 -U <file>  Variables that exist in downloaded snort.conf but not in <file>
            will be added to this file (usually your production snort.conf)
 -v         Verbose mode
@@ -383,16 +383,19 @@ sub read_config($ $)
 	    $$cfg_ref{update_files} = $1;
 
         } elsif (/^umask\s*=\s*([0-7]{4})$/i) { # umask
-	  $$cfg_ref{umask} = oct($1);
+	    $$cfg_ref{umask} = oct($1);
 
         } elsif (/^min_files\s*=\s*(\d+)/i) {   # min_files
-          $min_files = $1;
+            $min_files = $1;
 
         } elsif (/^min_rules\s*=\s*(\d+)/i) {   # min_rules
-          $min_rules= $1;
+            $min_rules= $1;
 
         } elsif (/^tmpdir\s*=\s*(.+)/i) {       # tmpdir
-          $tmp_basedir = $1;
+            $tmp_basedir = $1;
+
+        } elsif (/^scp_key\s*=\s*(.+)/i) {      # scp_key
+            $$cfg_ref{scp_key} = $1;
 
         } else {                                # invalid line
             warn("WARNING: line $linenum in $config_file is invalid, ignoring\n");
@@ -466,11 +469,20 @@ sub sanity_check()
   # Make sure $url is defined (either by -u <url> or url=... in the conf).
    clean_exit("incorrect URL or URL not specified in either $config_file or command line.")
       unless (exists($config{'url'}) &&
-        (($config{'url'}) = $config{'url'} =~ /^((?:http|ftp|file):\/\/.+\.tar\.gz)$/));
+        (($config{'url'}) = $config{'url'} =~ /^((?:https*|ftp|file|scp):\/\/.+\.tar\.gz)$/));
 
-  # Wget must be found if url is http:// or ftp://.
+  # Wget must be found if url is http[s]:// or ftp://.
     clean_exit("wget not found in PATH ($ENV{PATH}).")
-      if ($config{'url'} =~ /^(http|ftp):/ && !is_in_path("wget"));
+      if ($config{'url'} =~ /^(https*|ftp):/ && !is_in_path("wget"));
+
+  # scp must be found if scp://...
+    clean_exit("scp not found in PATH ($ENV{PATH}).")
+      if ($config{'url'} =~ /^scp:/ && !is_in_path("scp"));
+
+  # ssh key must exist if specified and url is scp://...
+    clean_exit("ssh key $config{scp_key} does not exist.")
+      if ($config{'url'} =~ /^scp:/ && exists($config{scp_key})
+        && !-e $config{scp_key});
 
   # Untaint output directory string.
     $config{output_dir} = untaint_path($config{output_dir});
@@ -514,8 +526,8 @@ sub download_rules($ $)
     my $url       = shift;
     my $localfile = shift;
 
-  # Use wget if URL starts with "http" or "ftp".
-    if ($url =~ /^(?:http|ftp)/) {
+  # Use wget if URL starts with "http[s]" or "ftp".
+    if ($url =~ /^(?:https*|ftp)/) {
         print STDERR "Downloading rules archive from $url...\n"
           unless ($quiet);
         if ($quiet) {
@@ -547,6 +559,21 @@ sub download_rules($ $)
 
         print STDERR "done.\n"
 	  unless ($quiet);
+    } elsif ($url =~ /^scp/) {
+        $url =~ s/^scp:\/\///;
+
+        my @cmd;
+        push(@cmd, "scp");
+        push(@cmd, "-i", "$config{scp_key}") if (exists($config{scp_key}));
+        push(@cmd, "-q")                     if ($quiet);
+        push(@cmd, "-v")                     if ($verbose);
+        push(@cmd, "$url", "$localfile");
+
+        print STDERR "Copying rules archive from $url using scp:\n"
+          unless ($quiet);
+
+        clean_exit("scp returned error when trying to copy $url to $localfile")
+          if (system(@cmd));
     }
 
   # Make sure the downloaded file actually exists.
