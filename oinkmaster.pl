@@ -6,6 +6,7 @@ use strict;
 use Cwd;
 use File::Basename;
 use File::Copy;
+use File::Spec;
 use File::Path;
 use Getopt::Std;
 
@@ -455,7 +456,7 @@ sub sanity_check()
   # Make sure all required binaries can be found.
   # Wget is not required if user specifies file:// as url. 
     foreach my $binary (@req_binaries) {
-        clean_exit("\"$binary\" could not be found in PATH ($ENV{PATH}).")
+        clean_exit("$binary not found in PATH ($ENV{PATH}).")
           unless (is_in_path($binary));
     }
 
@@ -465,7 +466,7 @@ sub sanity_check()
         (($config{'url'}) = $config{'url'} =~ /^((?:http|ftp|file):\/\/.+\.tar\.gz)$/));
 
   # Wget must be found if url is http:// or ftp://.
-    clean_exit("\"wget\" not found in PATH ($ENV{PATH}).")
+    clean_exit("wget not found in PATH ($ENV{PATH}).")
       if ($config{'url'} =~ /^(http|ftp):/ && !is_in_path("wget"));
 
   # Untaint output directory string.
@@ -1247,11 +1248,8 @@ sub update_rules($ @)
 sub is_in_path($)
 {
     my $file = shift;
-    my $sep  = ':';
 
-    $sep = ';' if ($^O eq "MSWin32" || $^O =~ /^Windows/);
-
-    foreach my $dir (split(/$sep/, $ENV{PATH})) {
+    foreach my $dir (File::Spec->path()) {
         return (1) if (-x "$dir/$file" || -x "$dir/$file.exe");
     }
 
