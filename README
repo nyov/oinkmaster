@@ -48,9 +48,9 @@ rules.
 Requirements
 ~~~~~~~~~~~~
 It should work on most UNIX-like systems containing Perl 5, tar, gzip and 
-wget (ftp://ftp.gnu.org/gnu/wget/) installed.
+wget (ftp://ftp.gnu.org/gnu/wget/).
 So far it has been successfully tested on OpenBSD, FreeBSD, NetBSD, Linux,
-AIX, Solaris and OpenDarwin/x86. You can also run it under Windows with
+AIX, Solaris and Mac OS X. You can also run it under Windows with
 either Cygwin or ActivePerl (see README.win32 for more information about 
 that). Let me know if you manage to run it on an unlisted platform.
 
