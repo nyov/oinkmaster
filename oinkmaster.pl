@@ -286,7 +286,7 @@ Options:
 -h         Show this usage information
 -i         Interactive mode - you will be asked to approve the changes (if any)
 -q         Quiet mode - no output unless changes were found
--Q         über-quiet mode (like -q but even more quiet when printing results)
+-Q         super-quiet mode (like -q but even more quiet when printing results)
 -r         Check for rules files that exist in the output directory
            but not in the downloaded rules archive
 -T         Test configuration and then exit
