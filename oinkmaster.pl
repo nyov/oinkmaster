@@ -54,7 +54,7 @@ sub read_config($ $);
 sub sanity_check();
 sub download_file($ $);
 sub unpack_rules_archive($ $);
-sub process_rules($ $ $ $);
+sub process_rules($ $ $ $ $ $);
 sub process_rule($ $ $ $ $ $ $);
 sub setup_rules_hash($ $);
 sub get_first_only($ $ $);
@@ -228,10 +228,15 @@ clean_exit("not enough rules files in downloaded archive (is it broken?)\n".
            "Number of rules files is $num_files but minimum is set to $config{min_files}.")
   if ($num_files < $config{min_files});
 
+# For possible localized rules.
+my %rh_tmp = setup_rules_hash(\%new_files, $config{output_dir});
+
 # Disable/modify/clean downloaded rules.
 my $num_rules = process_rules(\%{$config{sid_modify_list}},
                               \%{$config{sid_disable_list}},
                               \%{$config{sid_enable_list}},
+                              \%{$config{sid_local_list}},
+                              \%rh_tmp,
                               \%new_files);
 
 # Make sure we have at least the minumum number of rules.
@@ -519,6 +524,17 @@ sub read_config($ $)
 	    foreach my $sid (split(/\s*,\s*/, $sid_list)) {
   	        if ($sid =~ /^\d+$/) {
                     $$cfg_ref{sid_disable_list}{$sid}++;
+	        } else {
+                    warn("WARNING: line $linenum in $config_file is invalid, ignoring\n");
+	        }
+	    }
+
+      # localsid <SID[,SID, ...]>
+        } elsif (/^localsids*\s+(\d.*)/i) {
+	    my $sid_list = $1;
+	    foreach my $sid (split(/\s*,\s*/, $sid_list)) {
+  	        if ($sid =~ /^\d+$/) {
+                    $$cfg_ref{sid_local_list}{$sid}++;
 	        } else {
                     warn("WARNING: line $linenum in $config_file is invalid, ignoring\n");
 	        }
@@ -972,11 +988,13 @@ sub unpack_rules_archive($ $)
 # Open all rules files in the temporary directory and disable/modify all
 # rules/lines as requested in oinkmaster.conf, and then write back to the
 # same files. Also clean unwanted whitespaces and duplicate sids from them.
-sub process_rules($ $ $ $)
+sub process_rules($ $ $ $ $ $)
 {
     my $modify_sid_ref  = shift;
     my $disable_sid_ref = shift;
     my $enable_sid_ref  = shift;
+    my $local_sid_ref   = shift;
+    my $rh_tmp_ref      = shift;
     my $newfiles_ref    = shift;
     my %sids;
 
@@ -1000,7 +1018,7 @@ sub process_rules($ $ $ $)
     foreach my $file (sort(keys(%$newfiles_ref))) {
 
       # Make sure it's a regular file.
-        clean_exit("$file is not a regular file.")
+        clean_exit("\"$file\" is not a regular file.")
           unless (-f "$file" && !-l "$file");
 
         open(INFILE, "<", "$file")
@@ -1091,6 +1109,33 @@ sub process_rules($ $ $ $)
           # Even if it was a single-line rule, we want a copy in $multi.
             $multi = $single unless (defined($multi));
 
+          # If this rule is marked as localized and has not yet been written,
+          # write the old version to the new rules file.
+            if (exists($$local_sid_ref{$sid}) && !exists($sids{$sid}{printed})) {
+
+              # Just ignore the rule in the downloaded file if it doesn't
+              # exist in the same local file.
+                unless(exists($$rh_tmp_ref{old}{rules}{basename($file)}{$sid})) {
+                    warn("WARNING: SID $sid is marked as local and exists in ".
+                         "downloaded " . basename($file) . " but the SID does not ".
+                         "exist in the local file, ignoring rule\n")
+                      if ($config{verbose});
+
+                    next RULELOOP;
+                }
+
+                print OUTFILE $$rh_tmp_ref{old}{rules}{basename($file)}{$sid};
+                $sids{$sid}{printed} = 1;
+
+                warn("\nSID $sid is marked as local, keeping your version from ".
+                      basename($file) . ".\n".
+                     "Your version:       $$rh_tmp_ref{old}{rules}{basename($file)}{$sid}".
+                     "Downloaded version: $multi\n")
+                  if ($config{verbose});
+
+                next RULELOOP;
+            }
+
             my %rule = (
                 single => $single,
                 multi  => $multi,
@@ -1137,17 +1182,22 @@ sub process_rules($ $ $ $)
 
         foreach my $sid (keys(%$modify_sid_ref)) {
             next unless ($sid =~ /^\d+$/);    # don't warn on wildcard match
-            warn("WARNING: attempt to modify non-existent SID $sid\n")
+            warn("WARNING: attempt to use \"modifysid\" on non-existent SID $sid\n")
               unless (exists($sids{$sid}));
         }
 
         foreach my $sid (keys(%$enable_sid_ref)) {
-            warn("WARNING: attempt to enable non-existent SID $sid\n")
+            warn("WARNING: attempt to use \"enablesid\" on non-existent SID $sid\n")
               unless (exists($sids{$sid}));
         }
 
         foreach my $sid (keys(%$disable_sid_ref)) {
-            warn("WARNING: attempt to disable non-existent SID $sid\n")
+            warn("WARNING: attempt to use \"disablsid\" on non-existent SID $sid\n")
+              unless (exists($sids{$sid}));
+        }
+
+        foreach my $sid (keys(%$local_sid_ref)) {
+            warn("WARNING: attempt to use \"localsid\" on non-existent SID $sid\n")
               unless (exists($sids{$sid}));
         }
     }
