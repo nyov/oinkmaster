@@ -74,7 +74,6 @@ A1:  Check the "url = ..." line in oinkmaster.conf (or argument to "-u"
 
 
 
-
 Q2:  I want to download the rules archive using the program XXXXX, which 
      I can't do with Oinkmaster.
 
@@ -336,6 +335,14 @@ A12: No. (Not unless there is a bug in Oinkmaster anyway.) Oinkmaster was
      it is a multi-line rule). Since non-rule lines are also compared and 
      updated by Oinkmaster, things will work as usual anyway except that
      actions such as disablesid on that rule will have no effect.
+
+     Remember that even if Oinkmaster may not have problems with the new
+     rules, they can still be invalid when being read by Snort. This has
+     happened a couple of times in the past when the official rules
+     tarballs contained broken rules (containing keywords that weren't
+     valid for that version of Snort) put there by accident. Until
+     those broken rules are fixed, the easiest thing to do is usually
+     to simply add temporary "disablesid" statements for the them.
 
 
 
