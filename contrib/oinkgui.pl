@@ -341,13 +341,31 @@ sub update_file_label_color($ $ $)
     my $filename = shift;
     my $type     = shift;  # FILE|DIR
 
-    if ($filename && $type eq "FILE" && -f "$filename") {
-        $label->configure(-background => "#00e000");
-    } elsif ($filename && $type eq "DIR" && -d "$filename") {
-        $label->configure(-background => "#00e000");
-    } else {
+    unless ($filename) {
         $label->configure(-background => 'red');
+        return;
     }
+
+    if ($type eq "FILE") {
+        if (-f "$filename") {
+            $label->configure(-background => "#00e000");
+        } else {
+            $label->configure(-background => 'red');
+            logmsg("$filename does not exist or is not a regular file\n", 'ERROR');
+        }
+        return;
+    }
+
+    if ($type eq "DIR") {
+        if (-d "$filename") {
+            $label->configure(-background => "#00e000");
+        } else {
+            $label->configure(-background => 'red');
+            logmsg("$filename does not exist or is not a directory\n", 'ERROR');
+        }
+        return;
+    }
+
 }
 
 
@@ -440,7 +458,7 @@ sub create_fileSelectFrame($ $ $)
     my $entry = $frame->Entry(
       -background      => 'white',
       -width           => '80',
-      -validate        => 'focus',
+      -validate        => 'focusout',
       -validatecommand => sub { update_file_label_color($label, $_[0], $type) },
     )->pack(
       -side            => 'left',
