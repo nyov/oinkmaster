@@ -326,7 +326,7 @@ Options:
 -e         Enable all rules that are disabled by default
 -h         Show this usage information
 -i         Interactive mode - you will be asked to approve the changes (if any)
--m         Minimize diff when printing result by removing rules' common parts
+-m         Minimize diff when printing result by removing common parts in rules
 -q         Quiet mode - no output unless changes were found
 -Q         super-quiet mode - like -q but even more quiet
 -r         Check for rules files that exist in the output directory
