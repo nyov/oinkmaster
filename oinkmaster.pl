@@ -134,17 +134,19 @@ read_config($_, \%config) for @{$config{config_files}};
 $SINGLELINE_RULE_REGEXP =~ s/%ACTIONS%/$config{rule_actions}/;
 $MULTILINE_RULE_REGEXP  =~ s/%ACTIONS%/$config{rule_actions}/;
 
-# If we're told not to use external binaries, load the required modules.
+# If we're told not to use external binaries, load the Perl modules now.
 unless ($config{use_external_bins}) {
     print STDERR "Loading Perl modules.\n" if ($config{verbose});
+
     eval {
         require IO::Zlib;
         require Archive::Tar;
         require LWP::UserAgent;
     };
 
-    clean_exit("failed to load required Perl modules.\n".
-               "Install them or set use_external_bins to 1.\n\n$@")
+    clean_exit("failed to load required Perl modules:\n\n$@\n".
+               "Install them or set use_external_bins to 1 ".
+               "if you want to use external binaries instead.")
       if ($@);
 }
 
@@ -380,7 +382,8 @@ sub read_config($ $)
     while ($_ = shift(@conf)) {
         $linenum++;
 
-      # Remove comments unless it's a modifysid line.
+      # Remove comments unless it's a modifysid line
+      # (the "#" may be part of the modifysid expression).
         s/\s*\#.*// unless (/^\s*modifysid/i);
 
       # Remove leading/traling whitespaces.
@@ -392,7 +395,7 @@ sub read_config($ $)
 
 
        # modifysid <SID[,SID, ...]> "substthis" | "withthis"
-       if (/^modifysids*\s+(\d+.*|\*)\s+"(.+)"\s+\|\s+"(.*)"\s*$/i) {
+       if (/^modifysids*\s+(\d+.*|\*)\s+"(.+)"\s+\|\s+"(.*)"\s*(?:#.*)*$/i) {
             my ($sid_list, $subst, $repl) = ($1, $2, $3);
             warn("WARNING: line $linenum in $config_file is invalid, ignoring\n")
               unless(parse_mod_expr(\%{$$cfg_ref{sid_modify_list}},
