@@ -19,7 +19,7 @@ sub find_line;
 sub do_backup;
 sub clean_exit;
 
-my $version           = 'Oinkmaster v0.6 by Andreas Östling <andreaso@it.su.se>';
+my $version           = 'Oinkmaster v0.7 by Andreas Östling <andreaso@it.su.se>';
 my $config_file       = "./oinkmaster.conf";
 my $tmpdir            = "/tmp/oinkmaster.$$";
 my $outfile           = "snortrules.tar.gz";
