@@ -1478,8 +1478,8 @@ sub print_changetype($ $ $ $)
                 if ($config{minimize_diff}) {
                     my ($old, $new) = minimize_diff($$rh_ref{old}{rules}{$file}{$sid},
                                                     $$rh_ref{new}{rules}{$file}{$sid});
-                    print "        old sid $sid: $old";
-                    print "        new sid $sid: $new";
+                    print "        old SID $sid: $old";
+                    print "        new SID $sid: $new";
                 } else {
                     print "        old: $$rh_ref{old}{rules}{$file}{$sid}";
                     print "        new: $$rh_ref{new}{rules}{$file}{$sid}";
@@ -2002,7 +2002,12 @@ sub minimize_diff($ $)
 
   # Additional chars to print left and right to the diffing
   # part, to get some context.
-    my $additional_chars = 15;
+    my $additional_chars = 20;
+
+  # Remove the rev keyword from the rules, as it often
+  # makes diff minimizing useless.
+    $old_rule =~ s/rev\s*:\s*\d+\s*;//;
+    $new_rule =~ s/rev\s*:\s*\d+\s*;//;
 
   # Go forward char by char until they aren't equeal.
     my @old = split(//, $old_rule);
@@ -2027,18 +2032,29 @@ sub minimize_diff($ $)
     $i = 0 if ($i < 0);
 
     $j = -$j + $additional_chars;
-    $j = -1 if ($j > -1);
+    $j = 0 if ($j > -1);
 
     my ($old, $new);
 
-  # No chars should be skipped at the end if $j is -1, 
-  # so don't use 3rd arg to substr then.
-    if ($j == -1) {
-        $old = "..." . substr($old_rule, $i);
-        $new = "..." . substr($new_rule, $i);
-    } else {
+  # Print entire rules (i.e. they can not be shortened).
+    if (!$i && !$j) {
+        $old = $old_rule;
+        $new = $new_rule;
+
+  # Leading and trailing stuff can be removed.
+    } elsif ($i && $j) {
         $old = "..." . substr($old_rule, $i, $j) . "...";
         $new = "..." . substr($new_rule, $i, $j) . "...";
+
+  # Trailing stuff can be removed.
+    } elsif (!$i && $j) {
+        $old = substr($old_rule, $i, $j) . "...";
+        $new = substr($new_rule, $i, $j) . "...";
+
+  # Leading stuff can be removed.
+    } elsif ($i && !$j) {
+        $old = "..." . substr($old_rule, $i);
+        $new = "..." . substr($new_rule, $i);
     }
 
     chomp($old, $new);
