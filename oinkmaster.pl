@@ -815,7 +815,7 @@ sub unpack_rules_archive($ $)
        chomp($filename);
 
       # We don't want absolute filename.
-        clean_exit("archive contains absolute filename. ".
+        clean_exit("rules archive contains absolute filename. ".
                    "Offending file/line:\n$filename")
           if ($filename =~ /^\//);
 
