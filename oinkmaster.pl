@@ -634,9 +634,9 @@ sub setup_rules_hash($ $)
 	close(NEWFILE);
 
 	# Also read in old file if it exists.
-        if (-f "$config{output_dir}/$file") {
-            open(OLDFILE, "<$config{output_dir}/$file")
-              or clean_exit("could not open $config{output_dir}/$file for reading: $!");
+        if (-f "$old_dir/$file") {
+            open(OLDFILE, "<$old_dir/$file")
+              or clean_exit("could not open $old_dir/$file for reading: $!");
 
 	    while (<OLDFILE>) {
 	        s/\s*\n$/\n/;                # remove trailing whitespaces (for rules and non-rules)
