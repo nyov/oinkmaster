@@ -424,6 +424,14 @@ sub sanity_check()
   # Reset environment variables that may cause trouble.
     delete @ENV{'IFS', 'CDPATH', 'ENV', 'BASH_ENV'};
 
+  # Make sure $config{update_files} is a valid regexp.
+    eval {
+        "foo" =~ /$config{update_files}/;
+    };
+
+    clean_exit("value of update_files ($config{update_files} is not a valid regexp: $@")
+      if ($@);
+
   # If a variable file (probably local snort.conf) has been specified,
   # it must exist. It must also be writable unless we're in careful mode.
     if ($update_vars) {
@@ -1457,7 +1465,7 @@ sub parse_mod_expr($ $ $ $)
     foreach my $sid (split(/\s*,\s*/, $sid_list)) {
         return (0) unless ($sid =~ /^\d+$/);
 
-     # Make sure the regexps don't generate invalid code.
+      # Make sure the regexps don't generate invalid code.
         my $repl_qq = "qq/$repl/";
         my $dummy   = "foo";
 
