@@ -345,11 +345,11 @@ sub read_config($ $)
 	} elsif (/^url\s*=\s*(.*)/i) {                   # URL to use
 	    $$cfg_ref{url} = $1
               unless (exists($$cfg_ref{url}));           # may already be defined by -u <url>
-	} elsif (/^path\s*=\s*(.*)/i) {                  # $PATH to be used
+	} elsif (/^path\s*=\s*(.+)/i) {                  # $PATH to be used
 	    $$cfg_ref{path} = $1;
-	} elsif (/^update_files\s*=\s*(.*)/i) {          # regexp of files to be updated
+	} elsif (/^update_files\s*=\s*(.+)/i) {          # regexp of files to be updated
 	    $$cfg_ref{update_files} = $1;
-        } elsif (/^umask\s*=\s*([0-7]{3,4})$/i) {        # umask
+        } elsif (/^umask\s*=\s*([0-7]{4})$/i) {          # umask
 	  $$cfg_ref{umask} = oct($1);
         } elsif (/^min_files\s*=\s*(\d+)/i) {            # min_files
           $min_files = $1;
