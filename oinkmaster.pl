@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl -Tw
 
 # $Id$ #
 
@@ -34,12 +34,13 @@ sub write_new_vars($ $);
 sub msdos_to_cygwin_path($);
 sub parse_mod_expr($ $ $ $);
 sub untaint_path($);
+sub approve_changes();
 sub clean_exit($);
 
 
 my $VERSION           = 'Oinkmaster v0.9 by Andreas Östling <andreaso@it.su.se>';
-my $OUTFILE           = "snortrules.tar.gz";
-my $DIST_SNORT_CONF   = "rules/snort.conf";
+my $OUTFILE           = 'snortrules.tar.gz';
+my $DIST_SNORT_CONF   = 'rules/snort.conf';
 
 my $PRINT_NEW         = 1;
 my $PRINT_OLD         = 2;
@@ -48,7 +49,7 @@ my $PRINT_BOTH        = 3;
 my $min_rules         = 1;
 my $min_files         = 1;
 
-my $config_file       = "/usr/local/etc/oinkmaster.conf";
+my $config_file       = '/usr/local/etc/oinkmaster.conf';
 
 my $verbose           = 0;
 my $careful           = 0;
@@ -58,7 +59,9 @@ my $check_removed     = 0;
 my $make_backup       = 0;
 my $update_vars       = 0;
 my $config_test_mode  = 0;
+my $interactive       = 0;
 my $preserve_comments = 1;
+
 
 # Regexp to match a snort rule line. The msg string will go into $1 and
 # the sid will go into $2.
@@ -79,8 +82,8 @@ my $tmp_basedir = $ENV{TMP} || $ENV{TMPDIR} || $ENV{TEMPDIR} || '/tmp';
 
 use vars qw
    (
-      $opt_b $opt_c $opt_C $opt_e $opt_h $opt_o $opt_q
-      $opt_Q $opt_r $opt_T $opt_u $opt_U $opt_v $opt_V
+      $opt_b $opt_c $opt_C $opt_e $opt_h $opt_i $opt_o
+      $opt_q $opt_Q $opt_r $opt_T $opt_u $opt_U $opt_v $opt_V
    );
 
 my (
@@ -181,35 +184,41 @@ $something_changed = 1
       $#{$changes{new_vars}} > -1);
 
 
-# Update files listed in %changes{modified_files} (move the new files
+# Update files listed in %changes{modified_files} (copy the new files
 # from the temporary directory into our output directory) and add new
 # variables to the local snort.conf if requested, unless we're running in
 # careful mode. Create backup first if running with -b.
+my $printed = 0;
 if ($something_changed) {
     if ($careful) {
         print STDERR "Skipping backup since we are running in careful mode.\n"
           if ($make_backup && (!$quiet));
-    }  else {
-        make_backup($config{output_dir}, $config{backup_dir})
-          if ($make_backup);
+    } else {
+        if ($interactive) {
+            print_changes(\%changes, \%rh) ;
+            $printed = 1;
+        }
 
-        add_new_vars(\%changes, $config{varfile})
-          if ($update_vars);
+        if (!$interactive || ($interactive && approve_changes)) {
+            make_backup($config{output_dir}, $config{backup_dir})
+              if ($make_backup);
 
-        update_rules($config{output_dir}, keys(%{$changes{modified_files}}));
+            add_new_vars(\%changes, $config{varfile})
+              if ($update_vars);
+
+            update_rules($config{output_dir}, keys(%{$changes{modified_files}}));
+        }
     }
 } else {
     print STDERR "No files modified - no need to backup old files, skipping.\n"
       if ($make_backup && !$quiet);
 }
 
-
-# Print changes.
 print "\nNote: Oinkmaster is running in careful mode - not updating anything.\n"
   if ($something_changed && $careful);
 
 print_changes(\%changes, \%rh)
-  if ($something_changed || !$quiet);
+  if (!$printed && ($something_changed || !$quiet));
 
 
 # Everything worked. Do a clean exit without any error message.
@@ -241,6 +250,7 @@ Options:
 -e         Re-enable all rules that are disabled by default in the rules
            distribution (they are disabled for a reason, so use with care)
 -h         Show this usage information
+-i         Interactive mode - you will be asked to approve the changes (if any)
 -q         Quiet mode - no output unless changes were found
 -Q         über-quiet mode (like -q but even more quiet when printing results)
 -r         Check for rules files that exist in the output directory
@@ -264,13 +274,14 @@ RTFM
 sub parse_cmdline($)
 {
     my $cfg_ref    = shift;
-    my $cmdline_ok = getopts('b:cC:eho:qQrTu:U:vV');
+    my $cmdline_ok = getopts('b:cC:ehio:qQrTu:U:vV');
 
     $config_file          = $opt_C if (defined($opt_C));
     $$cfg_ref{url}        = $opt_u if (defined($opt_u));
     $careful              = 1      if (defined($opt_c));
     $preserve_comments    = 0      if (defined($opt_e));
     $quiet                = 1      if (defined($opt_q));
+    $interactive          = 1      if (defined($opt_i));
     $check_removed        = 1      if (defined($opt_r));
     $config_test_mode     = 1      if (defined($opt_T));
     $verbose              = 1      if (defined($opt_v));
@@ -410,8 +421,8 @@ sub read_config($ $)
 # Will also set a new PATH as defined in the config file.
 sub sanity_check()
 {
-   my @req_params   = qw (path update_files);  # required parameters in conf
-   my @req_binaries = qw (gzip tar);           # always required binaries
+   my @req_params   = qw(path update_files);  # required parameters in conf
+   my @req_binaries = qw(gzip tar);           # always required binaries
 
   # Can't use both -q and -v.
     clean_exit("quiet mode and verbose mode at the same time doesn't make sense.")
@@ -689,6 +700,7 @@ sub disable_and_modify_rules($ $ $)
 
     print STDERR "Disabling rules... "
       unless ($quiet);
+
     print STDERR "\n"
       if ($verbose);
 
@@ -1270,10 +1282,16 @@ sub update_rules($ @)
     my $dst_dir        = shift;
     my @modified_files = @_;
 
+    print STDERR "Updating rules... "
+      if (!$quiet || $interactive);
+
     foreach my $file_w_path (@modified_files) {
         copy("$file_w_path", "$dst_dir")
           or clean_exit("could not copy $file_w_path to $dst_dir: $!");
     }
+
+    print STDERR "done.\n"
+      if (!$quiet || $interactive);
 }
 
 
@@ -1582,6 +1600,22 @@ sub untaint_path($)
     }
 
     return ($path);
+}
+
+
+
+# Ask user to approve changes. Return 1 for yes, 0 for no.
+sub approve_changes()
+{
+    my $answer = "";
+
+    while ($answer !~ /^[yn]/i) {
+        print "Do you approve these changes? [Yn] ";
+        $answer = <STDIN>;
+        $answer = "y" unless ($answer =~ /\S/);
+    }
+
+    return ($answer =~ /^y/);
 }
 
 
