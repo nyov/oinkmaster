@@ -11,7 +11,7 @@
   value is set to 1000000 since this is the lowest SID assigned for local 
   usage. Handles multi-line rules.
 
-  Usage: ./addsid.pl <rules directory>
+  Usage: addsid.pl <rulesdir> [rulesdir2, ...]
 
 --------------------------------------------------------------------------------
 
@@ -24,7 +24,7 @@
   (Like snort's regen-sidmap, but this one handles multi-line rules.)
   Result goes to standard output.
 
-  Usage: ./create-sidmap.pl <rules directory>
+  Usage: create-sidmap.pl <rulesdir> [rulesdir2, ...]
 
 --------------------------------------------------------------------------------
 
