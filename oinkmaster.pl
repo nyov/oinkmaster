@@ -1366,7 +1366,7 @@ sub is_in_path($)
 
     foreach my $dir (File::Spec->path()) {
         if (-x "$dir/$file" || -x "$dir/$file.exe") {
-            print STDERR "Found $file binary in $dir/\n"
+            print STDERR "Found $file binary in $dir\n"
               if ($verbose);
             return (1) 
         }
