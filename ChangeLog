@@ -8,12 +8,13 @@ o New option -m to minimize/simplify the resulting output for modified
   see. Some characters to the left and right of the diffing parts
   are kept to get some context. More information and example output can
   be found in the updated manual page.
-o Support -m in the GUI (the "minimize diff" checkbox).
+o Support -m in the GUI as well (the "minimize diff" checkbox).
 o Support template-based modifysid expressions so you can define a template
   once and then use that one instead of repeating complex modifysid
   expressions. Documentation for this is found in README.templates and 
   usage examples is found in template-examples.conf.
-o Multi-line configuration directives are now allowed in oinkmaster.conf.
+o You can now split long configuration directives in oinkmaster.conf to
+  multiple lines using the regular trailing \ syntax.
 o All modifysid substitutions on multi-line rules (including when using
   templates) now work on the single-line version of the rule so that you
   don't have to care about where the trailing backslashes and newlines are.
@@ -23,6 +24,8 @@ o Print warning when attempting to enable/disable/modify non-existent SID
   when in non-quiet mode instead of only when in verbose mode.
 o Allow location of editor to be set in the GUI and do not search for
   default editor in a predefined list anymore.
+o The GUI will now always use the same Perl binary when executing 
+  oinkmaster.pl as the one running the GUI itself.
 o The manual page (oinkmaster.1) has been updated.
 
 
