@@ -456,13 +456,17 @@ sub sanity_check
     die("Incorrect URL or URL not specified in neither $config_file nor command line.\nExiting")
       unless (defined($url) && $url =~ /^(?:http|ftp|file):\/\/\S+.*\.tar\.gz$/);
 
-  # Make sure the output directory exists and is writable.
-    die("The output directory \"$output_dir\" doesn't exist or isn't writable by you.\nExiting")
-      if (! -d "$output_dir" || ! -w "$output_dir");
+  # Make sure the output directory exists and is readable.
+    die("The output directory \"$output_dir\" doesn't exist or isn't readable by you.\nExiting")
+      if (!-d "$output_dir" || !-x "$output_dir");
+
+  # Make sure the output directory is writable unless running in careful mode.
+   die("The output directory \"$output_dir\" isn't writable by you.\nExiting")
+      if (!$careful && !-w "$output_dir");
 
   # Make sure the backup directory exists and is writable, if running with -b.
     die("The backup directory \"$backup_dir\" doesn't exist or isn't writable by you.\nExiting")
-      if (defined($backup_dir) && (! -d "$backup_dir" || ! -w "$backup_dir"));
+      if (defined($backup_dir) && (!-d "$backup_dir" || !-w "$backup_dir"));
 }
 
 

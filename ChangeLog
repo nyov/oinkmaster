@@ -20,6 +20,8 @@ o Added addmsg.pl (by myself) to contrib section.
 o Fixed bug related to deleted rules printout.
 o Default URL is now http://www.snort.org/dl/signatures/snortrules-stable.tar.gz.
 o Print warning if a file in the archive is empty, unless running in quiet mode.
+o Don't require write permission in the output directory when running with -c.
+  Pointed out by arjones@simultan.dyndns.org.
 o A few minor cleanups.
 
 
