@@ -1301,7 +1301,7 @@ sub print_changes($ $)
 
   # Print list of added files.
     if (keys(%{$$ch_ref{added_files}})) {
-        print "\n[+] Added files (consider updating your snort.conf to include them): [+]\n\n";
+        print "\n[+] Added files: [+]\n\n";
         foreach my $added_file (sort({uc($a) cmp uc($b)} keys(%{$$ch_ref{added_files}}))) {
             print "    -> $added_file\n";
         }
