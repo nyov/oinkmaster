@@ -825,7 +825,7 @@ sub print_changes($ $)
     if ($update_vars) {
        if (keys(%{$$ch_ref{new_vars}})) {
             print "\n[*] New variables: [*]\n";
-            foreach my $var (keys(%{$$ch_ref{new_vars}})) {
+            foreach my $var (sort(keys(%{$$ch_ref{new_vars}}))) {
                 print "    var $var $$ch_ref{new_vars}{$var}\n";
             }
         } else {
@@ -1021,7 +1021,7 @@ sub get_changes($ $)
     }
 
   # Compare the rules.
-    FILELOOP:foreach my $file_w_path (keys(%$new_files_ref)) {    # for each new file
+    FILELOOP:foreach my $file_w_path (sort(keys(%$new_files_ref))) {    # for each new file
         my $file = $file_w_path;
         $file =~ s/.*\///;                                        # remove path
         next FILELOOP if (exists($$rh_ref{added_files}{$file}));  # skip diff if it's an added file
@@ -1287,7 +1287,7 @@ get_new_vars($ $ $)
     my %vars;
 
     unless (-e "$dist_conf") {
-        warn("WARNING: distribution file $dist_conf does not exist, ".
+        warn("WARNING: no $DIST_SNORT_CONF found in downloaded archive, ".
              "aborting check for new variables\n");
         return;
     }
@@ -1342,7 +1342,7 @@ add_new_vars($ $)
 
     open(NEW_LOCAL_CONF, ">$local_conf")
       or clean_exit("could not open $local_conf for writing: $!");
-    foreach my $varname (keys(%{$$ch_ref{new_vars}})) {
+    foreach my $varname (sort(keys(%{$$ch_ref{new_vars}}))) {
         print NEW_LOCAL_CONF "var $varname $$ch_ref{new_vars}{$varname}\n";
     }
     print NEW_LOCAL_CONF @local_conf;
