@@ -113,7 +113,6 @@ my $start_date = scalar(localtime);
 $config{use_external_bins} = 0 if ($^O eq "MSWin32");
 
 # Parse command line arguments and add at least %config{output_dir}.
-# Will exit if something is wrong. May set global @config_files.
 parse_cmdline(\%config);
 
 # If no config was specified on command line, look for one in default locations.
