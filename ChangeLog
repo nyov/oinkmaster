@@ -2,8 +2,12 @@
 
 Oinkmaster v1.0 - 200xxxxx
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
+o Default URL in distribution oinkmaster.conf is now
+  http://www.snort.org/dl/rules/snortrules-snapshot-2_1.tar.gz. Don't
+  forget to change it if it's not the right one for your version
+  of Snort!
 o You can now set "rule_actions = ..." in oinkmaster.conf to tell 
-  oinkmaster what keywords are valid as the start of a Snort rule. Useful 
+  Oinkmaster what keywords are valid as the start of a Snort rule. Useful 
   if you create your own ruletypes and want those lines to be regarded as 
   rules instead of non-rule lines. If unset, 
   "alert|drop|log|pass|reject|sdrop|activate|dynamic" will be used 
@@ -17,17 +21,22 @@ o You can now run without external binaries if you have the required
   systems (i.e. same behavior as before). This makes it much easier to
   install Oinkmaster on Windows/ActivePerl. See the new default
   oinkmaster.conf for more information.
-o Most contrib scripts have been improved with misc minor feature updates
-  and small bug fixes. makesidex.pl has been rewritten to handle 
-  multi-line rules and multiple rules directories. It will now also
-  include the rule's "msg" string as a comment on each disablesid line
-  it prints. Usage syntax is unchanged.
-o A fully featured graphical multi-platform front-end to Oinkmaster 
-  written in Perl/Tk is included in the contrib directory (oinkgui.pl). 
+o A simple graphical multi-platform front-end to Oinkmaster written in
+  Perl/Tk is included in the contrib directory (oinkgui.pl). 
   See README.gui for more information. Screenshots are available on
   Oinkmaster's homepage.
-o The new oinkmaster.conf has been updated with more and better
+o contrib/makesidex.pl has been rewritten to handle multi-line rules and 
+  multiple rules directories. It will now also include the rule's "msg" 
+  string as a comment on each disablesid line it prints. Usage syntax is 
+  unchanged. 
+o The other contrib scripts have been improved with misc feature updates
+  and small bug fixes as well. For example, addmsg.pl now handles 
+  multiple rules directories just like the others. All scripts now give
+  a short description when run without arguments. Full descriptions can
+  still be found in contrib/README.contrib.
+o The new default oinkmaster.conf has been updated with more and better
   examples (mostly "modifysid" stuff).
+o Slightly improved multi-line rule parsing.
 o Perl version is checked on startup and must be >= 5.6.1.
 o Permission on all rules files in the output directory that are subject
   to become updated by Oinkmaster (i.e. files matching the "update_rules"
@@ -35,14 +44,9 @@ o Permission on all rules files in the output directory that are subject
   before starting, so that we don't bail out in a middle of
   execution if a copy of an updated file should fail because of
   permission problem.
-o Default URL in distribution oinkmaster.conf is now
-  http://www.snort.org/dl/rules/snortrules-snapshot-2_1.tar.gz. Don't
-  forget to change it if it's not the right one for your version
-  of Snort.
 o A manual page is now included which describes all the command 
   line options in detail.
 o Major documentation updates.
-o Slightly improved multi-line rule parsing.
 o Many other improvements.
 
 
