@@ -4,6 +4,8 @@
 
 # Copyright (C) 2001-2004 Andreas Östling <andreaso@it.su.se>
 
+use 5.006001;
+
 use strict;
 use File::Basename;
 use File::Copy;
