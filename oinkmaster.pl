@@ -841,8 +841,8 @@ sub process_rules($ $ $ $)
         close(OUTFILE);
     }
 
-    print STDERR "disabled=$stats{disabled}, enabled=$stats{enabled}, ".
-                 "modified=$stats{modified}, total=" . keys(%sids) . ".\n"
+    print STDERR "disabled $stats{disabled}, enabled $stats{enabled}, ".
+                 "modified $stats{modified}, total=" . keys(%sids) . ".\n"
       unless ($quiet);
 
   # Warn on attempt at processing non-existent sids.
@@ -897,7 +897,7 @@ sub setup_rules_hash($)
 	while (get_next_entry(\@newfile, \$single, \$multi, \$nonrule, \$msg, \$sid)) {
 	    if (defined($single)) {
 		$rh{new}{rules}{"$file"}{"$sid"} = $single;
-	    } else {                                 # add non-rule line to hash
+	    } else {
 	        push(@{$rh{new}{other}{"$file"}}, $nonrule);
 	    }
 	}
@@ -918,7 +918,7 @@ sub setup_rules_hash($)
 
 	  	    $rh{old}{rules}{"$file"}{"$sid"} = $single;
 	  	    $old_sids{$sid}++;
-                } else {                     # add non-rule line
+                } else {
 	            push(@{$rh{old}{other}{"$file"}}, $nonrule);
                 }
             }
@@ -1199,9 +1199,6 @@ sub print_changetype($ $ $ $)
 
 
 # Compare the new rules to the old ones.
-# For each rule in the new file, check if the rule also exists
-# in the old file. If it does then check if it has been modified,
-# but if it doesn't, it must have been added.
 sub get_changes($ $)
 {
     my $rh_ref        = shift;
