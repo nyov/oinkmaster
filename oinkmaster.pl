@@ -16,7 +16,7 @@ sub read_config($ $);
 sub sanity_check();
 sub download_rules($ $);
 sub unpack_rules_archive($);
-sub process_rules($ $ $);
+sub process_rules($ $ $ $);
 sub setup_rules_hash($);
 sub find_line($ $);
 sub print_changes($ $);
@@ -147,8 +147,9 @@ clean_exit("not enough rules files in downloaded archive (is it broken?)\n".
   if ($num_files < $min_files);
 
 # Disable/modify/clean downloaded rules.
-my $num_rules = process_rules(\%{$config{sid_disable_list}},
-                              \%{$config{sid_modify_list}},
+my $num_rules = process_rules(\%{$config{sid_modify_list}},
+                              \%{$config{sid_disable_list}},
+                              \%{$config{sid_enable_list}},
                               \%new_files);
 
 # Make sure the number of rules is at least $min_rules.
@@ -352,8 +353,15 @@ sub read_config($ $)
       # Skip blank lines.
         next unless (/\S/);
 
+      # modifysid <SID[,SID, ...]> "substthis" | "withthis"
+       if (/^modifysids*\s+(\d+.*)\s+"(.+)"\s+\|\s+"(.*)"\s*$/i) {
+            my ($sid_list, $subst, $repl) = ($1, $2, $3);
+            warn("WARNING: line $linenum in $config_file is invalid, ignoring\n")
+              unless(parse_mod_expr(\%{$$cfg_ref{sid_modify_list}}, 
+                                    $sid_list, $subst, $repl));
+
       # disablesid <SID[,SID, ...]>
-        if (/^disablesids*\s+(\d.*)/i) {
+        } elsif (/^disablesids*\s+(\d.*)/i) {
 	    my $sid_list = $1;
 	    foreach my $sid (split(/\s*,\s*/, $sid_list)) {
   	        if ($sid =~ /^\d+$/) {
@@ -363,12 +371,16 @@ sub read_config($ $)
 	        }
 	    }
 
-      # modifysid <SID[,SID, ...]> "substthis" | "withthis"
-        } elsif (/^modifysids*\s+(\d+.*)\s+"(.+)"\s+\|\s+"(.*)"\s*$/i) {
-            my ($sid_list, $subst, $repl) = ($1, $2, $3);
-            warn("WARNING: line $linenum in $config_file is invalid, ignoring\n")
-              unless(parse_mod_expr(\%{$$cfg_ref{sid_modify_list}}, 
-                                    $sid_list, $subst, $repl));
+      # enablesid <SID[,SID, ...]>
+        } elsif (/^enablesids*\s+(\d.*)/i) {
+	    my $sid_list = $1;
+	    foreach my $sid (split(/\s*,\s*/, $sid_list)) {
+  	        if ($sid =~ /^\d+$/) {
+                    $$cfg_ref{sid_enable_list}{$sid}++;
+	        } else {
+                    warn("WARNING: line $linenum in $config_file is invalid, ignoring\n");
+	        }
+	    }
 
       # skipfile <file[,file, ...]>
         } elsif (/^skipfiles*\s+(.*)/i) {
@@ -689,10 +701,11 @@ sub unpack_rules_archive($)
 # Open all rules files in the temporary directory and disable/modify all
 # rules/lines as requested in oinkmaster.conf, and then write back to the
 # same files. Also clean unwanted whitespaces and duplicate sids from them.
-sub process_rules($ $ $)
+sub process_rules($ $ $ $)
 {
-    my $disable_sid_ref = shift;
     my $modify_sid_ref  = shift;
+    my $disable_sid_ref = shift;
+    my $enable_sid_ref  = shift;
     my $newfiles_ref    = shift;
     my $num_disabled    = 0;
     my %sids;
@@ -788,6 +801,15 @@ sub process_rules($ $ $)
 	        }
 
                 $num_disabled++;
+	    }
+
+          # Enable rule if requested.
+            if (exists($$enable_sid_ref{"$sid"})) {
+                print STDERR "Enabling SID $sid: $msg\n"
+                  if ($verbose);
+
+                $multi =~ s/^#+//;
+                $multi =~ s/\n#+(.+)/\n$1/g;
 	    }
 
           # Write rule back to the same rules file.
