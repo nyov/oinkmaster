@@ -399,7 +399,6 @@ sub unpack_rules_archive($)
     $archive =~ s/\.gz$//;
 
   # Look for uncool stuff in the archive.
-  # XXX make sure all paths are relative?
     if (open(TAR,"-|")) {
         @_ = <TAR>;                       # read output of the "tar vtf" command into @_
     } else {
@@ -656,25 +655,39 @@ sub print_changes($ $)
     my $ch_ref = shift;
     my $rh_ref = shift;
 
+    print "\n[***] Results from Oinkmaster started " . scalar(localtime) . " [***]\n";
 
   # Print rules changes.
-  # FIXME
-    foreach my $type (keys(%{$$ch_ref{rules}})) {
-        print "type: $type\n";
+    print "\n[*] Rules modifications: [*]\n";
+
+    foreach my $type (keys(%{$$ch_ref{rules}})) { # XXX sort the type?
+        print "\n*$type:\n";
         foreach my $file (keys(%{$$ch_ref{rules}{"$type"}})) {
-            print "  file -> $file\n";
+            print "\n     file -> $file\n";
             foreach my $sid (keys(%{$$ch_ref{rules}{"$type"}{"$file"}})) {
-	        print "          old: $rh{old}{rules}{$file}{$sid}\n"
-                  if (exists($$rh_ref{old}{rules}{"$file"}{"$sid"}));
-	        print "          new: $rh{new}{rules}{$file}{$sid}\n"
-                  if (exists($$rh_ref{new}{rules}{"$file"}{"$sid"}));
+
+	    # Print old and new if the rule was modified.
+	        if ($type =~ /modified/i) {
+	            print "     old: $rh{old}{rules}{$file}{$sid}";
+	            print "     new: $rh{new}{rules}{$file}{$sid}"
+	    # print only the new one if the rule was added, enabled or disabled.
+	        } elsif ($type =~ /added/i || $type =~ /enabled/i || $type =~ /disabled/i) {
+	            print "     $rh{new}{rules}{$file}{$sid}"
+	    # print only the old one if the rule was removed.
+		} elsif ($type =~ /removed/i) {
+	            print "     $rh{old}{rules}{$file}{$sid}"
+	        } else {
+		    print "DEBUG: UNKNOWN TYPE: $type\n";
+		}
   	    }
         }
     }
 
+    print "    None.\n" if (keys(%{$$ch_ref{rules}}) < 1);
+
 
   # Print added non-rule lines.
-    print "\n[+]       Added non-rule lines:       [+]\n";
+    print "\n[+] Added non-rule lines: [+]\n";
     foreach my $file (keys(%{$$ch_ref{other}{added}})) {
         print "    -> File \"$file\":\n";
         foreach my $other (@{$$ch_ref{other}{added}{$file}}) {
@@ -685,7 +698,7 @@ sub print_changes($ $)
 
 
   # Print removed non-rule lines.
-    print "\n[-]       Removed lines:       [-]\n";
+    print "\n[-] Removed non-rule lines: [-]\n";
     foreach my $file (keys(%{$$ch_ref{other}{removed}})) {
         print "    -> File \"$file\":\n";
         foreach my $other (@{$$ch_ref{other}{removed}{$file}}) {
@@ -803,28 +816,28 @@ sub get_changes($ $)
 
 		    unless ($new_rule eq $old_rule) {           # are they identical?
                         if ("#$old_rule" eq $new_rule) {                          # rule disabled?
- 	                    $changes{rules}{removed_dis}{$file}{$sid}++;
+ 	                    $changes{rules}{"    Disabled"}{$file}{$sid}++;
                         } elsif ($old_rule eq "#$new_rule") {                     # rule enabled?
- 	                    $changes{rules}{added_ena}{$file}{$sid}++;
+ 	                    $changes{rules}{"    Enabled"}{$file}{$sid}++;
                         } elsif ($old_rule =~ /^\s*#/ && $new_rule !~ /^\s*#/) {  # rule enabled and modified?
- 	                    $changes{rules}{added_ena_mod}{$file}{$sid}++;
+ 	                    $changes{rules}{"    Enabled and modified"}{$file}{$sid}++;
                         } elsif ($old_rule !~ /^\s*#/ && $new_rule =~ /^\s*#/) {  # rule disabled and modified?
- 	                    $changes{rules}{removed_dis_mod}{$file}{$sid}++;
+ 	                    $changes{rules}{"    Disabled and modified"}{$file}{$sid}++;
                         } elsif ($old_rule =~ /^\s*#/ && $new_rule =~ /^\s*#/) {  # inactive rule modified?
- 	                    $changes{rules}{modified_inactive}{$file}{$sid}++;
+ 	                    $changes{rules}{"    Modified inactive"}{$file}{$sid}++;
                         } else {                                                  # active rule modified?
- 	                    $changes{rules}{modified_active}{$file}{$sid}++;
+ 	                    $changes{rules}{"    Modified active"}{$file}{$sid}++;
 	  	        }
 		    }
 	        } else {    # sid not found in old file so it must have been added
-  	            $changes{rules}{added_new}{$file}{$sid}++;
+  	            $changes{rules}{"    Added"}{$file}{$sid}++;
 	        }
         } # foreach sid
 
       # Check for removed rules, i.e. sids that exist in the old file but not in the new one.
         foreach my $sid (keys(%{$rh{old}{rules}{$file}})) {
             unless (exists($rh{new}{rules}{$file}{$sid})) {
-	        $changes{rules}{removed_del}{$file}{$sid}++;
+	        $changes{rules}{"    Removed"}{$file}{$sid}++;
             }
         }
 
