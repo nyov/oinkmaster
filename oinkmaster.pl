@@ -29,6 +29,7 @@ my $quiet             = 0;
 my $rules_changed     = 0;
 my $other_changed     = 0;
 my $check_removed     = 0;
+my $preserve_comments = 0;
 
 # Regexp to match a snort rule line.
 # The msg string will go into $1, and the sid will go into $2.
@@ -36,7 +37,7 @@ my $snort_rule_regexp = '^\s*#*\s*(?:alert|log|pass) .+msg\s*:\s*"(.+?)"\s*;.+si
 
 use vars qw
    (
-      $opt_b $opt_c $opt_C $opt_h $opt_o $opt_q $opt_r $opt_u $opt_v
+      $opt_b $opt_c $opt_C $opt_h $opt_o $opt_q $opt_p $opt_r $opt_u $opt_v
    );
 
 my (
@@ -336,6 +337,8 @@ sub show_usage
                  "-r         Check for rules files that exist in the output directory\n".
                  "           but not in the downloaded rules archive (i.e. files that may\n".
                  "           have been removed from the archive).\n".
+		 "-p         Preserve comments in downloaded rules (some rules may be\n".
+                 "           disabled by default, and Oinkmaster will usually enable them)\n".
                  "-q         Quiet mode. No output unless changes were found\n".
 		 "-v         Verbose mode\n".
                  "-h         Show usage help\n\n";
@@ -346,15 +349,16 @@ sub show_usage
 
 sub parse_cmdline
 {
-    my $cmdline_ok = getopts('b:cC:ho:qru:v');
+    my $cmdline_ok = getopts('b:cC:ho:pqru:v');
 
     $backup_dir    = $opt_b if (defined($opt_b));
     $config_file   = $opt_C if (defined($opt_C));
     $url           = $opt_u if (defined($opt_u));
-    $careful       = 1      if (defined($opt_c));
-    $quiet         = 1      if (defined($opt_q));
-    $check_removed = 1      if (defined($opt_r));
-    $verbose       = 1      if (defined($opt_v));
+    $careful           = 1  if (defined($opt_c));
+    $preserve_comments = 1  if (defined($opt_p));
+    $quiet             = 1  if (defined($opt_q));
+    $check_removed     = 1  if (defined($opt_r));
+    $verbose           = 1  if (defined($opt_v));
     show_usage              if (defined($opt_h));
     show_usage unless ($cmdline_ok);
 
@@ -532,11 +536,13 @@ sub disable_rules
 	    }
 	    ($msg, $sid) = ($1, $2);
 
-          # Some rules may be commented out by default, but we want our oinkmaster.conf
-          # to decide what to disable, so uncomment all rules by default.
-          # Also remove all leading whitespaces.
+          # Remove leading whitespaces, and whitespaces next to the leading #.
 	    $line =~ s/^\s*//;
-            $line =~ s/^#*\s*//;
+	    $line =~ s/^#+\s*/#/;
+
+          # Some rules may be commented out by default, but we want our oinkmaster.conf to decide
+          # what to disable, so uncomment all rules by default unless -p is specified.
+            $line =~ s/^#*// unless ($preserve_comments);
 
             if (exists($sid_disable_list{$sid})) {      # should this sid be disabled?
                 if ($verbose) {
