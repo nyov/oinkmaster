@@ -168,7 +168,7 @@ Note that your current files will be overwritten by the new ones
 if they had been modified.
 
 Options:
--b <dir>   Backup old rules into <dir> before overwriting them
+-b <dir>   Backup your old rules into <dir> before overwriting them
 -c         Careful mode - only check for changes, but do not update anything
 -C <cfg>   Use this config file instead of $config_file
 -e         Re-enable all rules that are disabled by default in the rules
@@ -475,7 +475,6 @@ sub disable_and_modify_rules($ $ @)
     my $disable_sid_ref = shift;
     my $modify_sid_ref  = shift;
     my @newfiles        = @_;
-
     my $num_disabled    = 0;
 
     if (!$preserve_comments && !$quiet) {
@@ -821,7 +820,6 @@ sub get_modified_files($ $)
 {
     my $changes_ref   = shift;    # ref to hash with all changes
     my $new_files_ref = shift;    # ref to hash with all new files (with full path)
-
     my %modified_files;
 
   # For each new rules file...
