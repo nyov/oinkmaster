@@ -1177,9 +1177,10 @@ sub make_backup($ $)
 
         $backup_tarball .= ".gz";
 
+      # Write tarball. Print stupid error message if it fails as
+      # we can't use $tar->error or Tar::error on all platforms.
         $tar->write("$backup_tarball", 1)
-          or clean_exit("could not create backup archive: ".
-                        $tar->error());
+          or clean_exit("could not create backup archive: Tar::Archive returned unknown error\n");
     }
 
   # Change back to old directory (so it will work with -b <directory> as either
