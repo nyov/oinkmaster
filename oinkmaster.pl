@@ -379,23 +379,28 @@ sub parse_cmdline
 
 sub read_config
 {
-    my ($args, $line);
+    my ($args, $linenum);
 
-    $line = 0;
+    $linenum = 0;
 
     open(CONF, "<$config_file") or die("Could not open $config_file: $!\nExiting");
 
     while (<CONF>) {
-        $line++;
-        s/\s*\#.*//;                     # remove comments
-	s/^\s*//;                        # remove leading whitespaces
-	s/\s*$//;                        # remove trailing whitespaces
+        $linenum++;
+
+      # Remove comments unless it's a modifysid line.
+        s/\s*\#.*// unless (/^\s*modifysid/i);
+
+      # Remove leading/traling whitespaces.
+	s/^\s*//;
+	s/\s*$//;
+
         next unless (/\S/);              # skip blank lines
 
         if (/^disablesids*\s+(\d.*)/) {                            # disablesid
 	    $args = $1;
 	    foreach $_ (split(/\s*,\s*/, $args)) {
-                die("Line $line in $config_file is invalid, giving up.\nExiting")
+                die("Line $linenum in $config_file is invalid, giving up.\nExiting")
 		  unless (/^\d+$/);
                 $sid_disable_list{$_}++;
 	    }
@@ -404,7 +409,7 @@ sub read_config
         } elsif (/^skipfiles*\s+(.*)/) {                           # skipfile
 	    $args = $1;
 	    foreach $_ (split(/\s*,\s*/, $args)) {
-                die("Line $line in $config_file is invalid, giving up.\nExiting")
+                die("Line $linenum in $config_file is invalid, giving up.\nExiting")
 		  unless (/^\S.*\S$/);
                 $verbose && print STDERR "Adding file to ignore list: $_.\n";
                 $file_ignore_list{$_}++;
@@ -418,7 +423,7 @@ sub read_config
 	} elsif (/^skip_diff\s*=\s*(.*)/i) {                       # regexp of files to skip comparison for
 	    $config{skip_diff} = $1;
         } else {                                                   # invalid line
-            die("Line $line in $config_file is invalid, giving up.\nExiting");
+            die("Line $linenum in $config_file is invalid, giving up.\nExiting");
         }
 
     }
@@ -607,7 +612,7 @@ sub disable_rules
 
           # Modify rule, if requested.
             foreach $_ (@{$sid_modify_list{$sid}}) {
-	        print STDERR "Modifying sid $sid: $_\n  Before: $line"
+	        print STDERR "Modifying sid $sid with expression: $_\n  Before: $line"
 		  if ($verbose);
 		eval "\$line =~ $_";
 		print STDERR "  After:  $line\n"
