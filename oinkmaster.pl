@@ -929,11 +929,10 @@ sub make_backup($ $)
     my $src_dir  = shift;    # dir with the rules to be backed up
     my $dest_dir = shift;    # where to put the backup tarball
 
-    (undef, my $min, my $hour, my $mday, my $mon, my $year, undef, undef, undef)
-      = localtime(time);
+    my ($sec, $min, $hour, $mday, $mon, $year) = (localtime)[0 .. 5];
 
-    my $date = sprintf("%d%02d%02d-%02d%02d", 
-                       $year + 1900, $mon + 1, $mday, $hour, $min);
+    my $date = sprintf("%4d-%02d-%02dT-%02d:%02d:%02d",
+                       $year + 1900, $mon + 1, $mday, $hour, $min, $sec);
 
     my $backup_tmp_dir = "$tmpdir/rules-backup-$date";
 
