@@ -765,13 +765,13 @@ sub print_changes($ $)
 
   # Print added rules.
     if (exists($$ch_ref{rules}{added})) {
-        print "\n[+++]         Added rules:           [+++]\n";
+        print "\n[+++]          Added rules:          [+++]\n";
 	print_changetype($PRINT_NEW, \%{$$ch_ref{rules}{added}}, $rh_ref);
     }
 
   # Print enabled rules.
     if (exists($$ch_ref{rules}{ena})) {
-        print "\n[+++]        Enabled rules:          [+++]\n";
+        print "\n[+++]         Enabled rules:         [+++]\n";
 	print_changetype($PRINT_NEW, \%{$$ch_ref{rules}{ena}}, $rh_ref);
     }
 
@@ -801,13 +801,13 @@ sub print_changes($ $)
 
   # Print disabled rules.
     if (exists($$ch_ref{rules}{dis})) {
-        print "\n[---]        Disabled rules:         [---]\n";
+        print "\n[---]         Disabled rules:        [---]\n";
 	print_changetype($PRINT_NEW, \%{$$ch_ref{rules}{dis}}, $rh_ref);
     }
 
   # Print removed rules.
     if (exists($$ch_ref{rules}{removed})) {
-        print "\n[---]        Removed rules:          [---]\n";
+        print "\n[---]         Removed rules:         [---]\n";
 	print_changetype($PRINT_OLD, \%{$$ch_ref{rules}{removed}}, $rh_ref);
     }
 
@@ -828,7 +828,7 @@ sub print_changes($ $)
 
   # Print removed non-rule lines.
     if (keys(%{$$ch_ref{other}{removed}}) > 0) {
-        print "\n[---]    Removed non-rule lines:     [---]\n";
+        print "\n[---]     Removed non-rule lines:    [---]\n";
         foreach my $file (sort({uc($a) cmp uc($b)} keys(%{$$ch_ref{other}{removed}}))) {
             print "\n     -> File $file:\n";
             foreach my $other (@{$$ch_ref{other}{removed}{$file}}) {
