@@ -59,6 +59,7 @@ my %color = (
   file_label_not_ok => 'red',
   out_frame_fg      => 'white',
   out_frame_bg      => 'black',
+  entry_bg          => 'white',
 );
 
 my %config;
@@ -122,6 +123,19 @@ select STDERR;
 $| = 1;
 select STDOUT;
 $| = 1;
+
+# Find out if we're on Win32 and can use Win32::FileOp.
+my $use_fileop = 0;
+
+if ($^O eq 'MSWin32') {
+    foreach (@INC) {
+        if (-e "$_/Win32/FileOp.pm") {
+            $use_fileop = 1;
+            require Win32::FileOp;
+            last;
+        }
+    }
+}
 
 
 # Find out which oinkmaster.pl file to default to.
@@ -212,7 +226,8 @@ my $types = [
   ['All files',         '*'            ]
 ];
 my $oinkscript_frame = 
-  create_fileSelectFrame($req_tab, "oinkmaster.pl", 'EXECFILE', \$config{oinkmaster}, 'NOEDIT', $types);
+  create_fileSelectFrame($req_tab, "oinkmaster.pl", 'EXECFILE', 
+                         \$config{oinkmaster}, 'NOEDIT', $types);
 
 $balloon->attach($oinkscript_frame, -statusmsg => $help{oinkscript});
 
@@ -223,14 +238,16 @@ $types = [
   ['All files',           '*'    ]
 ];
 my $oinkconf_frame = 
-  create_fileSelectFrame($req_tab, "oinkmaster.conf", 'ROFILE', \$config{oinkmaster_conf}, 'EDIT', $types);
+  create_fileSelectFrame($req_tab, "oinkmaster.conf", 'ROFILE', 
+                         \$config{oinkmaster_conf}, 'EDIT', $types);
 
 $balloon->attach($oinkconf_frame, -statusmsg => $help{oinkconf});
 
 
 # Create frame with output directory.
 my $outdir_frame =
-  create_fileSelectFrame($req_tab, "output directory", 'WRDIR', \$config{outdir}, 'NOEDIT', undef);
+  create_fileSelectFrame($req_tab, "output directory", 'WRDIR', 
+                         \$config{outdir}, 'NOEDIT', undef);
 
 $balloon->attach($outdir_frame, -statusmsg => $help{outdir});
 
@@ -248,7 +265,8 @@ $types = [
   ['compressed tar files', '.tar.gz']
 ];
 my $url_frame =
-  create_fileSelectFrame($opt_tab, "Alternate URL", 'URL', \$config{url}, 'NOEDIT', $types);
+  create_fileSelectFrame($opt_tab, "Alternate URL", 'URL', 
+                         \$config{url}, 'NOEDIT', $types);
 
 $balloon->attach($url_frame, -statusmsg => $help{url});
 
@@ -259,14 +277,16 @@ $types = [
   ['All files',    '*'                           ]
 ];
 my $varfile_frame =
-  create_fileSelectFrame($opt_tab, "Variable file", 'WRFILE', \$config{varfile}, 'EDIT', $types);
+  create_fileSelectFrame($opt_tab, "Variable file", 'WRFILE', 
+                         \$config{varfile}, 'EDIT', $types);
 
 $balloon->attach($varfile_frame, -statusmsg => $help{varfile});
 
 
 # Create frame with backup dir location.
 my $backupdir_frame =
-  create_fileSelectFrame($opt_tab, "Backup directory", 'WRDIR', \$config{backupdir}, 'NOEDIT', undef);
+  create_fileSelectFrame($opt_tab, "Backup directory", 'WRDIR', 
+                         \$config{backupdir}, 'NOEDIT', undef);
 
 $balloon->attach($backupdir_frame, -statusmsg => $help{backupdir});
 
@@ -274,8 +294,8 @@ $balloon->attach($backupdir_frame, -statusmsg => $help{backupdir});
 $notebook->pack(
   -expand => 'no',
   -fill   => 'x',
-  -padx   => 5,
-  -pady   => 5,
+  -padx   => '5',
+  -pady   => '5',
   -side   => 'top'
 );
 
@@ -457,10 +477,16 @@ sub fileDialog($ $ $ $)
     my $type      = shift;
     my $filetypes = shift;
 
+    my $dirname;
+
     if ($type eq 'WRDIR') {
-        my $fs = $main->FileSelect();
-        $fs->configure(-verify => ['-d', '-w'], -title => $title);
-        my $dirname = $fs->Show;
+        if ($use_fileop) {
+            $dirname = Win32::FileOp::BrowseForFolder ("$title");
+        } else {
+            my $fs = $main->FileSelect();
+            $fs->configure(-verify => ['-d', '-w'], -title => $title);
+            $dirname = $fs->Show;
+        }
         $$var_ref = $dirname if ($dirname);
     } else {
         my $filename = $main->getOpenFile(-title => $title, -filetypes => $filetypes);
@@ -487,7 +513,7 @@ sub update_file_label_color($ $ $)
     if ($type eq "URL") {
         if ($filename =~ /^(?:http|ftp):\/\/.+\.tar\.gz$/) {
             $label->configure(-background => $color{file_label_ok});
-        } elsif ($filename =~ /^(?:file:\/\/)*(.+\.tar\.gz)$/) {
+                } elsif ($filename =~ /^(?:file:\/\/)*(.+\.tar\.gz)$/) {
             my $file = $1;
             if (-f "$file" && -r "$file") {
                 $label->configure(-background => $color{file_label_ok});
@@ -619,7 +645,7 @@ sub create_fileSelectFrame($ $ $ $ $ $)
       -text       => $name,
       -width      => '16',
       -relief     => 'raised',
-      -background => 'red'
+      -background => "$color{file_label_not_ok}",
     )->pack(
       -side       => 'left'
     );
@@ -629,7 +655,7 @@ sub create_fileSelectFrame($ $ $ $ $ $)
     if ($type eq 'URL') {
         $entry = $frame->BrowseEntry(
           -textvariable    => $var_ref,
-          -background      => 'white',
+          -background      => $color{entry_bg},
           -width           => '80',
           -choices         => \@urls,
           -validate        => 'key',
@@ -642,7 +668,7 @@ sub create_fileSelectFrame($ $ $ $ $ $)
     } else {
         $entry = $frame->Entry(
           -textvariable    => $var_ref,
-          -background      => 'white',
+          -background      => $color{entry_bg},
           -width           => '80',
           -validate        => 'key',
           -validatecommand => sub { update_file_label_color($label, $_[0], $type) },
@@ -661,7 +687,7 @@ sub create_fileSelectFrame($ $ $ $ $ $)
           -background => "$color{button}",
           -command    => sub {
                                  unless (-e "$$var_ref") {
-                                     logmsg("Select an existing file first!.\n\n", 'ERROR');
+                                     logmsg("Select an existing file first!\n\n", 'ERROR');
                                      return;
                                  }
 
@@ -785,6 +811,7 @@ sub test_config()
     my @cmd;
 
     create_cmdline(\@cmd) || return;
+
     push(@cmd, "-T");
     execute_oinkmaster(@cmd);
 }
@@ -816,7 +843,7 @@ sub create_cmdline($)
 {
     my $cmd_ref = shift;
 
-    my $oinkmaster      = File::Spec->rel2abs($config{oinkmaster});
+    my $oinkmaster      = $config{oinkmaster};
     my $oinkmaster_conf = $config{oinkmaster_conf};
     my $outdir          = $config{outdir};
     my $varfile         = $config{varfile};
@@ -827,6 +854,9 @@ sub create_cmdline($)
     if ($url) {
         $url = "file://$url" unless ($url =~ /(?:http|ftp|file):\/\//);
     }
+
+    $oinkmaster = File::Spec->rel2abs($oinkmaster)
+      if ($oinkmaster);
 
   # Clean leading/trailing whitespaces, also add leading/trailing "" if win32.
     foreach my $var_ref (\$oinkmaster, \$oinkmaster_conf, \$outdir, 
