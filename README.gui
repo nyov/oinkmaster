@@ -65,11 +65,11 @@ its configuration and then exit. If the configuration test is successful,
 you should be ready to update the rules.
 
 When you're happy with all the filename entries and options, you probably 
-want to push the "Save config" button. All GUI settings will then be save 
+want to push the "Save config" button. All GUI settings will then be saved
 to a configuration file which you can load later with then "Load config" 
 button. It's also loaded automatically on startup.
 
-You can try placing the mouse pointer over a button or filename entry and 
+Hint: Place the mouse pointer over a button or filename entry and 
 a short help message will be displayed under the big black output window.
 
 To find out more about Oinkmaster, consult its own documentation.
