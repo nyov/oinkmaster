@@ -172,7 +172,7 @@ $notebook->pack(
 
 # Create the option frame to the left.
 my $opt_frame = $main->Frame(
-  -background => "#202020", 
+  -background => "$labelcolor", 
   -border     => '2'
 )->pack(
   -side       => 'left',
@@ -265,7 +265,12 @@ create_actionbutton($opt_frame, "Exit",               \&exit);
 
 
 # Now the fun begins.
-logmsg("Welcome to $version by Andreas Östling <andreaso\@it.su.se>\n\n", 'MISC');
+foreach (split(//, "Welcome to $version")) {
+    logmsg("$_", 'MISC');
+    select(undef, undef, undef, 0.03);
+}
+
+logmsg("\n\n", 'MISC');
 
 # Load gui settings into %config. Will overwrite the defaults if it exists.
 load_config();
