@@ -116,3 +116,11 @@ A7:  No. What you may want to consider instead is to use a separate
      with Oinkmaster (contrib/create-sidmap.pl). The latter handles
      multiline rules and can also take an arbitrary number of rules
      directories as argument.
+
+
+
+Q8:  How can the 'include' statement in oinkmaster.conf be useful?
+
+A8:  There are many situations where this is useful, but perhaps the most
+     common usage is to be able to use one global and one sensor-specific
+     configuration file, where the global one is common among all sensors.
