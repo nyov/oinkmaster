@@ -276,7 +276,7 @@ sub read_config($ $)
                     warn("WARNING: line $linenum in $config_file is invalid, ignoring\n");
 	        }
 	    }
-        } elsif (/^modifysid\s+(\d+)\s+(.*)/i) {         # modifysid <SID> <regexp>
+        } elsif (/^modifysid\s+(\d+)\s+(.+\|.+)/i) {     # modifysid <SID> <substthis|withthis>
             push(@{$$cfg_ref{sid_modify_list}{$1}}, $2);
         } elsif (/^skipfiles*\s+(.*)/i) {                # skipfile <file[,file, ...]>
 	    my $args = $1;
@@ -490,7 +490,7 @@ sub disable_and_modify_rules($ $ @)
     my $num_disabled    = 0;
 
     if (!$preserve_comments && !$quiet) {
-        warn("Warning: all rules that are disabled by default will be re-enabled\n");
+        warn("WARNING: all rules that are disabled by default will be re-enabled\n");
     }
 
     print STDERR "Disabling rules according to $config_file... "
@@ -535,29 +535,35 @@ sub disable_and_modify_rules($ $ @)
           # Some rules may be commented out by default. Enable them if -e is specified.
 	    if ($line =~ /^\s*#/) {
 		if ($preserve_comments) {
-		    print STDERR "Preserving disabled rule (sid $sid): $msg\n"
+		    print STDERR "Preserving disabled rule (SID $sid): $msg\n"
 		      if ($verbose);
 		} else {
-		    print STDERR "Enabling disabled rule (sid $sid): $msg\n"
+		    print STDERR "Enabling disabled rule (SID $sid): $msg\n"
 		      if ($verbose);
 		    $line =~ s/^\s*#*//;
 		}
 	    }
 
           # Modify rule if requested.
-            foreach my $regexp (@{$$modify_sid_ref{$sid}}) {
-	        print STDERR "Modifying sid $sid with expression: $regexp\n  Before: $line"
-		  if ($verbose);
-		eval "\$line =~ $regexp";
-		warn("WARNING: error in expression \"$regexp\": $@\n")
-		  if ($@);
-		print STDERR "  After: $line\n"
-                  if ($verbose);
+            foreach my $mod (@{$$modify_sid_ref{$sid}}) {
+                my ($sub, $repl) = split(/\|/, $mod);
+		if ($line =~ /\Q$sub\E/) {
+  	            print STDERR "Modifying SID $sid with expression: $mod\n" .
+                                 "Before: $line"
+		      if ($verbose);
+                    $line =~ s/\Q$sub\E/$repl/;
+  	  	    print STDERR "  After: $line\n"
+                      if ($verbose);
+		} else {
+                   print STDERR "\nWARNING: SID $sid does not contain modifysid-string ".
+                                "\"$sub\", skipping\n"
+                     unless ($quiet);
+                }
 	    }
 
           # Disable rule if requested.
             if (exists($$disable_sid_ref{"$sid"})) {
-                print STDERR "Disabling sid $sid: $msg\n"
+                print STDERR "Disabling SID $sid: $msg\n"
                   if ($verbose);
                 $line = "#$line" unless ($line =~ /^\s*#/);
                 $num_disabled++;
