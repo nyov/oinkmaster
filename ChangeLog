@@ -2,6 +2,12 @@
 
 Oinkmaster v1.0 - 200xxxxx
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
+o You can now set "rule_actions = ..." in oinkmaster.conf to 
+  tell oinkmaster what keywords are valid as the start of a Snort
+  rule. Useful if you create your own ruletypes and want those lines
+  to be regarded as rules instead of non-rule lines.
+  If unset, "alert|drop|log|pass|reject|sdrop|activate|dynamic" will be
+  used (same as before).
 
 
 

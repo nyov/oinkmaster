@@ -47,8 +47,6 @@ my $PRINT_NEW          = 1;
 my $PRINT_OLD          = 2;
 my $PRINT_BOTH         = 3;
 
-my (%loaded, $tmpdir);
-
 my %config = (
     careful            => 0,
     check_removed      => 0,
@@ -63,17 +61,18 @@ my %config = (
     update_vars        => 0,
     use_external_bins  => 1,
     verbose            => 0,
+    rule_actions       => "alert|drop|log|pass|reject|sdrop|activate|dynamic",
+    tmp_basedir        => $ENV{TMP} || $ENV{TMPDIR} || $ENV{TEMPDIR} || '/tmp',
 );
 
-# Set default temporary base directory.
-$config{tmp_basedir} = $ENV{TMP} || $ENV{TMPDIR} || $ENV{TEMPDIR} || '/tmp';
 
 # Regexp to match the start of a multi-line rule.
-my $MULTILINE_RULE_REGEXP  = '^\s*#*\s*(?:alert|drop|log|pass|reject|sdrop|activate|dynamic)'.
+# %ACTIONS% will be replaced with content of $config{actions} later.
+my $MULTILINE_RULE_REGEXP  = '^\s*#*\s*(?:%ACTIONS%)'.
                              '\s.*\\\\\s*\n$'; # ';
 
 # Regexp to match a single-line rule.
-my $SINGLELINE_RULE_REGEXP = '^\s*#*\s*(?:alert|drop|log|pass|reject|sdrop|activate|dynamic)'.
+my $SINGLELINE_RULE_REGEXP = '^\s*#*\s*(?:%ACTIONS%)'.
                              '\s.+;\s*\)\s*$'; # ';
 
 # Match var line where var name goes into $1.
@@ -88,6 +87,7 @@ my @default_config_files = qw(
     /usr/local/etc/oinkmaster.conf
 );
 
+my (%loaded, $tmpdir);
 
 
 #### MAIN ####
@@ -127,6 +127,11 @@ if ($#{$config{config_files}} == -1) {
 }
 
 read_config($_, \%config) for @{$config{config_files}};
+
+# Now substitute "%ACTIONS%" with $config{rule_actions}, which may have been
+# modified after reading the config file.
+$SINGLELINE_RULE_REGEXP =~ s/%ACTIONS%/$config{rule_actions}/;
+$MULTILINE_RULE_REGEXP  =~ s/%ACTIONS%/$config{rule_actions}/;
 
 # If we're told not to use external binaries, load the required modules.
 unless ($config{use_external_bins}) {
@@ -430,6 +435,9 @@ sub read_config($ $)
 
 	} elsif (/^update_files\s*=\s*(.+)/i) { # regexp of files to be updated
 	    $$cfg_ref{update_files} = $1;
+
+	} elsif (/^rule_actions\s*=\s*(.+)/i) { # regexp of rule action keywords
+	    $$cfg_ref{rule_actions} = $1;
 
         } elsif (/^umask\s*=\s*([0-7]{4})$/i) { # umask
 	    $$cfg_ref{umask} = oct($1);
