@@ -58,7 +58,7 @@ foreach my $rulesdir (@rulesdirs) {
         while (get_next_entry(\@file, \$single, \$multi, \$nonrule, \$msg, \$sid)) {
             $single = $multi if (defined($multi));
             $disabled{$sid} = $msg
-              if (defined($single) && $single =~ /\s*#/);
+              if (defined($single) && $single =~ /^\s*#/);
         }
     }
 }
