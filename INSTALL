@@ -10,9 +10,9 @@ o Put oinkmaster.pl in some suitable directory, for example /usr/local/bin/.
 
 o Make sure that the ownership/permission on the above files and your 
   rules directory are suitable for your environment. You must run Oinkmaster
-  as a regular user that has read/write access to your rules directory. 
-  (The user you run Snort as, if different than the Oinkmaster user,
-  usually only needs read access.) 
+  as a user that has read/write access to your rules directory. It should not
+  be a privileged user. (The user you run Snort as, if different than the 
+  Oinkmaster user, usually only needs read access.)
 
 o Edit oinkmaster.conf. There are some options you may want to change before
   running Oinkmaster. Here you will then also tell Oinkmaster which SIDs or 
@@ -23,9 +23,10 @@ o Edit oinkmaster.conf. There are some options you may want to change before
   re-enabled after each update.
 
 o Decide in which directory you want to put the new rules. Since you probably
-  already have Snort up and running, you should use your existing rules
-  directory. If you for example have the official Snort rules files stored in
-  /snort/snort.org-rules/ you can now update those by running:
+  already have Snort up and running, you should use the directory where you
+  keep the official rules. It's a good idea to create a backup of it first.
+  For example, if the directory is /snort/snort.org-rules/, you can now update
+  those rules by running:
 
   oinkmaster.pl -o /snort/snort.org-rules/
 
