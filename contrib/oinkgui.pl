@@ -5,10 +5,11 @@
 use strict;
 use File::Spec;
 use Tk;
-use Tk::NoteBook;
-use Tk::ROText;
 use Tk::Balloon;
 use Tk::BrowseEntry;
+use Tk::FileSelect;
+use Tk::NoteBook;
+use Tk::ROText;
 
 
 sub test_config();
@@ -17,7 +18,7 @@ sub show_help();
 sub update_rules();
 sub clear_messages();
 sub create_cmdline($);
-sub fileDialog($ $);
+sub fileDialog($ $ $);
 sub load_config();
 sub save_config();
 sub update_file_label_color($ $ $);
@@ -70,13 +71,13 @@ my $config_file     = "";
 my %help = (
 
   # File locations.
-    oinkscript   => 'Location of the executable oinkmaster script.',
-    oinkconf     => 'The oinkmaster configuration file to use.',
+    oinkscript   => 'Location of the executable Oinkmaster script.',
+    oinkconf     => 'The Oinkmaster configuration file to use.',
     outdir       => 'Where to put the new rules. This shoudl be the directory where you '.
                     'store your existing rules.',
 
     url          => 'Alternate location of rules archive. '.
-                    'If empty, the location in oinkmaster.conf is used.',
+                    'If empty, the location in Oinkmaster.conf is used.',
     varfile      => 'Variables that exist in downloaded snort.conf but not in '.
                     'this file will be added to it. Leave empty to skip.',
     backupdir    => 'Directory to put tarball of old rules before overwriting them. '.
@@ -94,7 +95,7 @@ my %help = (
     clear        => 'Clear current output messages.',
     exit         => 'Exit the GUI.',
     update       => 'Execute Oinkmaster to update the rules.',
-    test         => 'Test current oinkmaster configuration. ' .
+    test         => 'Test current Oinkmaster configuration. ' .
                     'If there are no fatal errors, you are ready to update the rules.',
     help         => 'Execute oinkmaster -h.',
     version      => 'Request version information from Oinkmaster.',
@@ -188,7 +189,7 @@ my ($oinkconf_frame, $oinkconf_label, $oinkconf_entry, $oinkconf_but) =
 $balloon->attach($oinkconf_frame, -statusmsg => $help{oinkconf});
 
 
-# Create frame with output directory. XXX must be able to select dir only.
+# Create frame with output directory.
 my ($outdir_frame, $outdir_label, $outdir_entry, $outdir_but) = 
   create_fileSelectFrame($req_tab, "Output directory", 'WRDIR', \$config{outdir});
 
@@ -203,7 +204,7 @@ my $opt_tab = $notebook->add("optional",
 );
 
 
-# Create frame with alternate URL location. XXX choice between stable/current/local.
+# Create frame with alternate URL location.
 my ($url_frame, $url_label, $url_entry, $url_but) = 
   create_fileSelectFrame($opt_tab, "Alternate URL", 'URL', \$config{url});
 
@@ -217,7 +218,7 @@ my ($varfile_frame, $varfile_label, $varfile_entry, $varfile_but) =
 $balloon->attach($varfile_frame, -statusmsg => $help{varfile});
 
 
-# Create frame with backup dir location. XXX must be able to select dir only.
+# Create frame with backup dir location.
 my ($backupdir_frame, $backupdir_label, $backupdir_entry, $backupdir_but) = 
   create_fileSelectFrame($opt_tab, "Backup directory", 'WRDIR', \$config{backupdir});
 
@@ -405,13 +406,21 @@ MainLoop;
 
 
 
-sub fileDialog($ $)
+sub fileDialog($ $ $)
 {
     my $var_ref = shift;
     my $title   = shift;
+    my $type    = shift;
 
-    my $filename = $main->getOpenFile(-title => $title);
-    $$var_ref = $filename if ($filename);
+    if ($type eq 'WRDIR') {
+        my $fs = $main->FileSelect();
+        $fs->configure(-verify => ['-d', '-w'], -title => $title);
+        my $dirname = $fs->Show;
+        $$var_ref = $dirname if ($dirname);
+    } else {
+        my $filename = $main->getOpenFile(-title => $title);
+        $$var_ref = $filename if ($filename);
+    }
 }
 
 
@@ -457,12 +466,6 @@ sub update_file_label_color($ $ $)
         }
     } elsif ($type eq "WRFILE") {
         if (-f "$filename" && -w "$filename") {
-            $label->configure(-background => "#00e000");
-        } else {
-            $label->configure(-background => 'red');
-        }
-    } elsif ($type eq "RODIR") {
-        if (-d "$filename" && -r "$filename") {
             $label->configure(-background => "#00e000");
         } else {
             $label->configure(-background => 'red');
@@ -605,13 +608,12 @@ if ($type eq 'URL') {
 }
 
 
-
   # Create browse-button.
     my $but = $frame->Button(
       -text       => "browse ...",
       -background => "$actbutcolor",
       -command    => sub {
-                            fileDialog($var_ref, $name);
+                            fileDialog($var_ref, $name, $type);
                          }
     )->pack(
       -side       => 'left',
