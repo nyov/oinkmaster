@@ -1075,7 +1075,7 @@ sub process_rules($ $ $ $ $ $)
                     $sids{$sid}{single} = $single;
                     $sids{$sid}{multi}  = $multi;
                 }
-        
+
           # No dup.
             } else {
                 $sids{$sid}{single} = $single;
@@ -1224,7 +1224,7 @@ sub process_rule($ $ $ $ $ $ $)
     my $multi  = $$rule_ref{multi};
 
     $$stats_ref{total}++;
- 
+
   # Some rules may be commented out by default.
   # Enable them if -e is specified.
     if ($multi =~ /^#/ && $config{enable_all}) {
@@ -1589,7 +1589,7 @@ sub print_changes($ $)
 
   # Print list of added files.
     if (keys(%{$$ch_ref{added_files}})) {
-        print "\n[+] Added files: [+]\n\n";
+        print "\n[+] Added files (consider updating your snort.conf to include them): [+]\n\n";
         foreach my $added_file (sort({uc($a) cmp uc($b)} keys(%{$$ch_ref{added_files}}))) {
             print "    -> $added_file\n";
         }
