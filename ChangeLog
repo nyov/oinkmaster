@@ -38,10 +38,12 @@ o Allow location of editor to be set in the GUI and do not search for
 o The GUI will now always use the same Perl binary when executing 
   oinkmaster.pl as the one running the GUI itself.
 o By popular demand: support marking rules as locally modified to prevent
-  them from being overwritten. See oinkmaster.conf for documentation
-  about "localsid". Do NOT use this unless you really have to as it's
-  very easy to end up with lots of sigs that aren't updated anymore,
-  which is the exact opposite of what Oinkmaster is created for.
+  them from being overwritten. See oinkmaster.conf and the FAQ for 
+  documentation about "localsid". Do not use this unless you really have 
+  to as it's very easy to end up with lots of sigs that aren't updated 
+  anymore.
+o The FAQ has been updated, especially the sections about local 
+  customization of rules.
 
 
 
