@@ -429,7 +429,7 @@ sub unpack_rules_archive($)
 {
     my $archive  = shift;
     my $ok_lead  = 'a-zA-Z0-9_\.';       # allowed leading char in filenames in the tar archive
-    my $ok_chars = 'a-zA-Z0-9_\.\-/';    # allowed chars in filenames in the tar archive
+    my $ok_chars = 'a-zA-Z0-9_~\.\-/';   # allowed chars in filenames in the tar archive
 
     my ($dir) = ($archive =~ /(.*)\//);  # extract directory part of the filename
 
