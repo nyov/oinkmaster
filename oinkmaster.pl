@@ -98,7 +98,7 @@ while ($_ = readdir(NEWRULES)) {
 closedir(NEWRULES);
 
 # Make sure there is at least one file to be updated.
-clean_exit("Found no files in archive to be updated.")
+clean_exit("Found no files in archive matching \"$config{update_files}\".")
   if (keys(%new_files) < 1);
 
 # Disable (#comment out) all rules listed in %sid_disable_list.
@@ -120,7 +120,7 @@ print STDERR "Comparing new files to the old ones... "
 FILELOOP:foreach $file (keys(%new_files)) {                  # for each new file
     next FILELOOP if (exists($added_files{$file}));          # skip diff if it's an added file
 
-  # Skip diff if file maches skip_diff regexp.
+  # Skip diff if file maches skip_diff regexp. Not documented and perhaps not even working?
     if (exists($config{skip_diff}) && $file =~ /$config{skip_diff}/) {
 	$skip_diff_files .= "\n    -> $file";
 	$skip_diff_files .= " (local copy updated)" unless ($careful);
@@ -342,7 +342,7 @@ sub show_usage
                  "           but not in the downloaded rules archive (i.e. files that may\n".
                  "           have been removed from the archive).\n".
                  "-q         Quiet mode. No output unless changes were found\n".
-		 "-v         Verbose mode (usually not needed)\n".
+		 "-v         Verbose mode\n".
                  "-h         Show usage help\n\n";
     exit(0);
 }
@@ -397,7 +397,7 @@ sub read_config
 
         next unless (/\S/);   # skip blank lines
 
-        if (/^disablesids*\s+(\d.*)/) {                            # disablesid
+        if (/^disablesids*\s+(\d.*)/i) {                           # disablesid
 	    $args = $1;
 	    foreach $_ (split(/\s*,\s*/, $args)) {
   	        if (/^\d+$/) {
@@ -408,7 +408,7 @@ sub read_config
 	    }
         } elsif (/^modifysid\s+(\d+)\s+(.*)/i) {                   # modifysid
             push(@{$sid_modify_list{$1}}, $2);
-        } elsif (/^skipfiles*\s+(.*)/) {                           # skipfile
+        } elsif (/^skipfiles*\s+(.*)/i) {                          # skipfile
 	    $args = $1;
 	    foreach $_ (split(/\s*,\s*/, $args)) {
 	        if (/^\S.*\S$/) {
@@ -455,9 +455,9 @@ sub sanity_check
 
   # We now know a path was defined in the config, so set it.
     $ENV{"PATH"} = $config{path};
-    $ENV{'IFS'} = '';
+    $ENV{'IFS'}  = '';
 
-  # Make sure all required binaries are found.
+  # Make sure all required binaries can be found.
     foreach $_ (@req_binaries) {
         die("\"$_\" binary not found\nExiting")
           if (system("which \"$_\" >/dev/null 2>&1"));
@@ -471,7 +471,7 @@ sub sanity_check
     die("The output directory \"$output_dir\" doesn't exist or isn't writable by you.\nExiting")
       if (! -d "$output_dir" || ! -w "$output_dir");
 
-  # Make sure the backup directory exists and is writable if running with -b.
+  # Make sure the backup directory exists and is writable, if running with -b.
     die("The backup directory \"$backup_dir\" doesn't exist or isn't writable by you.\nExiting")
       if (defined($backup_dir) && (! -d "$backup_dir" || ! -w "$backup_dir"));
 }
@@ -497,7 +497,7 @@ sub download_rules
     } else {                           # Grab file from local filesystem.
         $url =~ s/^file:\/\///;        # Remove file://, the rest is the actual filename.
         print STDERR "Copying rules archive from $url...\n" unless ($quiet);
-        copy("$url", "$tmpdir/$outfile") or clean_exit("Unable to copy $url: $!");
+        copy("$url", "$tmpdir/$outfile") or clean_exit("Unable to copy $url to $tmpdir/$outfile: $!");
     }
 }
 
@@ -509,8 +509,8 @@ sub unpack_rules_archive
 {
     my ($old_dir, $ok_chars, $tmpoutfile);
 
-    $ok_chars = 'a-zA-Z0-9_\.\-/\n :';   # allowed characters for filenames in the tar archive
-    $tmpoutfile = $outfile;                # so we don't modify the global filename variable
+    $ok_chars = 'a-zA-Z0-9_\.\-/\n :';     # allowed characters for filenames in the tar archive
+    $tmpoutfile = $outfile;                # so we don't modify the global $outfile variable
 
     $old_dir = getcwd or clean_exit("Could not get current directory: $!");
     chdir("$tmpdir")  or clean_exit("Could not change directory to $tmpdir: $!");
@@ -552,7 +552,7 @@ sub unpack_rules_archive
           if (/->/ || /=>/ || /==/);
     }
 
-  # Looks good. Now we can finally untar it for real.
+  # Looks good. Now we can finally untar it.
     print STDERR "Archive successfully downloaded, unpacking... "
       unless ($quiet);
     clean_exit("Failed to untar $tmpoutfile.")
@@ -601,15 +601,14 @@ sub disable_rules
 	    $line =~ s/\s*\n$/\n/;
 	    $line =~ s/^#+\s*/#/;
 
-          # Some rules may be commented out by default.
-          # Enable them if -e is specified.
+          # Some rules may be commented out by default. Enable them if -e is specified.
 	    if ($line =~ /^#/) {
 		if ($preserve_comments) {
 		    print STDERR "Preserving disabled rule (sid $sid): $msg\n"
-		      if ($verbose && !exists($sid_disable_list{$sid}));
+		      if ($verbose);
 		} else {
 		    print STDERR "Enabling disabled rule (sid $sid): $msg\n"
-		      if ($verbose && !exists($sid_disable_list{$sid}));
+		      if ($verbose);
 		    $line =~ s/^#*//;
 		}
 	    }
@@ -692,7 +691,7 @@ sub setup_rule_hashes
 
 
 
-# Try to find a given string in a given array. Return 1 if found, otherwise 0.
+# Try to find a given string in a given array. Return 1 if found, or 0 if not.
 # Some things will always be considered as found (lines that we don't care if
 # they were added/removed). It's extremely slow, but who cares.
 sub find_line
@@ -741,7 +740,7 @@ sub do_backup
     print STDERR "Creating backup of old rules..." unless ($quiet);
 
     mkdir("$tmpbackupdir", 0700)
-      or clean_exit("Could not create directory $tmpbackupdir: $!");
+      or clean_exit("Could not create temporary backup directory $tmpbackupdir: $!");
 
     opendir(OLDRULES, "$output_dir") or clean_exit("Could not open directory $output_dir: $!");
     while ($_ = readdir(OLDRULES)) {
