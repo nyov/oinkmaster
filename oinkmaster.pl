@@ -482,6 +482,7 @@ sub unpack_rules_archive($)
 
 # Open all rules files in the temporary directory and disable (#comment out)
 # all rules in listed in the disable list and then write back to the same files.
+# Also clean unwanted whitespaces from them.
 sub disable_and_modify_rules($ $ @)
 {
     my $disable_sid_ref = shift;
@@ -532,15 +533,20 @@ sub disable_and_modify_rules($ $ @)
           # We've got a valid snort rule. Grab msg and sid.
    	    my ($msg, $sid) = ($1, $2);
 
+          # Remove unwanted whitespaces.
+            $line =~ s/^\s*//;
+            $line =~ s/\s*\n$/\n/;
+            $line =~ s/^#+\s*/#/;
+
           # Some rules may be commented out by default. Enable them if -e is specified.
-	    if ($line =~ /^\s*#/) {
+	    if ($line =~ /^#/) {
 		if ($preserve_comments) {
 		    print STDERR "Preserving disabled rule (SID $sid): $msg\n"
 		      if ($verbose);
 		} else {
 		    print STDERR "Enabling disabled rule (SID $sid): $msg\n"
 		      if ($verbose);
-		    $line =~ s/^\s*#*//;
+		    $line =~ s/^#*//;
 		}
 	    }
 
