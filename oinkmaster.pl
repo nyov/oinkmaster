@@ -28,6 +28,7 @@ my $careful           = 0;
 my $quiet             = 0;
 my $rules_changed     = 0;
 my $other_changed     = 0;
+my $something_changed = 0;
 my $check_removed     = 0;
 my $preserve_comments = 0;
 
@@ -217,7 +218,7 @@ print STDERR "done.\n" unless ($quiet);
 # Also create backup first if running with -b.
 if ($rules_changed || $other_changed || defined($skip_diff_files)) {
     if ($careful) {
-        print STDERR "No need to backup old files, skipping.\n"
+        print STDERR "No need to backup old files (running in careful mode), skipping.\n"
           if (defined($backup_dir) && (!$quiet));
     }  else {
         do_backup if (defined($backup_dir));               # backup old rules if -b
@@ -243,11 +244,14 @@ unless ($careful) {
 
 # Time to print the results.
 
-if (($rules_changed || $other_changed || keys(%added_files) > 0
-    || defined($removed_files)) || !$quiet) {
+$something_changed = 1
+  if ($rules_changed || $other_changed
+      || keys(%added_files) > 0 || defined($removed_files));
+
+if ($something_changed || !$quiet) {
     print "\n[***] Results from Oinkmaster started $start_date [***]\n";
     print "\nNote: Oinkmaster was running in careful mode - no files were really updated or added.\n"
-      if ($careful);
+      if ($careful && $something_changed);
 
   # Print rule changes.
     print "\n[*] Rules added/removed/modified: [*]\n";
@@ -362,20 +366,26 @@ sub parse_cmdline
     show_usage              if (defined($opt_h));
     show_usage unless ($cmdline_ok);
 
-    if (defined($opt_o)) {                # -o <dir>, the only required option.
+    if (defined($opt_o)) {       # -o <dir>, the only required option.
         $output_dir = $opt_o;
     } else {
         show_usage;
     }
+
+  # Remove possible trailing slash (just for cosmetic reasons).
+    $output_dir =~ s/\/+$//;
+    $backup_dir =~ s/\/+$// if (defined($backup_dir));
 }
 
 
 
 sub read_config
 {
-    my $line = 0;
+    my ($args, $line);
 
-    open(CONF, "$config_file") or die("could not open $config_file: $!\nExiting");
+    $line = 0;
+
+    open(CONF, "$config_file") or die("Could not open $config_file: $!\nExiting");
 
     while (<CONF>) {
         $line++;
@@ -384,11 +394,21 @@ sub read_config
 	s/\s*$//;                        # remove trailing whitespaces
         next unless (/\S/);              # skip blank lines
 
-        if (/^\s*sid\s*(\d+)/i || /^\s*disablesid\s*(\d+)/ ) {     # disablesid X
-            $sid_disable_list{$1}++;
-        } elsif (/^\s*file\s*(\S+)/i || /^\s*skipfile\s*(\S+)/) {  # file X
-            $verbose && print STDERR "Adding file to ignore list: $1.\n";
-            $file_ignore_list{$1}++;
+        if (/^\s*disablesids*\s+(\d.*)/) {                        # disablesid
+	    $args = $1;
+	    foreach $_ (split(/\s*,\s*/, $args)) {
+                die("Line $line in $config_file is invalid, giving up.\nExiting")
+		  unless (/^\d+$/);
+                $sid_disable_list{$_}++;
+	    }
+        } elsif (/^\s*skipfiles*\s+(.*)/) {                       # skipfile
+	    $args = $1;
+	    foreach $_ (split(/\s*,\s*/, $args)) {
+                die("Line $line in $config_file is invalid, giving up.\nExiting")
+		  unless (/^\S.*\S$/);
+                $verbose && print STDERR "Adding file to ignore list: $_.\n";
+                $file_ignore_list{$_}++;
+	    }
 	} elsif (/^URL\s*=\s*(.*)/i) {                             # URL to use
 	    $url = $1 unless (defined($url));                      # may already be defined by -u <url>
 	} elsif (/^PATH\s*=\s*(.*)/i) {                            # $PATH to be used
@@ -398,10 +418,10 @@ sub read_config
 	} elsif (/^skip_diff\s*=\s*(.*)/i) {                       # regexp of files to skip comparison for
 	    $config{skip_diff} = $1;
         } else {                                                   # invalid line
-            print STDERR "Warning: line $line in $config_file is invalid, skipping line.\n";
+            die("Line $line in $config_file is invalid, giving up.\nExiting");
         }
-    }
 
+    }
     close(CONF)
 }
 
@@ -665,7 +685,7 @@ sub do_backup
     opendir(OLDRULES, "$output_dir") or clean_exit("Could not open directory $output_dir: $!");
     while ($_ = readdir(OLDRULES)) {
         copy("$output_dir/$_", "$tmpbackupdir/")
-          or print STDERR "Warning: error copying $output_dir/$_ to $tmpbackupdir: $!"
+          or print STDERR "WARNING: error copying $output_dir/$_ to $tmpbackupdir: $!"
             if (/$config{update_files}/ && !exists($file_ignore_list{$_}));
     }
     closedir(OLDRULES);
@@ -677,11 +697,11 @@ sub do_backup
 
   # Execute tar command. This will archive "rules-backup-$date/"
   # into the file rules-backup-$date.tar, placed in $tmpdir.
-    print STDERR "Warning: tar command did not exit with status 0 when archiving backup files.\n"
+    print STDERR "WARNING: tar command did not exit with status 0 when archiving backup files.\n"
       if (system("tar","cf","rules-backup-$date.tar","rules-backup-$date"));
 
   # Compress it.
-    print STDERR "Warning: gzip command did not exit with status 0 when compressing backup file.\n"
+    print STDERR "WARNING: gzip command did not exit with status 0 when compressing backup file.\n"
       if (system("gzip","rules-backup-$date.tar"));
 
   # Change back to old directory (so it will work with -b <directory> as either
@@ -690,7 +710,7 @@ sub do_backup
 
   # Move the archive to the backup directory.
     move("$tmpdir/rules-backup-$date.tar.gz", "$backup_dir/")
-      or print STDERR "Warning: unable to move $tmpdir/rules-backup-$date.tar.gz to $backup_dir/: $!\n";
+      or print STDERR "WARNING: unable to move $tmpdir/rules-backup-$date.tar.gz to $backup_dir/: $!\n";
 
     print STDERR " saved as $backup_dir/rules-backup-$date.tar.gz.\n"
       unless ($quiet);
@@ -703,7 +723,7 @@ sub do_backup
 sub clean_exit
 {
     system("rm","-r","-f","$tmpdir")
-      and print STDERR "Warning: unable to remove temporary directory $tmpdir.\n";
+      and print STDERR "WARNING: unable to remove temporary directory $tmpdir.\n";
 
     if (defined($_[0])) {
         $_ = $_[0];
