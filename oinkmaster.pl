@@ -607,7 +607,11 @@ sub disable_rules
 
           # Modify rule, if requested.
             foreach $_ (@{$sid_modify_list{$sid}}) {
+	        print STDERR "Modifying sid $sid: $_\n  Before: $line"
+		  if ($verbose);
 		eval "\$line =~ $_";
+		print STDERR "  After:  $line\n"
+                  if ($verbose);
 	    }
 
           # Disable rule, if requested.
@@ -616,6 +620,9 @@ sub disable_rules
                 $line = "#$line" unless ($line =~ /^#/);
                 $num_disabled++;
 	    }
+
+	    chomp($line);
+	    $line .= "\n";
             print OUTFILE $line;       # Write line back to the rules file.
         }
         close(OUTFILE);
