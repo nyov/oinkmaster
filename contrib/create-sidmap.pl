@@ -18,7 +18,7 @@ my $MULTILINE_RULE_REGEXP  = '^\s*(?:%ACTIONS%)'.
 my $SINGLELINE_RULE_REGEXP = '^\s*(?:%ACTIONS%)'.
                              '\s.+;\s*\)\s*$'; # ';
 
-my $USAGE   = "usage: $0 <rulesdir> [rulesdir2, ... ]\n";
+my $USAGE   = "usage: $0 <rulesdir> [rulesdir2, ...]\n";
 my $verbose = 1;
 
 my (%sidmap, %config);
@@ -41,10 +41,10 @@ foreach my $rulesdir (@rulesdirs) {
     while (my $file = readdir(RULESDIR)) {
         next unless ($file =~ /\.rules$/);
 
-        open(OLDFILE, "$rulesdir/$file") or die("could not open $rulesdir/$file: $!\n");
+        open(FILE, "$rulesdir/$file") or die("could not open $rulesdir/$file: $!\n");
         print STDERR "Processing $file\n";
-        my @file = <OLDFILE>;
-        close(OLDFILE);
+        my @file = <FILE>;
+        close(FILE);
 
         my ($single, $multi, $nonrule, $msg, $sid);
 
