@@ -1,5 +1,5 @@
 .\" $Id$
-.\" Copyright (c) 2004 Andreas Ostling <andreaso@it.su.se>
+.\" Copyright (c) 2004-2005 Andreas Ostling <andreaso@it.su.se>
 .\"
 .\" Command to generate the man page: groff -man -Tascii oinkmaster.1
 .\"
@@ -135,11 +135,13 @@ Download the rules archive from
 .I url
 instead of the location specified in the configuration file.
 It must start with file://, ftp://, http://, https:// or scp:// and end 
-with ".tar.gz". The archive must contain a directory called "rules",
-holding all the rules files. For the official Snort rules, the URL you 
-should use depends on the version of Snort you run. Visit the rules 
-download section at the Snort web site to find the right URL. It may need 
-to be updated when upgrading to a new major version of Snort.
+with ".tar.gz" or ".tgz". The file must be a gzipped tarball 
+containing a directory named "rules", holding all the rules files. For 
+the official Snort rules, the URL to use depends on the version of Snort 
+you run and it might also require registration. Visit the rules download 
+section at the Snort web site to find the right URL and more 
+information. Remember to update the URL when upgrading to a new major 
+version of Snort.
 
 You may specify multiple
 .B -u
