@@ -950,6 +950,7 @@ sub make_backup($ $)
       or clean_exit("could not open directory $src_dir: $!");
 
     while ($_ = readdir(OLDRULES)) {
+        next if (/^\.\.?$/);
         if (/$config{update_files}/) {
 	    my $src_file = untaint_path("$src_dir/$_");
             copy("$src_file", "$backup_tmp_dir/")
@@ -1194,6 +1195,7 @@ sub get_changes($ $)
           or clean_exit("could not open directory $config{output_dir}: $!");
 
         while ($_ = readdir(OLDRULES)) {
+            next if (/^\.\.?$/);
             $changes{removed_files}{"$_"}++
               if (/$config{update_files}/ && 
                 !exists($config{file_ignore_list}{$_}) && 
@@ -1294,6 +1296,7 @@ sub get_new_filenames($ $)
       or clean_exit("could not open directory $new_rules_dir: $!");
 
     while ($_ = readdir(NEWRULES)) {
+        next if (/^\.\.?$/);
         $new_files{"$new_rules_dir/$_"}++
           if (/$config{update_files}/ && !exists($config{file_ignore_list}{$_}));
     }
