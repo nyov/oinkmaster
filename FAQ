@@ -23,11 +23,11 @@ Q8:  I want to copy the rules archive from a remote host to the sensor
 Q9:  How do I setup proxy configuration?
 Q10: Can Oinkmaster be used to update rules from www.whitehats.com?
 Q11: Will Oinkmaster fail when new keywords are introduced in the rules?
-Q12: What license are the official Snort rules reeased under, and
+Q12: Under what license are the official Snort rules reeased, and
      can I modify them without violating it?
 Q13: Is there a GUI for Oinkmaster?
 Q14: Oinkmaster says the file in URL does not exist (or it exists but
-     doesn't work with Snort).
+     doesn't work with my Snort).
 Q15: When starting Oinkmaster it says my Perl version is too old, or 
      gives me errors about "too many arguments for open".
 
@@ -167,7 +167,7 @@ Q8:  I want to copy the rules archive from a remote host to the sensor
      sensors full access to foohost. Can this be done?
 
 A8:  Yes. You should really rely on the OpenSSH documentation on how to 
-     do this as this is well documented there, but an attempt at 
+     do this as it is well documented there, but an attempt at 
      explaining how it could be done follows. The instructions assumes 
      OpenSSH on both client and server. 
 
@@ -239,8 +239,8 @@ A9:  If you download the snort rules archive from a web site (e.g.
      Oinkmaster to use that proxy or the download will fail. How you do 
      that depends if you use wget (i.e. use use_external_bins=1 in 
      oinkmaster.conf) or libwww-perl (use_external_bins=0). You can read 
-     their man pages for complete instructions configuration ("man wget" 
-     or "man LWP::UserAgent").
+     their man pages for complete configuration instructions, "man wget" 
+     or "man LWP::UserAgent".
 
      Quick instructions for the impatient:
 
@@ -264,9 +264,9 @@ A9:  If you download the snort rules archive from a web site (e.g.
 Q10: Can Oinkmaster be used to update rules from www.whitehats.com?
 
 A10: No, the Snort rules on www.whitehats.com has currently not been 
-     maintained for a long long time and should not be used (although the 
+     maintained for a long long time and should not be used, although the 
      arachNIDS database is still a good source of information for older 
-     rules). Use the rules on www.snort.org instead.
+     rules. Use the rules on www.snort.org instead.
 
      (And for Oinkmaster to work, the rules package must be a gzipped 
      tar file that contains a directory called "rules", which holds
@@ -292,14 +292,15 @@ A11: No. (Not unless there is a bug in Oinkmaster anyway.) Oinkmaster was
 
 
 
-Q12: What license are the official Snort rules reeased under, and
+Q12: Under what license are the official Snort rules released, and
      can I modify them without violating it?
 
 A12: The Snort people have answered this a few times on the Snort
      lists, but here is a small summary. The official Snort
      signatures are part of Snort and are therefore also released
      under GPL. You can modify them locally as much as you want,
-     but if distributing them, they need to be GPL-licensed as well.
+     but if distributing them, they need to follow GPL and be 
+     GPL'ed as well.
 
 
 
@@ -314,7 +315,7 @@ A13: Yes, check out README.gui and contrib/oinkgui.pl.
 
 
 Q14: Oinkmaster says the file in URL does not exist (or it exists but
-     doesn't work with Snort).
+     doesn't work with my Snort).
 
 A14: Check the "url = ..." line in oinkmaster.conf (or argument to "-u" 
      if you specify it on command line). The URL you should use depends 
@@ -330,18 +331,19 @@ A14: Check the "url = ..." line in oinkmaster.conf (or argument to "-u"
      download layout again at any time, so if you experience problems, go 
      to the Snort web site and see if anything is mentioned there.
 
-     If you are absolute sure you use the right rules for your version of 
-     Snort but still have problems, you may need to read the Snort manual
-     because it is likely that your local configuration is broken. But of 
-     course there can be times when the rules archive actually is broken 
-     somehow (remember that auto-update of the rules with automatic Snort 
-     restart is bad unless you are careful). These issues are often 
-     mentioned on the Snort mailing lists.
+     If you are absolutely sure you use the right rules for your version
+     of Snort but still have problems, you may need to read the Snort
+     manual because it is likely that your local configuration is broken.
+     For example, the new rules maybe contains new variables that you
+     forgot to add. But of course there can be times when the rules
+     archive actually is broken somehow (remember that auto-update of the
+     rules with automatic Snort restart is bad unless you are careful).
+     These issues are often mentioned on the Snort mailing lists.
 
 
 
 Q15: When starting Oinkmaster it says my Perl version is too old, or 
-     gives me errors about "too many arguments for open".
+     gives me errors about "too many arguments for open ...".
 
 A15: Your Perl version needs to be upgraded to at least 5.6.1.
      The issue is common on FreeBSD boxes, which usually use Perl 

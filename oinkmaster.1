@@ -23,9 +23,9 @@ The only required argument to Oinkmaster is
 .I outdir
 where
 .I outdir
-is the directory to put the new rules in. This should be where you keep 
-your rules locally. The downloaded files will be compared to the ones in 
-here before possibly overwriting them.
+is the directory to put the new rules files in. This should be where you
+keep your rules locally. The downloaded files will be compared to the ones
+in here before possibly overwriting them.
 .PP
 Optional arguments:
 .IP "\fB-b \fIdir\fP
@@ -36,7 +36,7 @@ before overwriting them with the new files. No backup if done if no file
 has changed or if Oinkmaster is running in careful mode.
 .IP "\fB-c
 Run in careful mode. This means that Oinkmaster will only check for 
-updates and print them, but not overwrite or update anything.
+updates and print them, but not update anything.
 .IP "\fB-C \fIcfg\fP
 Use this configuration file instead of the default.
 If not specified, oinkmaster.conf will be looked for in
@@ -60,7 +60,7 @@ Enable interactive mode. You will be asked to approve the changes (if
 any) before updating anything.
 .IP "\fB-q
 Run in quiet mode. Nothing is printed unless there are changes in the 
-rules or if there are any error messages.
+rules or if there are errors or warnings.
 .IP "\fB-Q
 Run in super-quiet mode. This is the same as
 .B -q
@@ -68,10 +68,8 @@ but even more quiet when printing the results (the "None." stuff is not
 printed).
 .IP "\fB-r
 Check for rules files that exist in the output directory
-.I (outdir)
-but not in the 
-downloaded rules archive, i.e. files that may have been removed from the 
-distribution archive.
+but not in the downloaded rules archive, i.e. files that may have been 
+removed from the distribution archive.
 .IP "\fB-T
 Test if the configuration file(s) seems to be in order and then exit.
 .IP "\fB-u \fIurl\fP
@@ -79,18 +77,19 @@ Download the rules archive from
 .I url
 instead of the location specified in the configuration file.
 It must start with file://, ftp://, http://, https:// or scp:// and
-end with ".tar.gz". It must contain a directory called "rules", holding
-all the rules files. 
-(For the official Snort rules, the URL you should 
+end with ".tar.gz". The archive must contain a directory called "rules".
+holding all the rules files. 
+For the official Snort rules, the URL you should 
 use depends on the version of Snort you run. Visit the rules download 
 section at the Snort web site to find the right URL. It may need to be 
-updated when upgrading to a new major version of Snort.)
+updated when upgrading to a new major version of Snort.
 .IP "\fB-U \fIfile\fP
 Variables that exist in downloaded snort.conf but not in
 .I file
 will be added to this one, right after any other variables it may contain. 
 Modified variables are not merged, only new ones. This is usually your 
-production copy of snort.conf.
+production copy of snort.conf (which should not be a file that is
+updated by Oinkmaster the normal way).
 .IP "\fB-v
 Run in verbose mode.
 .IP "\fB-V
@@ -103,7 +102,7 @@ and put the new rules in /etc/rules/:
 \fB    oinkmaster.pl -o /etc/rules \fP
 .fi
 .PP
-Grab rules archive from local filesystem but do not print anything unless
+Grab rules archive from local filesystem and do not print anything unless
 it contains updated rules:
 .PP
 .nf
@@ -115,11 +114,10 @@ there were updates, and send output by e-mail. (Note however that if you
 plan on distributing files with Oinkmaster that could be considered 
 sensitive, such as Snort configuration files containing database 
 passwords, you should of course not send the output by e-mail without 
-first encrypting the content.) Also make backup first if anything is 
-updated:
+first encrypting the content.) 
 .PP
 .nf
-\fB    oinkmaster.pl -o /etc/rules -b /etc/snort/rules 2>&1 | \fP\\
+\fB    oinkmaster.pl -o /etc/snort/rules -b /etc/snort/backup 2>&1 | \fP\\
 \fB    mail -s "subject" user@example.com
 .fi
 .PP
@@ -140,8 +138,6 @@ command is available on the system:
 .fi
 .PP
 .SH FILES
-The configuration file will be looked for here by default:
-.br
 .B /etc/oinkmaster.conf
 .br
 .B /usr/local/etc/oinkmaster.conf
@@ -150,8 +146,8 @@ If you find a bug, report it by e-mail to the author. Always include as
 much information as possible.
 .SH HISTORY
 The first version of this script was called arachnids_upd and was 
-released in early 2001. It worked only with the ArachNIDS Snort rules but 
-as times changed it was redesigned to work with the official Snort rules 
+released in early 2001. It worked only with the ArachNIDS Snort rules, but 
+as times changed, it was redesigned to work with the official Snort rules 
 instead, and the new name became Oinkmaster.
 .SH AUTHOR
 Andreas Ostling <andreaso@it.su.se>
