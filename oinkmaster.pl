@@ -320,7 +320,10 @@ sub parse_cmdline($)
         "u=s" => \$$cfg_ref{url},
         "U=s" => \$$cfg_ref{varfile},
         "v"   => \$$cfg_ref{verbose},
-        "V"   => sub { print "$VERSION\n"; exit(0) }
+        "V"   => sub { 
+                     print "$VERSION\n";
+                     exit(0)
+                 }
     );
 
     show_usage unless ($cmdline_ok);
@@ -586,7 +589,8 @@ sub sanity_check()
     }
 
   # Make sure temporary directory exists.
-    clean_exit("the temporary directory $config{tmp_basedir} does not exist or isn't writable by you.")
+    clean_exit("the temporary directory $config{tmp_basedir} does not ".
+               "exist or isn't writable by you.")
       if (!-d "$config{tmp_basedir}" || !-w "$config{tmp_basedir}");
 
   # Also untaint it.
@@ -1583,7 +1587,8 @@ sub get_next_entry($ $ $ $ $ $)
 
       # Do extra check and warn if it *might* be a rule anyway,
       # but that we just couldn't parse for some reason.
-        warn("\nWARNING: line may be a rule but it could not be parsed (missing sid or msg?): $line\n")
+        warn("\nWARNING: line may be a rule but it could not be parsed ".
+             "(missing sid or msg?): $line\n")
           if ($config{verbose} && $line =~ /^\s*alert .+msg\s*:\s*".+"\s*;/);
 
         $$nonrule_ref = $line;
