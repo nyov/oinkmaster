@@ -8,8 +8,9 @@ use strict;
 my (%sidmsgmap);
 
 my $usage = "Usage: $0 <oinkmaster config file> <rules directory>\n\n".
-            "New config file will be printed to standard output so you\n".
-            "probably want to redirect the output to a file, for example:\n".
+            "The new config file will be printed to standard output, so you\n".
+            "probably want to redirect the output to a file (NOT the same\n".
+            "file you used as input!), for example:\n".
             "$0 oinkmaster.conf rules/ > oinkmaster.conf.new\n".
             "If oinkmaster.conf.new looks ok, simply rename it to oinkmaster.conf.\n\n";
 
