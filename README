@@ -127,15 +127,15 @@ Oinkmaster will tell you if something has been updated.
 
 If you already have several rules commented out (or removed) in your current
 local rules, you need to add the SIDs (Snort rule ID) of those to 
-oinkmaster.conf manually (or check out the contrib directory for a help script)
-before running Oinkmaster, or they will be re-enabled after each update. 
+oinkmaster.conf manually (or check out the contrib directory for a help 
+script) before running Oinkmaster, or they will be re-enabled after each 
+update. 
 
-You disable rules by adding "disablesid x" to oinkmaster.conf, where
-x is the SID of the rule in question. So if you want the rule with SID
-12345 to be commented out after each update, you add the line
-"disablesid 12345" to oinkmaster.conf. When you update the rules the next 
-time, this rule will be commented out and Oinkmaster will notify you of 
-that change.
+You disable rules by adding "disablesid x" to oinkmaster.conf, where x is 
+the SID of the rule in question. So if you want the rule with SID 12345 to 
+be commented out after each update, you add the line "disablesid 12345" to 
+oinkmaster.conf. When you update the rules the next time, this rule will 
+be commented out and Oinkmaster will notify you of that change.
 
 You can also add entire files to be totally ignored by adding 
 "skipfile filename" options to oinkmaster.conf where "filename" is a file
@@ -303,10 +303,12 @@ o It's a really good idea to separate your local rules files (if you have
   and that some of your local file can become overwritten by files from 
   the downloaded rules archive.
 
-  It's also a really good idea to keep an extra (unused) copy of 
-  snort.conf in the rules directory but specify another snort.conf when 
-  starting Snort. This way you can keep track of changes in the snort.conf 
-  from the rules archive while keeping your customized copy intact. If 
+  It's also a good idea to keep an extra (unused) copy of snort.conf in 
+  the rules directory but specify another snort.conf (one that's not in 
+  your output directory specified by -o to Oinkmaster) when starting 
+  Snort. This way you can keep track of changes in the snort.conf file 
+  from the rules archive while keeping your customized copy intact (You 
+  do not want to update your production snort.conf automatically!). If 
   there are added/removed rules files in the archive or added/modified 
   variables in snort.conf, you will have to edit your production copy of 
   snort.conf manually and update as needed. Oinkmaster does not do that 
@@ -318,7 +320,7 @@ o It's a really good idea to separate your local rules files (if you have
 
   You can run with -U <file> though, which means that Oinkmaster will 
   search snort.conf in the downloaded rules archive for all variables 
-  (the "var somevar something" lines) and then verify against 
+  (the "var varname something" lines) and then verify against 
   <file> (which probably is your local production copy of snort.conf). 
   Variables that exist in the distribution snort.conf but not in <file> 
   will be added to <file> directly after any other variables it may contain. 
@@ -327,7 +329,7 @@ o It's a really good idea to separate your local rules files (if you have
   solve the problem, but it may be convenient on home networks and such if 
   you think it's a good idea.
 
-o Oinkmaster also never deletes any rules files from your system.
+o Oinkmaster never deletes any rules files from your system.
   So if a file called foo.rules is usually included in the rules distribution
   archive but is one day removed from it, the old foo.rules will still be left
   in your rules directory. Oinkmaster will notify you of this but only if you
@@ -343,11 +345,6 @@ o Oinkmaster also never deletes any rules files from your system.
   probably want to use the "-r" argument. Otherwise it will be very
   missleading since your local rules files obviously don't exist in the
   rules distribution, and will therefore be regarded as removed every time.
-  Note that the rules in your output directory will be overwritten after each
-  update (if there were any changes, that is) which means that all possible
-  local modifications will be lost. Therefore it's better to move rules you
-  need to modify (other than just enabling/disabling) to some local file
-  in another directory instead. That's my opinion anyway.
 
 o Don't depend too much on this script for the rules updating process.
   It's just intended to be a small help and you should always keep an eye
