@@ -125,7 +125,7 @@ download_rules("$config{url}", "$tmpdir/$OUTFILE");
 unpack_rules_archive("$tmpdir/$OUTFILE");
 
 # Create list of new files (with full path) that we care about from the
-# downloaded archive. Filenames (with full path) will be stored as 
+# downloaded archive. Filenames (with full path) will be stored as
 # %new_files{filenme}.
 my $num_files = get_new_filenames(\%new_files, "$tmpdir/rules/");
 
@@ -136,7 +136,7 @@ clean_exit("not enough rules files in downloaded archive (is it broken?)\n".
 
 # Disable/modify/clean downloaded rules.
 my $num_rules = disable_and_modify_rules(\%{$config{sid_disable_list}},
-                                         \%{$config{sid_modify_list}}, 
+                                         \%{$config{sid_modify_list}},
                                          \%new_files);
 
 # Make sure the number of rules is at least $min_rules.
@@ -164,9 +164,9 @@ $something_changed = 1
       $#{$changes{new_vars}} > -1);
 
 
-# Update files listed in %changes{modified_files} (move the new files 
-# from the temporary directory into our output directory) and add new 
-# variables to the local snort.conf if requested, unless we're running in 
+# Update files listed in %changes{modified_files} (move the new files
+# from the temporary directory into our output directory) and add new
+# variables to the local snort.conf if requested, unless we're running in
 # careful mode. Create backup first if running with -b.
 if ($something_changed) {
     if ($careful) {
@@ -662,7 +662,7 @@ sub disable_and_modify_rules($ $ $)
                 next RULELOOP;
             }
 
-            $sids{$sid} = basename($sid);
+            $sids{$sid} = basename($file);
 
           # Even if it was a single-line rule, we want a copy in $multi.
 	    $multi = $single unless (defined($multi));
