@@ -1459,12 +1459,11 @@ sub parse_mod_expr($ $ $ $)
 
      # Make sure the regexps doesn't generate invalid code.
         my $repl_qq   = "qq/$repl/";
-        my $dummy_sig = "alert ip any any -> any any";
 
-        eval '$dummy_sig =~ s/$subst/$repl/ee';
+        eval '"foo" =~ s/$subst/$repl/ee';
 
         if ($@) {
-            warn($@);
+            warn("Invalid regexp: $@");
             return (0);
         }
 
