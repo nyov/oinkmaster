@@ -684,7 +684,8 @@ sub download_file($ $)
 
         my $ua = LWP::UserAgent->new();
         $ua->env_proxy;
-        my $response = $ua->get($url, ':content_file' => $localfile);
+        my $request = HTTP::Request->new(GET => $url);
+        my $response = $ua->request($request, $localfile);
 
         clean_exit("could not download file: " . $response->status_line)
           unless $response->is_success;
