@@ -164,6 +164,11 @@ A5:  localsid is processed first and if there is such a statement for a
      SID 1 was enabled by default in the downloaded rules archive, this 
      is a NOOP. Disabling a disabled rule is also a NOOP.
 
+     Note: If you specify "-e" on the command line (to enable all rules
+           that are disabled by default), they will be enabled before
+           the modifysid/disablesid/enablesid happens. It still has no
+           effect on localsid rules; they are always preserved.
+
 
 
 Q6:  How can the 'include' statement in oinkmaster.conf be useful?
