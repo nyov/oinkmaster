@@ -272,9 +272,9 @@ sub read_config($ $)
 
         if (/^disablesids*\s+(\d.*)/i) {                 # disablesid <SID[,SID, ...]>
 	    my $args = $1;
-	    foreach $_ (split(/\s*,\s*/, $args)) {
-  	        if (/^\d+$/) {
-                    $$cfg_ref{sid_disable_list}{$_}++;
+	    foreach my $sid (split(/\s*,\s*/, $args)) {
+  	        if ($sid =~ /^\d+$/) {
+                    $$cfg_ref{sid_disable_list}{$sid}++;
 	        } else {
                     warn("WARNING: line $linenum in $config_file is invalid, ignoring\n");
 	        }
@@ -283,10 +283,10 @@ sub read_config($ $)
             push(@{$$cfg_ref{sid_modify_list}{$1}}, $2);
         } elsif (/^skipfiles*\s+(.*)/i) {                # skipfile <file[,file, ...]>
 	    my $args = $1;
-	    foreach $_ (split(/\s*,\s*/, $args)) {
-	        if (/^\S+$/) {
-                    $verbose && print STDERR "Adding file to ignore list: $_.\n";
-                    $$cfg_ref{file_ignore_list}{$_}++;
+	    foreach my $file (split(/\s*,\s*/, $args)) {
+	        if ($file =~ /^\S+$/) {
+                    $verbose && print STDERR "Adding file to ignore list: $file.\n";
+                    $$cfg_ref{file_ignore_list}{$file}++;
 		} else {
                     warn("WARNING: line $linenum in $config_file is invalid, ignoring\n");
 		}
@@ -450,22 +450,23 @@ sub unpack_rules_archive($)
     }
 
   # For each filename in the archive...
-    foreach $_ (@_) {
-       chomp;
+    foreach my $filename (@_) {
+       chomp($filename);
 
       # Make sure the leading char is valid (not an absolute path, for example).
         clean_exit("forbidden leading character in filename in tar archive. ".
                    "Offending file/line:\n$_")
-          unless (/^[$ok_lead]/);
+          unless ($filename =~ /^[$ok_lead]/);
 
       # We don't want to have any weird characters anywhere in the filename.
         clean_exit("forbidden characters in filename in tar archive. ".
                    "Offending file/line:\n$_")
-          if (/[^$ok_chars]/);
+          if ($filename =~ /[^$ok_chars]/);
 
       # We don't want to unpack any "../../" junk.
-        clean_exit("filename in tar archive contains \"..\".\nOffending file/line:\n$_")
-          if (/\.\./);
+        clean_exit("filename in tar archive contains \"..\".\n".
+                   "Offending file/line:\n$filename")
+          if ($filename =~ /\.\./);
     }
 
   # Looks good. Now we can untar it.
@@ -623,20 +624,20 @@ sub setup_rules_hash($)
       # From now on we don't care about the path, so remove it.
 	$file =~ s/.*\///;
 
-	while (<NEWFILE>) {
-            s/\s*\n$/\n/;                    # remove trailing whitespaces (for rules and non-rules)
+	while (my $newline = <NEWFILE>) {
+            $newline =~ s/\s*\n$/\n/;                # remove trailing whitespaces (for rules and non-rules)
 
-	    if (/$SNORT_RULE_REGEXP/) {      # add rule line to hash
+	    if ($newline =~ /$SNORT_RULE_REGEXP/) {  # add rule line to hash
 	        my $sid = $2;
-  	        s/^\s*//;                    # remove leading whitespaces
-		s/^#+\s*/#/;                 # remove whitespaces next to the leading #
+  	        $newline =~ s/^\s*//;                # remove leading whitespaces
+		$newline =~ s/^#+\s*/#/;             # remove whitespaces next to the leading #
 
 		warn("WARNING: duplicate SID in downloaded rules archive in file ".
                      "$file: SID $sid\n")
 		  if (exists($rh{new}{rules}{"$file"}{"$sid"}));
-		$rh{new}{rules}{"$file"}{"$sid"} = $_;
-	    } else {                         # add non-rule line to hash
-	        push(@{$rh{new}{other}{"$file"}}, $_);
+		$rh{new}{rules}{"$file"}{"$sid"} = $newline;
+	    } else {                                 # add non-rule line to hash
+	        push(@{$rh{new}{other}{"$file"}}, $newline);
 	    }
 	}
 
@@ -647,20 +648,20 @@ sub setup_rules_hash($)
             open(OLDFILE, "<$config{output_dir}/$file")
               or clean_exit("could not open $config{output_dir}/$file for reading: $!");
 
-	    while (<OLDFILE>) {
-	        s/\s*\n$/\n/;                # remove trailing whitespaces (for rules and non-rules)
+	    while (my $oldline = <OLDFILE>) {
+	        $oldline =~ s/\s*\n$/\n/;          # remove trailing whitespaces (for rules and non-rules)
 
-                if (/$SNORT_RULE_REGEXP/) {  # add rule line to hash
+                if ($oldline =~ /$SNORT_RULE_REGEXP/) {  # add rule line to hash
 		    my $sid = $2;
-		    s/^\s*//;                # remove leading whitespaces
-		    s/^#+\s*/#/;             # remove whitespaces next to the leading #
+		    $oldline =~ s/^\s*//;                # remove leading whitespaces
+		    $oldline =~ s/^#+\s*/#/;             # remove whitespaces next to the leading #
 
 		    warn("WARNING: duplicate SID in your local rules in file ".
                          "$file: SID $sid\n")
 	  	      if (exists($rh{old}{rules}{"$file"}{"$sid"}));
-	  	    $rh{old}{rules}{"$file"}{"$sid"} = $_;
+	  	    $rh{old}{rules}{"$file"}{"$sid"} = $oldline;
                 } else {                     # add non-rule line to hash
-	            push(@{$rh{old}{other}{"$file"}}, $_);
+	            push(@{$rh{old}{other}{"$file"}}, $oldline);
                 }
             }
 
