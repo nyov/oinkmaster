@@ -3,18 +3,18 @@
 Installation instructions for Oinkmaster v0.7
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-o Put oinkmaster.pl in some suitable directory, for example /usr/local/bin/
+o Put oinkmaster.pl in some suitable directory, for example /usr/local/bin/.
   Put oinkmaster.conf in /usr/local/etc/ (this is where oinkmaster will search
   for it by default). If you want to have oinkmaster.conf in some other
   directory, you must run oinkmaster with the -C argument.
 
-o Edit the file oinkmaster.conf. There are some options you may want to
-  change before running Oinkmaster. Here you will then also tell Oinkmaster
-  which SIDs or files you want to disable or ignore. As you will see, a few
-  things are disabled/ignored by default (which you may not want).
+o Edit oinkmaster.conf. There are some options you may want to change before
+  running Oinkmaster. Here you will then also tell Oinkmaster which SIDs or 
+  files you want to disable or ignore. As you will see, a few things are
+  disabled/ignored by default (which you may not want).
   If you already have several rules commented out (or removed) in your current
   rules, you need to add the SIDs of those to oinkmaster.conf so they don't get
-  re-enabled after each update. See the README.
+  re-enabled after each update.
 
 o Decide in which directory you want to put the new rules. Since you probably
   already have Snort up and running, you should use your existing rules
