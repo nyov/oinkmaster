@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl -Tw
 
 # $Id$ #
 
@@ -480,10 +480,10 @@ sub sanity_check()
 
   # Make sure the backup directory exists and is writable if running with -b.
     if ($make_backup) {
-      $config{backup_dir} = untaint_path($config{backup_dir});
-      clean_exit("the backup directory \"$config{backup_dir}\" doesn't exist or ".
+        $config{backup_dir} = untaint_path($config{backup_dir});
+        clean_exit("the backup directory \"$config{backup_dir}\" doesn't exist or ".
                  "isn't writable by you.")
-        if (!-d "$config{backup_dir}" || !-w "$config{backup_dir}");
+          if (!-d "$config{backup_dir}" || !-w "$config{backup_dir}");
     }
 
   # Convert tmp_basedir to cygwin style if running cygwin and msdos style was specified.
@@ -733,12 +733,12 @@ sub disable_and_modify_rules($ $ $)
                 print STDERR "Disabling SID $sid: $msg\n"
                   if ($verbose);
 
-               unless ($multi =~ /^\s*#/) {
-                   $multi = "#$multi";
-                   $multi =~ s/\n(.+)/\n#$1/g;
-	       }
+                unless ($multi =~ /^\s*#/) {
+                    $multi = "#$multi";
+                    $multi =~ s/\n(.+)/\n#$1/g;
+	        }
 
-               $num_disabled++;
+                $num_disabled++;
 	    }
 
           # Write rule back to the same rules file.
@@ -1013,7 +1013,7 @@ sub print_changes($ $)
       if (!keys(%{$$ch_ref{other}}) && !$super_quiet);
 
   # Print added non-rule lines.
-     if (exists($$ch_ref{other}{added})) {
+    if (exists($$ch_ref{other}{added})) {
         print "\n[+++]      Added non-rule lines:     [+++]\n";
         foreach my $file (sort({uc($a) cmp uc($b)} keys(%{$$ch_ref{other}{added}}))) {
             my $num = $#{$$ch_ref{other}{added}{$file}} + 1;
@@ -1428,8 +1428,7 @@ sub get_new_vars($ $ $)
     my @local_conf = <LOCAL_CONF>;
 
     foreach $_ (@local_conf) {
-        $old_vars{lc($1)}++
-          if (/$var_regexp/i);
+        $old_vars{lc($1)}++ if (/$var_regexp/i);
     }
 
     close(LOCAL_CONF);
