@@ -9,8 +9,8 @@ Q1:  Oinkmaster says the file in URL does not exist (or it exists but
 Q2:  Can I use an external utility to download the rules archive rather
      than one of the built-in methods?
 
-Q3:  Can Oinkmaster be useful for distributing rules locally to my 
-     sensors?
+Q3:  Can Oinkmaster be useful for distributing rules and configurations
+     locally to my sensors?
 
 Q4:  Can Oinkmaster be useful for distributing my homemade rules to my 
      sensors?
@@ -65,6 +65,14 @@ Q22: I want to disable rules by editing the files directly and putting
 Q23: How do I update the rules from multiple sources, like the official 
      ones at www.snort.org and the ones at www.bleedingsnort.com?
 
+Q24: How do I know which rules to disable?
+
+Q25: Why do I get alerts like "Snort Alert [1:123456:0]", i.e. 
+     "Snort Alert" instead of the rule's msg string?
+
+Q26: How do I keep my sid-msg.map up-to-date?
+
+
 --------------
 
 
@@ -101,30 +109,34 @@ Q2:  Can I use an external utility to download the rules archive rather
 
 A2:  Yes, use whatever program you want and download the rules archive to the 
      local filesystem first, and then run Oinkmaster and point to that file 
-     using file://<filename> as URL specification (url=<url> in oinkmaster.conf
-     or -u <url> on the command line).
+     using file://<filename> as URL specification (url=<url> in 
+     oinkmaster.conf or -u <url> on the command line).
 
 
 
-Q3:  Can Oinkmaster be useful for distributing rules locally to my 
-     sensors?
+Q3:  Can Oinkmaster be useful for distributing rules and configurations
+     locally to my sensors?
 
 A3:  Yes, there are several situations where Oinkmaster can be handy when
      dealing with local rules management. If you have only a few sensors,
      you can simply run Oinkmaster in a traditional way to update the 
      rules from the Internet on all of them. However, if the sensors have 
      no way to talk to the outside, and/or you have many sensors you want 
-     to control in a convenient way, you'll want to consider another 
-     solution.
+     to control in a convenient way from a single place, you'll want to
+     consider another solution.
 
-     A common way to solve this is to have a "master" host which downloads 
-     the rules using Oinkmaster and does some global modifications to 
-     them. With some simple scripting, it can then push the rules archive 
-     to each sensor which runs Oinkmaster on it. You can also have each 
-     sensor run Oinkmaster and pull the rules archive from the master, for 
-     example using -u scp://... and point to the master. Each sensor can 
-     have its own oinkmaster.conf to fine-tune the rules (even override 
-     global settings done by the master).
+     A common way to solve this is to do some very simple scripting and
+     have a "master" host which downloads the rules using Oinkmaster and
+     does some global modifications to them. With some simple scripting,
+     it can then push the rules archive to each sensor which runs
+     Oinkmaster on it. You can also have each sensor run Oinkmaster and
+     pull the rules archive from the master, for example using
+     -u scp://... and point to the master. Each sensor can have its own
+     oinkmaster.conf to fine-tune the rules (even override global settings
+     set by the master). The rules archive can of course contain more than
+     just the rules, such as Snort/Barnyard/Oinkmaster configuration files
+     and the sid-msg.map and so on.
+     
 
      An example step-by-step list how this could be done:
 
@@ -189,7 +201,7 @@ A5:  For each rule, the following is performed:
 
      Usually you don't have to worry about this as it only matters if you
      have multiple types of processing directives for the same rule 
-     and that affects eachother.
+     and that affects each other.
 
 
 
@@ -230,7 +242,8 @@ A8:  No. What you may want to consider instead is to use a separate
      one script in Snort's contrib directory that does this, and there is 
      also one that comes with Oinkmaster (contrib/create-sidmap.pl). The 
      latter handles multi-line rules and can also take an arbitrary number 
-     of rules directories as argument.
+     of rules directories as argument. It is described in detail elsewhere
+     in this FAQ.
 
 
 
@@ -580,11 +593,13 @@ Q22: I want to disable rules by editing the files directly and putting a
      "#" in front of the rules. How to these changes become permanent?
 
 A22: As can be read elsewhere in this FAQ, you shouldn't ever modify 
-     rules in anyway by editing the rules files directly. Normally, the 
-     right way to disable rules is to use the "disablesid" keyword. 
-     However, if you for some reason really want to disable rules by 
-     editing the rules files directly and putting a "#" in front of 
-     unwanted rules, you can use a little trick.
+     rules in any way by editing the rules files directly when using
+     Oinkmaster. Normally, the right way to disable rules is to use
+     the "disablesid" keyword. However, if you for some reason really
+     want to disable rules by editing the rules files directly and
+     putting a "#" in front of unwanted rules, like if you're about
+     to use Oinkmaster for the first time and you already have a bunch
+     of disabled rules, you can use a little trick.
 
      Use contrib/makesidex.pl to generate "disablesid" lines for those 
      disabled rules and feed them to Oinkmaster. You can for example use 
@@ -601,46 +616,101 @@ A22: As can be read elsewhere in this FAQ, you shouldn't ever modify
 Q23: How do I update the rules from multiple sources, like the official 
      ones at www.snort.org and the ones at www.bleedingsnort.com?
 
-A23: You cannot update from multiple sources at the same time (i.e. in 
-     a single Oinkmaster run) as it would introduce too many potential 
-     problems. Instead, simply run Oinkmaster twice (or more correctly, 
-     one time for each rules archive) and point to different URLs. It 
-     may be convenient to use separate Oinkmaster configuration files 
-     but this is not a requirement. Note that it is strongly recommended 
-     to download each rules archive into a separate output directory, or 
-     you may get problems with filename collisions etc.
+A23: The best way is to simply run Oinkmaster once for each URL and with 
+     different output directories. This way you don't have to worry about 
+     filename collisions etc. 
 
-     Note that if you run Barnyard (or any other program that use
-     unified logs) when using rules from multiple sources, you must make 
-     sure that your SID message map file (sid-msg.map) is up-to-date and
-     contains entries from all those sources, including your local 
-     rules if any. There are a few ways to do this.
+     As of Oinkmaster 1.2, you can specify multiple URLs at the same time 
+     though, either by using several url=<url> in the configuration file
+     or by specifying several -u <url> on the command line. Beware that 
+     even when using multiple URLs, all the downloaded rules files will be 
+     put in the same output directory. So if a filename exists in multiple 
+     rules archives, there is going to be trouble (Oinkmaster will detect 
+     this and abort before touching anything). Any 'skipfile' or other 
+     directive you may have in your Oinkmaster configuration that takes a 
+     filename as argument will apply on any matching file regardless of 
+     which rules archive it was in. If you specify multiple URLs and one 
+     of them happen to be broken somehow, Oinkmaster will exit and not 
+     process the other ones. This may be good or bad, depending on the 
+     situation.
 
-     One way is to assume that an updated sid-msg.map file is included 
-     in each rules archive and to update those along with the rules, and 
-     then merge them into a new file which you then feed to 
-     Barnyard/whatever. Note that for this to work, you must use 
-     separate output directories for each download source (which is a 
-     good idea anyway) and also make sure there is no
-     "skipfile sid-msg.map" entry in your Oinkmaster configuration 
-     file.
+     Note that if you run Barnyard (or any other program that use unified 
+     logs) when using rules from multiple sources (and/or local rules), 
+     you must make sure that your SID message map file (sid-msg.map) is 
+     up-to-date and contains entries from all those sources, including 
+     your local rules if any. This procedure is described elsewhere in 
+    this FAQ.
 
-     Another way (which I think is much better) is to ignore the 
-     sid-msg.map files in all the rules archives and instead generate 
-     it yourself after each rules update. Why is this better?
-     As you must run Oinkmaster one time for each rules archive rather 
-     than fetch rules from multiple sources at the same time, it is not 
-     able to check for duplicate SIDs across the different rules 
-     archives. There is a script in Oinkmaster's contrib directory, 
-     create-sidmap.pl, which can generate a sid-msg.map file from 
-     multiple rules directories. It will also warn you in case of 
-     duplicate SIDs, regardless of the file or directory.
-     This includes any local rules you may have written, which is 
-     very important as the SIDs in those may collide with those 
-     in a 3rd party rules archive. Just remember to run 
-     create-sidmap.pl after each rules update. Also remember to restart
-     Barnyard/whatever to use the new SID map. This should probably be 
-     done right before the Snort restart.
+
+
+Q24: How do I know which rules to disable?
+
+A24: This is a very hard question that really has very little to do with 
+     Oinkmaster. But here are a few tips:
+
+     - Remember that there are many ways to stop alerts from firing, and 
+       disabling the rule is not always the best way. For example, if all 
+       you want is to stop the alert from/to a particular host, you should 
+       not disable the rule completely. Instead, check the Snort manual on 
+       how to use BPF filters, suppressing and pass rules and choose the 
+       best method for the situation.
+
+     - Review your Oinkmaster configuration files every now and then, 
+       especially rules you have disabled or modified. Rules you disabled 
+       or modified a long time ago may have improved, or your environment 
+       may have changed since then.
+       
+     - Subscribe to relevant mailing lists, like snort-sigs.
+
+
+
+Q25: Why do I get alerts like "Snort Alert [1:123456:0]", i.e. 
+     "Snort Alert" instead of the rule's msg string?
+
+A25: It happens when you run Barnyard with a sid-msg.map file that is not 
+     up-to-date. When Snort generates an alert in unified format, it does 
+     not include the rule's msg string, just the rule's SID (a number to 
+     identify a rule). When Barnyard then converts the unified alerts to 
+     something human readable or something to insert in the database, it
+     must somehow be able to lookup the msg string for each rule by using 
+     their SIDs. This is done via the file sid-msg.map. This file must 
+     contains an entry for every rule. This means that when adding new 
+     rules, this file must be updated as well (how to do this can be found 
+     elsewhere in this FAQ). Also, make sure to restart both Barnyard and 
+     Snort so they stay in sync. You must also make sure that the 
+     gen-msg.map file is current, but it probably only requires updating 
+     when switching Snort versions.
+
+     If you wonder what the numbers in [1:123456:0] means, the first is 
+     the generator ID (1 means it's a rule), the second number is the SID 
+     (123456 in this case) and the last one is the revision (0 in this 
+     case, which probably mean the rule has no revision keyword in it).
+     See the Snort and Barnyard manuals for more information.
+
+
+
+Q26: How do I keep my sid-msg.map up-to-date?
+
+A26: When using Barnyard, it's important that the sid-msg.map file is 
+     always up-to-date, or you will end up with alerts like "Snort Alert 
+     [1:123456:0]" instead of getting the rule's real msg string. There 
+     are several ways to do this.
+
+     One way is to assume that an updated sid map file is included in each 
+     rules archive and to update those along with the rules, and then 
+     merge them into a new file which you then feed to Barnyard/whatever.
+
+     Another way (which I think is much better) is to ignore the SID map 
+     files in all the rules archives and instead generate it yourself 
+     after each rules update. There is a script in Oinkmaster's contrib 
+     directory, create-sidmap.pl, which can generate a sid-msg.map file 
+     from multiple rules directories. It can handle multi-line rules and 
+     will also warn you in case of duplicate SIDs, regardless of the file 
+     or directory. This includes any local rules you may have written, 
+     which is very important as the SIDs in those may collide with those 
+     in a 3rd party rules archive. Just remember to run create-sidmap.pl 
+     after each rules update, and also to to restart Barnyard/whatever to 
+     use the new SID map.
 
      A tiny example just to show the idea how an update wrapper could 
      look like when updating from multiple sources and then generating 
@@ -656,7 +726,6 @@ A23: You cannot update from multiple sources at the same time (i.e. in
                       /etc/snort/rules/local/    \
                       > /etc/snort/sid-msg.map
 
-     You may also want to put in some sanity checks like aborting in 
-     case of duplicate SIDs and restarting Barnyard/Snort if 
-     everything went ok and there were changes and so on, you get the 
-     point.
+     You may also want to put in some sanity checks like aborting in case 
+     of duplicate SIDs and restarting Barnyard/Snort if everything went ok 
+     and there were changes and so on, you get the point.
