@@ -9,14 +9,16 @@ use strict;
 sub get_next_entry($ $ $ $ $ $);
 sub parse_singleline_rule($ $ $);
 
+
 # Regexp to match the start of a multi-line rule.
-# We only care about active rules.
-my $MULTILINE_RULE_REGEXP  = '^\s*(?:%ACTIONS%)'.
+# %ACTIONS% will be replaced with content of $config{actions} later.
+my $MULTILINE_RULE_REGEXP  = '^\s*#*\s*(?:%ACTIONS%)'.
                              '\s.*\\\\\s*\n$'; # ';
 
 # Regexp to match a single-line rule.
-my $SINGLELINE_RULE_REGEXP = '^\s*(?:%ACTIONS%)'.
+my $SINGLELINE_RULE_REGEXP = '^\s*#*\s*(?:%ACTIONS%)'.
                              '\s.+;\s*\)\s*$'; # ';
+
 
 my $USAGE = << "RTFM";
 
@@ -58,6 +60,9 @@ foreach my $rulesdir (@rulesdirs) {
 
         while (get_next_entry(\@file, \$single, \$multi, \$nonrule, \$msg, \$sid)) {
             if (defined($single)) {
+
+            # Don't care about inactive rules.
+                next if ($single =~ /^\s*#/);
 
                 warn("WARNING: duplicate SID: $sid (discarding old)\n")
                   if (exists($sidmap{$sid}));
