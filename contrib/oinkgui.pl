@@ -780,7 +780,7 @@ sub create_fileSelectFrame($ $ $ $ $ $)
                                  if ($config{editor}) {
                                      $main->Busy(-recurse => 1);
                                      logmsg("Launching " . $config{editor} .
-                                            " Close it to continue the GUI.\n\n", 'MISC');
+                                            ", close it to continue the GUI.\n\n", 'MISC');
                                      sleep(2);
                                      system($config{editor}, $$var_ref); # MainLoop will be put on hold...
                                      $main->Unbusy;
