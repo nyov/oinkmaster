@@ -19,25 +19,31 @@ sub find_line($ $);
 sub print_changes($ $);
 sub print_changetype($ $ $ $);
 sub make_backup($ $);
-sub get_modified_files($ $);
 sub get_changes($ $);
 sub get_new_filenames($ $);
 sub update_rules($ @);
 sub is_in_path($);
 sub get_next_entry($ $ $ $);
 sub make_tempdir($);
+sub get_new_vars($ $ $);
+sub add_new_vars($ $);
+sub write_new_vars($ $);
 sub clean_exit($);
 
 
 my $VERSION           = 'Oinkmaster v0.8 by Andreas Östling <andreaso@it.su.se>';
-my $TMP_BASEDIR       = "/tmp";
+my $tmp_basedir       = "/tmp";
 
 my $PRINT_NEW         = 1;
 my $PRINT_OLD         = 2;
 my $PRINT_BOTH        = 3;
 
+my $min_rules         = 1;   # default number of required rules
+my $min_files         = 1;   # default number of required files
+
 my $config_file       = "/usr/local/etc/oinkmaster.conf";
 my $outfile           = "snortrules.tar.gz";
+my $dist_snort_conf   = "rules/snort.conf";  # where (inside tmpdir) to look for new variables
 
 my $verbose           = 0;
 my $careful           = 0;
@@ -45,6 +51,7 @@ my $quiet             = 0;
 my $super_quiet       = 0;
 my $check_removed     = 0;
 my $preserve_comments = 1;
+my $update_vars       = 0;
 
 # Regexp to match a snort rule line.
 # Multiline rules are currently not handled, but at this time,
@@ -59,7 +66,7 @@ my $MULTILINE_RULE_REGEXP = '^\s*#*\s*(?:alert|log|pass)\s.*\\\\\s*\n$';
 use vars qw
    (
       $opt_b $opt_c $opt_C $opt_e $opt_h $opt_o
-      $opt_q $opt_Q $opt_r $opt_u $opt_v $opt_V
+      $opt_q $opt_Q $opt_r $opt_u $opt_U $opt_v $opt_V
    );
 
 my (
@@ -86,7 +93,7 @@ parse_cmdline(\%config);
 read_config($config_file, \%config);
 
 # Create empty temporary directory.
-my $tmpdir = make_tempdir(exists($config{tmpdir}) ? $config{tmpdir} : $TMP_BASEDIR);
+my $tmpdir = make_tempdir($tmp_basedir);
 
 # Do some basic sanity checking and exit if something fails.
 # A new PATH will be set.
@@ -98,25 +105,33 @@ umask($config{umask}) if exists($config{umask});
 # Download the rules archive.
 # This will leave us with the file $tmpdir/$outfile
 # (/tmp/oinkmaster.$$/snortrules.tar.gz). Will exit if download fails.
-download_rules("$config{'url'}", "$tmpdir/$outfile");
+download_rules("$config{url}", "$tmpdir/$outfile");
 
 # Verify and unpack archive. This will leave us with a directory
 # called "rules/" in the same directory as the archive, containing the
 # new rules. Will exit if something fails.
 unpack_rules_archive("$tmpdir/$outfile");
 
-# Create list of new files that we care about from the downloaded archive.
-# Filenames (with full path) will be stored as %new_files{filenme}.
-# Make sure there is at least one file to be updated.
-clean_exit("no rules files found in downloaded archive.")
-  if (get_new_filenames(\%new_files, "$tmpdir/rules/") < 1);
+# Create list of new files (with full path) that we care about from the
+# downloaded archive. Filenames (with full path) will be stored as %new_files{filenme}.
+my $num_files = get_new_filenames(\%new_files, "$tmpdir/rules/");
+
+# Make sure the number of files is at least $min_files.
+clean_exit("not enough rules files in downloaded archive (is it broken?)\n".
+           "Number of rules files is $num_files but minimum is set to $min_files.")
+  if ($num_files < $min_files);
 
 # Disable (#comment out) all sids listed in conf{sid_disable_list}
 # and modify sids listed in conf{sid_modify_list}.
 # Will open each file listed in %new_files, make modifications, and
 # write back to the same file.
-disable_and_modify_rules(\%{$config{sid_disable_list}},
-                         \%{$config{sid_modify_list}}, \%new_files);
+my $num_rules = disable_and_modify_rules(\%{$config{sid_disable_list}},
+                                         \%{$config{sid_modify_list}}, \%new_files);
+
+# Make sure the number of rules is at least $min_rules.
+clean_exit("not enough rules in downloaded archive (is it broken?)\n".
+           "Number of rules is $num_rules but minimum is set to $min_rules.")
+  if ($num_rules < $min_rules);
 
 # Setup rules hash.
 my %rh = setup_rules_hash(\%new_files);
@@ -124,20 +139,36 @@ my %rh = setup_rules_hash(\%new_files);
 # Compare the new rules to the old ones.
 my %changes = get_changes(\%rh, \%new_files);
 
-# Get list of modified files (with full path to the new file).
-my @modified_files = get_modified_files(\%changes, \%new_files);
+# Check for variables that exist in dist snort.conf but not in local snort.conf.
+get_new_vars(\%changes, $config{varfile}, "$tmpdir/$dist_snort_conf")
+  if ($update_vars);
 
-# Update files listed in @modified_files (move the new files from the temporary
-# directory into our output directory), unless we're running in careful mode.
+
+# Find out if something had changed.
+my $something_changed = 0;
+$something_changed = 1
+    if (keys(%{$changes{modified_files}}) ||
+        keys(%{$changes{added_files}})    ||
+        keys(%{$changes{removed_files}})  ||
+        keys(%{$changes{new_vars}}));
+
+
+# Update files listed in %changes{modified_files} (move the new files from the temporary
+# directory into our output directory) and add new variables to the local snort.conf
+# if requested, unless we're running in careful mode.
 # Create backup first if running with -b.
-if ($#modified_files > -1) {
+if ($something_changed) {
     if ($careful) {
         print STDERR "No need to backup old files (running in careful mode), skipping.\n"
           if (exists($config{backup_dir}) && (!$quiet));
     }  else {
         make_backup($config{output_dir}, $config{backup_dir})
           if (exists($config{backup_dir}));
-        update_rules($config{output_dir}, @modified_files);
+
+        update_rules($config{output_dir}, keys(%{$changes{modified_files}}));
+
+        add_new_vars(\%changes, $config{local_snort_conf})
+          if ($update_vars);
     }
 } else {
     print STDERR "No files modified - no need to backup old files, skipping.\n"
@@ -146,17 +177,12 @@ if ($#modified_files > -1) {
 
 
 # Print changes.
-my $something_changed = 0;
+print "\nNote: Oinkmaster is running in careful mode - not updating/adding anything.\n"
+  if ($something_changed && $careful);
 
-$something_changed = 1
-  if ($#modified_files > -1 ||
-      keys(%{$changes{added_files}}) > 0 || keys(%{$changes{removed_files}}) > 0);
+print_changes(\%changes, \%rh)
+  if ($something_changed || !$quiet);
 
-if ($something_changed || !$quiet) {
-    print "\nNote: Oinkmaster is running in careful mode - not updating/adding anything.\n"
-      if ($careful && $something_changed);
-    print_changes(\%changes, \%rh);
-}
 
 # Everything worked. Do a clean exit without any error message.
 clean_exit("");
@@ -176,9 +202,7 @@ $VERSION
 Usage: $0 -o <output dir> [options]
 
 <output dir> is where to put the new files.
-This should be the directory where you store your snort.org rules.
-Note that your current files will be overwritten by the new ones
-if they had been modified.
+This should be the directory where you store the official snort rules.
 
 Options:
 -b <dir>   Backup your old rules into <dir> before overwriting them
@@ -194,6 +218,8 @@ Options:
            have been removed from the distribution archive)
 -u <url>   Download from this URL (http://, ftp:// or file:// ...tar.gz)
            instead of the URL specified in the configuration file
+-U <file>  Variables that exist in the distribution snort.conf but not in <file>
+           will be inserted at the top of it. This is probably your snort.conf.
 -v         Verbose mode
 -V         Show version and exit
 
@@ -207,15 +233,17 @@ RTFM
 sub parse_cmdline($)
 {
     my $cfg_ref    = shift;
-    my $cmdline_ok = getopts('b:cC:eho:qQru:vV');
+    my $cmdline_ok = getopts('b:cC:eho:qQru:U:vV');
 
     $$cfg_ref{backup_dir} = $opt_b if (defined($opt_b));
     $config_file          = $opt_C if (defined($opt_C));
     $$cfg_ref{url}        = $opt_u if (defined($opt_u));
+    $$cfg_ref{varfile}    = $opt_U if (defined($opt_U));
     $careful              = 1      if (defined($opt_c));
     $preserve_comments    = 0      if (defined($opt_e));
     $quiet                = 1      if (defined($opt_q));
     $check_removed        = 1      if (defined($opt_r));
+    $update_vars          = 1      if (defined($opt_U));
     $verbose              = 1      if (defined($opt_v));
 
     if (defined($opt_Q)) {
@@ -306,8 +334,12 @@ sub read_config($ $)
 	    $$cfg_ref{update_files} = $1;
         } elsif (/^umask\s*=\s*([0-7]{3,4})$/i) {        # umask
 	  $$cfg_ref{umask} = oct($1);
-        } elsif (/^tmpdir\s*=\s*(.+)/i) {
-          $$cfg_ref{tmpdir} = $1;                        # tmpdir
+        } elsif (/^min_files\s*=\s*(\d+)/i) {            # min_files
+          $min_files = $1;
+        } elsif (/^min_rules\s*=\s*(\d+)/i) {            # min_rules
+          $min_rules= $1;
+        } elsif (/^tmpdir\s*=\s*(.+)/i) {                # tmpdir
+          $tmp_basedir = $1;
         } else {                                         # invalid line
             warn("WARNING: line $linenum in $config_file is invalid, ignoring\n");
         }
@@ -340,10 +372,20 @@ sub sanity_check()
   # Reset environment variables that may cause trouble.
     delete @ENV{'IFS', 'CDPATH', 'ENV', 'BASH_ENV'};
 
+  # If a variable file (probably local snort.conf) has been specified,
+  # it must exist. It must also be writable unless we're in careful mode.
+    if (exists($config{varfile})) {
+        clean_exit("file $config{varfile} does not exist.")
+          unless (-e "$config{local_snort_conf}");
+
+        clean_exit("file $config{varfile} is not writable by you.")
+          if (!$careful && !-w "$config{local_snort_conf}");
+    }
+
   # Make sure all required binaries can be found.
   # (Wget is not required if user specifies file:// as url. That check is done below.)
     foreach my $binary (@req_binaries) {
-        clean_exit("\"$binary\" could not be found in PATH")
+        clean_exit("\"$binary\" could not be found in PATH.")
           unless (is_in_path($binary));
     }
 
@@ -353,7 +395,7 @@ sub sanity_check()
         $config{'url'}  =~ /^(?:http|ftp|file):\/\/\S+.*\.tar\.gz$/);
 
   # Wget must be found if url is http:// or ftp://.
-    clean_exit("\"wget\" not found in PATH")
+    clean_exit("\"wget\" not found in PATH.")
       if ($config{'url'} =~ /^(http|ftp):/ && !is_in_path("wget"));
 
   # Make sure the output directory exists and is readable.
@@ -471,7 +513,6 @@ sub unpack_rules_archive($)
         clean_exit("forbidden characters in filename in tar archive. ".
                    "Offending file/line:\n$filename")
           if ($filename =~ /[^$ok_chars]/);
-
       # We don't want to unpack any "../../" junk.
         clean_exit("filename in tar archive contains \"..\".\n".
                    "Offending file/line:\n$filename")
@@ -602,8 +643,12 @@ sub disable_and_modify_rules($ $ $)
 
         close(OUTFILE);
     }
+
     print STDERR "$num_disabled out of $num_rules rules disabled.\n"
       unless ($quiet);
+
+  # Return total number of valid rules.
+    return ($num_rules);
 }
 
 
@@ -707,13 +752,13 @@ sub make_backup($ $)
 
     my $date = sprintf("%d%02d%02d-%02d%02d", $year + 1900, $mon + 1, $mday, $hour, $min);
 
-    my $bu_tmp_dir = "$tmpdir/rules-backup-$date";
+    my $backup_tmp_dir = "$tmpdir/rules-backup-$date";
 
     print STDERR "Creating backup of old rules..."
       unless ($quiet);
 
-    mkdir("$bu_tmp_dir", 0700)
-      or clean_exit("could not create temporary backup directory $bu_tmp_dir: $!");
+    mkdir("$backup_tmp_dir", 0700)
+      or clean_exit("could not create temporary backup directory $backup_tmp_dir: $!");
 
   # Copy all rules files from the rules dir to the temporary backup dir.
     opendir(OLDRULES, "$src_dir")
@@ -721,8 +766,8 @@ sub make_backup($ $)
 
     while ($_ = readdir(OLDRULES)) {
         if (/$config{update_files}/) {
-          copy("$src_dir/$_", "$bu_tmp_dir/")
-            or warn("WARNING: error copying $src_dir/$_ to $bu_tmp_dir: $!")
+          copy("$src_dir/$_", "$backup_tmp_dir/")
+            or warn("WARNING: error copying $src_dir/$_ to $backup_tmp_dir: $!")
 	}
     }
 
@@ -765,6 +810,21 @@ sub print_changes($ $)
 
     print "\n[***] Results from Oinkmaster started " . scalar(localtime) . " [***]\n";
 
+  # Print new variables.
+    if ($update_vars) {
+       if (keys(%{$$ch_ref{new_vars}})) {
+            print "\n[*] New variables: [*]\n";
+            foreach my $var (keys(%{$$ch_ref{new_vars}})) {
+                print "    var $var $$ch_ref{new_vars}{$var}\n";
+            }
+        } else {
+            print "\n[*] New variables: [*]\n    None.\n"
+              unless ($super_quiet);
+        }
+    }
+
+
+  # Print rules modifications.
     print "\n[*] Rules modifications: [*]\n    None.\n"
       if (!keys(%{$$ch_ref{rules}}) && !$super_quiet);
 
@@ -825,7 +885,8 @@ sub print_changes($ $)
     }
 
 
-    print "\n[*] Non-rule modifications: [*]\n    None.\n"
+  # Print non-rule modifications.
+    print "\n[*] Non-rule line modifications: [*]\n    None.\n"
       if (!keys(%{$$ch_ref{other}}) && !$super_quiet);
 
   # Print added non-rule lines.
@@ -852,6 +913,7 @@ sub print_changes($ $)
         }
     }
 
+
   # Print list of added files.
     if (keys(%{$$ch_ref{added_files}})) {
         print "\n[+] Added files (consider updating your snort.conf to include them): [+]\n\n";
@@ -864,7 +926,8 @@ sub print_changes($ $)
     }
 
 
-  # Print list of possibly removed files, if requested.
+
+  # Print list of possibly removed files if requested.
     if ($check_removed) {
         if (keys(%{$$ch_ref{removed_files}})) {
             print "\n[-] Files possibly removed from the archive ".
@@ -909,45 +972,6 @@ sub print_changetype($ $ $ $)
 
 
 
-# Return list of modified files (with full path).
-sub get_modified_files($ $)
-{
-    my $changes_ref   = shift;    # ref to hash with all changes
-    my $new_files_ref = shift;    # ref to hash with all new files (with full path)
-    my %modified_files;
-
-  # For each new rules file...
-    foreach my $file_w_path (keys(%$new_files_ref)) {
-        my $file = $file_w_path;
-        $file =~ s/.*\///;    # remove path
-
-      # Check if there were any rules changes in this file.
-        foreach my $type (keys(%{$$changes_ref{rules}})) {
-	     $modified_files{"$file_w_path"}++
-               if (exists($$changes_ref{rules}{"$type"}{"$file"}));
-        }
-
-      # Check if there were any non-rule changes in this file.
-        foreach my $type (keys(%{$$changes_ref{other}})) {
-            $modified_files{"$file_w_path"}++
-              if (exists($$changes_ref{other}{"$type"}{"$file"}));
-        }
-
-      # Added files are also regarded as modified
-      # since we want to update (add) those as well.
-      # We only have a list of added files without the full path,
-      # so that's why we have to do the special check below.
-        foreach my $added_file (keys(%{$$changes_ref{added_files}})) {
-            $modified_files{"$file_w_path"}++
-              if ($added_file eq $file);
-        }
-    }
-
-    return (keys(%modified_files));
-}
-
-
-
 # Compare the new rules to the old ones.
 # For each rule in the new file, check if the rule also exists
 # in the old file. If it does then check if it has been modified,
@@ -961,11 +985,17 @@ sub get_changes($ $)
     print STDERR "Comparing new files to the old ones... "
       unless ($quiet);
 
-  # We have the list of added files in $rh_ref{added_files}, but we'd rather
-  # want to have it in $changes{added_files} now.
+  # We have the list of added files (without full path) in $rh_ref{added_files},
+  # but we'd rather want to have it in $changes{added_files} now.
     $changes{added_files} = $$rh_ref{added_files};
 
-  # Add list of possibly removed files into $removed_files, if requested.
+  # Added files are also regarded as modified since we want to update
+  # (i.e. add) those as well. Here we want them with full path.
+    foreach my $file (keys(%{$changes{added_files}})) {
+        $changes{modified_files}{"$tmpdir/rules/$file"}++;
+    }
+
+  # Add list of possibly removed files into $removed_files if requested.
     if ($check_removed) {
         opendir(OLDRULES, "$config{output_dir}")
           or clean_exit("could not open directory $config{output_dir}: $!");
@@ -992,6 +1022,8 @@ sub get_changes($ $)
                     my $old_rule = $$rh_ref{old}{rules}{$file}{$sid};
 
 		    unless ($new_rule eq $old_rule) {                             # are they identical?
+                        $changes{modified_files}{$file_w_path}++;
+
                         if ("#$old_rule" eq $new_rule) {                          # rule disabled?
  	                    $changes{rules}{dis}{$file}{$sid}++;
                         } elsif ($old_rule eq "#$new_rule") {                     # rule enabled?
@@ -1008,6 +1040,7 @@ sub get_changes($ $)
 
 		    }
 	        } else {    # sid not found in old file so it must have been added
+                    $changes{modified_files}{$file_w_path}++;
   	            $changes{rules}{added}{$file}{$sid}++;
 	        }
         } # foreach sid
@@ -1015,6 +1048,7 @@ sub get_changes($ $)
       # Check for removed rules, i.e. sids that exist in the old file but not in the new one.
         foreach my $sid (keys(%{$$rh_ref{old}{rules}{$file}})) {
             unless (exists($$rh_ref{new}{rules}{$file}{$sid})) {
+                $changes{modified_files}{$file_w_path}++;
 	        $changes{rules}{removed}{$file}{$sid}++;
             }
         }
@@ -1022,12 +1056,14 @@ sub get_changes($ $)
       # Check for added/removed non-rule lines.
         foreach my $other_added (@{$$rh_ref{new}{other}{$file}}) {
             unless (find_line($other_added, \@{$$rh_ref{old}{other}{"$file"}})) {
+                $changes{modified_files}{$file_w_path}++;
                 push(@{$changes{other}{added}{$file}}, $other_added);
             }
         }
 
         foreach my $other_removed (@{$$rh_ref{old}{other}{$file}}) {
             unless (find_line($other_removed, \@{$$rh_ref{new}{other}{"$file"}})) {
+                $changes{modified_files}{$file_w_path}++;
                 push(@{$changes{other}{removed}{$file}}, $other_removed);
             }
         }
@@ -1067,12 +1103,12 @@ sub get_new_filenames($ $)
 # Copy modified rules to the output directory.
 sub update_rules($ @)
 {
-    my $dst_dir = shift;
-    my @files   = @_;
+    my $dst_dir        = shift;
+    my @modified_files = @_;
 
-    foreach my $file_w_path (@files) {
+    foreach my $file_w_path (@modified_files) {
         my $file = $file_w_path;
-        $file =~ s/.*\///;    # remove path
+        $file =~ s/.*\///;        # remove path
         copy("$file_w_path", "$dst_dir/$file")
           or clean_exit("could not copy $file_w_path to $file: $!");
     }
@@ -1206,7 +1242,7 @@ sub make_tempdir($)
 {
     my $base = shift;
 
-    die("The temporary base directory $base does not exist.\nExiting...\n")
+    die("The temporary directory $base does not exist.\nExiting...\n")
       unless (-d "$base");
 
     my $tmpdir = "$base/oinkmaster.$$";
@@ -1215,6 +1251,80 @@ sub make_tempdir($)
       or die("Could not create temporary directory $tmpdir: $!\nExiting...\n");
 
     return ($tmpdir);
+}
+
+
+
+# Look for variables that exist in dist snort.conf but not in local snort.conf.
+sub
+get_new_vars($ $ $)
+{
+    my $ch_ref     = shift;
+    my $local_conf = shift;
+    my $dist_conf  = shift;
+    my %vars;
+
+    unless (-e "$dist_conf") {
+        warn("WARNING: distribution file $dist_conf does not exist, ".
+             "aborting check for new variables\n");
+        return;
+    }
+
+    print STDERR "Looking for new variables... "
+      unless ($quiet);
+
+    open(DIST_CONF, "<$dist_conf")
+      or clean_exit("could not open $dist_conf for reading: $!");
+
+    while ($_ = <DIST_CONF>) {
+        $vars{$1} = $2
+          if (/^\s*var\s+(\S+)\s+(\S+)/);
+    }
+
+    close(DIST_CONF);
+
+    open(LOCAL_CONF, "<$local_conf")
+      or clean_exit("could not open $local_conf for reading: $!");
+
+    my @local_conf = <LOCAL_CONF>;
+
+    foreach $_ (@local_conf) {
+        delete($vars{$1})
+          if (/^\s*var\s+(\S+)\s+(\S+)/);
+    }
+
+    close(LOCAL_CONF);
+
+  # Any keys left in %vars are missing in the local config.
+    %{$$ch_ref{new_vars}} = %vars;
+
+    print "done.\n"
+      unless ($quiet);
+}
+
+
+
+# Add variables to local snort.conf.
+sub
+add_new_vars($ $)
+{
+    my $ch_ref     = shift;
+    my $local_conf = shift;
+
+    return unless (keys(%{$$ch_ref{new_vars}}));
+
+    open(OLD_LOCAL_CONF, "<$local_conf")
+      or clean_exit("could not open $local_conf for reading: $!");
+    my @local_conf = <OLD_LOCAL_CONF>;
+    close(OLD_LOCAL_CONF);
+
+    open(NEW_LOCAL_CONF, ">$local_conf")
+      or clean_exit("could not open $local_conf for writing: $!");
+    foreach my $varname (keys(%{$$ch_ref{new_vars}})) {
+        print NEW_LOCAL_CONF "var $varname $$ch_ref{new_vars}{$varname}\n";
+    }
+    print NEW_LOCAL_CONF @local_conf;
+    close(NEW_LOCAL_CONF);
 }
 
 
