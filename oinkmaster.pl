@@ -15,10 +15,11 @@ sub sanity_check();
 sub download_rules($ $);
 sub unpack_rules_archive($);
 sub disable_and_modify_rules($ $ @);
-sub setup_rule_hash;
-sub find_line;
+sub setup_rule_hash($ $ @);
+sub find_line($ @);
 sub do_backup;
-sub clean_exit;
+sub fix_fileinfo;
+sub clean_exit($);
 
 my $VERSION           = 'Oinkmaster v0.7 by Andreas Östling <andreaso@it.su.se>';
 my $TMPDIR            = "/tmp/oinkmaster.$$";
@@ -133,10 +134,12 @@ FILELOOP:foreach my $file (keys(%new_files)) {                  # for each new f
   # This one will tell us if the filename info has been printed or not.
     undef(%printed);
 
-    foreach my $sid (keys(%{$new_rules{$file}})) {         # for each sid in the new file
-        my $new_rule = $new_rules{$file}{$sid};            # save the rule in $new_rule for easier access
-            if (exists($old_rules{$file}{$sid})) {         # does this sid also exist in the old rules file?
-                my $old_rule = $old_rules{$file}{$sid};    # yes, put old rule in $old_rule for easier access
+#    foreach my $sid (keys(%{$new_rules{$file}})) {         # for each sid in the new file
+    foreach my $sid (keys(%{$rh{new}{rules}{$file}})) {     # for each sid in the new file
+        my $new_rule = $rh{new}{rules}{$file}{$sid};        # save the rule in $new_rule for easier access
+
+            if (exists($rh{old}{rules}{$file}{$sid})) {     # does this sid also exist in the old rules file?
+                my $old_rule = $rh{old}{rules}{$file}{$sid};    # yes, put old rule in $old_rule for easier access
 
 		unless ($new_rule eq $old_rule) {                             # are they identical?
 		    $rules_changed = 1;
@@ -314,7 +317,7 @@ if ($something_changed || !$quiet) {
     print "\n";
 }
 
-clean_exit;
+clean_exit("");
 
 # END OF MAIN #
 
@@ -670,16 +673,12 @@ sub disable_and_modify_rules($ $ @)
 }
 
 
-### Setup %new_rules, %old_rules, %new_other and %old_other.
-### Format will be %new_rules{filename}{sid} = rule
-#### and:
-#### %new_other{filename} = @array_with_non-rule_lines
-#### As a bonus, we get list of added files in %added_files.
 
 # Setup rules hash.
 # Format for rules will be:     rh{old|new}{rules{filename}{sid} = rule
 # Format for non-rules will be: rh{old|new}{other}{filename}     = array of lines
-sub setup_rule_hash
+# List of added files will be stored as rh{added_files}{filename}
+sub setup_rule_hash($ $ @)
 {
     my $rh_ref    = shift;
     my $old_dir   = shift;
@@ -729,11 +728,13 @@ sub setup_rule_hash
 
             close(OLDFILE);
         } else {
-	    $added_files .= "    -> $file\n" unless (exists($added_files{"$file"}));
-	    $added_files{"$file"}++;
+
+# XXX fix this elsewhere...
+#	    $added_files .= "    -> $file\n" unless (exists($added_files{"$file"}));
+
+	    $$rh_ref{added_files}{"$file"}++;
         }
     }
-exit;    # tmp... no need to even try to continue right now...
 }
 
 
@@ -741,7 +742,8 @@ exit;    # tmp... no need to even try to continue right now...
 # Try to find a given string in a given array. Return 1 if found, or 0 if not.
 # Some things will always be considered as found (lines that we don't care if
 # they were added/removed). It's extremely slow and braindead, but who cares.
-sub find_line
+# XXX pass array as ref instead?
+sub find_line($ @)
 {
     my $line = shift;   # line to look for
     my @arr  = @_;      # array to look in
@@ -821,21 +823,20 @@ sub do_backup
 
     print STDERR " saved as $backup_dir/rules-backup-$date.tar.gz.\n"
       unless ($quiet);
-
 }
 
 
 
 # Remove temporary directory and exit.
-sub clean_exit
+sub clean_exit($)
 {
     system("rm","-r","-f","$TMPDIR")
       and warn("WARNING: unable to remove temporary directory $TMPDIR.\n");
 
-    if (defined($_[0])) {
+    if ($_[0] ne "") {
         $_ = $_[0];
 	chomp;
-        die("$_\nExiting");
+        die("$_\nExiting...\n");
     } else {
         exit(0);
     }
