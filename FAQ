@@ -3,51 +3,81 @@
 Oinkmaster FAQ
 --------------
 
-Q1:  I want to download the rules archive using the program XXXXX, which 
-     I can't do with Oinkmaster. What do I do?
-Q2:  Can Oinkmaster be useful for distributing rules locally to my 
+Q1:  Oinkmaster says the file in URL does not exist (or it exists but
+     doesn't work with my Snort).
+Q2:  I want to download the rules archive using the program XXXXX, which 
+     I can't do with Oinkmaster.
+Q3:  Can Oinkmaster be useful for distributing rules locally to my 
      sensors?
-Q3:  Can Oinkmaster be useful for distributing my homemade rules to my 
+Q4:  Can Oinkmaster be useful for distributing my homemade rules to my 
      sensors?
-Q4:  In which order will 'modifysid'/'disablesid'/'enablesid' be 
+Q5:  In which order will 'modifysid'/'disablesid'/'enablesid' be 
      processed?
-Q5:  How can the 'include' statement in oinkmaster.conf be useful?
-Q6:  Can Oinkmaster restart Snort after an update?
-Q7:  Can I tell Oinkmaster to not touch certain SIDs in sid-msg.map so 
+Q6:  How can the 'include' statement in oinkmaster.conf be useful?
+Q7:  Can Oinkmaster restart Snort after an update?
+Q8:  Can I tell Oinkmaster to not touch certain SIDs in sid-msg.map so 
      the entries I add for my local rules don't get deleted?
-Q8:  I want to copy the rules archive from a remote host to the sensor 
+Q9:  I want to copy the rules archive from a remote host to the sensor 
      via scp without having to supply a password or passphrase, but I also 
      don't want to give the sensors full access to that host. Can this be 
      done?
-Q9:  How do I setup proxy configuration?
-Q10: Can Oinkmaster be used to update rules from www.whitehats.com?
-Q11: Will Oinkmaster fail when new keywords are introduced in the rules?
-Q12: Under what license are the official Snort rules released, and
+Q10: How do I setup proxy configuration?
+Q11: Can Oinkmaster be used to update rules from www.whitehats.com?
+Q12: Will Oinkmaster fail when new keywords are introduced in the rules?
+Q13: Under what license are the official Snort rules released, and
      can I modify them without violating it?
-Q13: Is there a GUI for Oinkmaster?
-Q14: Oinkmaster says the file in URL does not exist (or it exists but
-     doesn't work with my Snort).
+Q14: Is there a GUI for Oinkmaster?
 Q15: When starting Oinkmaster it says my Perl version is too old, or 
      gives me errors about "too many arguments for open".
 Q16: If I make a modification directly in a rules file that is updated by
      Oinkmaster, will that change be permanent?
 Q17: Should I run Oinkmaster as root?
 
+--------------
 
 
-Q1:  I want to download the rules archive using the program XXXXX, which 
-     I can't do with Oinkmaster. What do I do?
+Q1:  Oinkmaster says the file in URL does not exist (or it exists but
+     doesn't work with my Snort).
 
-A1:  Use whatever program you want to download the rules archive to the 
+A1:  Check the "url = ..." line in oinkmaster.conf (or argument to "-u" 
+     if you specify it on command line). The URL you should use depends 
+     on the version of Snort you run. This means that the default URL does
+     not work for everyone! So, you must make sure you really use the one 
+     that is right for you. Visit http://www.snort.org/dl/rules/, read 
+     the instructions there, and pick the right URL. As the official Snort 
+     rules archives now have version information in the filenames, you 
+     must remember to update the URL info for Oinkmaster when upgrading to 
+     a new major version of Snort. You can also make a tiny wrapper to 
+     create the right URL string on the fly by using the output from 
+     "snort -V". Keep in mind though that the Snort people can change the 
+     download layout again at any time, so if you experience problems, go 
+     to the Snort web site and see if anything is mentioned there.
+
+     If you are absolutely sure you use the right rules for your version
+     of Snort but still have problems, you may need to read the Snort
+     manual because it is likely that your local configuration is broken.
+     For example, the new rules maybe contains new variables that you
+     forgot to add. But of course there can be times when the rules
+     archive actually is broken somehow (remember that auto-update of the
+     rules with automatic Snort restart is bad unless you are careful).
+     These issues are often mentioned on the Snort mailing lists.
+
+
+
+
+Q2:  I want to download the rules archive using the program XXXXX, which 
+     I can't do with Oinkmaster.
+
+A2:  Use whatever program you want to download the rules archive to the 
      local filesystem first, and then run Oinkmaster with
      -u file://<filename>.
 
 
 
-Q2:  Can Oinkmaster be useful for distributing rules locally to my 
+Q3:  Can Oinkmaster be useful for distributing rules locally to my 
      sensors?
 
-A2:  Yes, there are several situations where Oinkmaster can be handy when
+A3:  Yes, there are several situations where Oinkmaster can be handy when
      dealing with local rules management. If you have only a few sensors,
      you can simply run Oinkmaster in a traditional way to update the 
      rules from the Internet on all of them. However, if the sensors have 
@@ -89,10 +119,10 @@ A2:  Yes, there are several situations where Oinkmaster can be handy when
 
 
 
-Q3:  Can Oinkmaster be useful for distributing my homemade rules to my 
+Q4:  Can Oinkmaster be useful for distributing my homemade rules to my 
      sensors?
 
-A3:  Yes! This can be done almost exactly like in the example above.
+A4:  Yes! This can be done almost exactly like in the example above.
      The main difference is that in step 1, you don't download from the
      Internet but rather point to a rules tarball created from a local
      directory (perhaps checked out from a cvs repository) containing 
@@ -110,9 +140,9 @@ A3:  Yes! This can be done almost exactly like in the example above.
 
 
 
-Q4:  In which order will 'modifysid'/'disablesid'/'enablesid' be processed?
+Q5:  In which order will 'modifysid'/'disablesid'/'enablesid' be processed?
 
-A4:  All the 'modifysid' will be processed first, then 'disablesid' and last
+A5:  All the 'modifysid' will be processed first, then 'disablesid' and last
      'enablesid'. The order they appear in oinkmaster.conf does not matter.
      So if you use both "enablesid 1" and "disablesid 1" in
      oinkmaster.conf (in any order), SID 1 will first be disabled and then
@@ -122,9 +152,9 @@ A4:  All the 'modifysid' will be processed first, then 'disablesid' and last
 
 
 
-Q5:  How can the 'include' statement in oinkmaster.conf be useful?
+Q6:  How can the 'include' statement in oinkmaster.conf be useful?
 
-A5:  There are many situations where this is useful, but perhaps the most
+A6:  There are many situations where this is useful, but perhaps the most
      common usage is to be able to use one global and one sensor-specific
      configuration file. You would usually want to make sure to include 
      the sensor-specific file last since possible values that are 
@@ -135,9 +165,9 @@ A5:  There are many situations where this is useful, but perhaps the most
 
 
 
-Q6:  Can Oinkmaster restart Snort after an update?
+Q7:  Can Oinkmaster restart Snort after an update?
 
-A6:  No. This functionality does not belong in Oinkmaster since almost 
+A7:  No. This functionality does not belong in Oinkmaster since almost 
      everyone has their own way of restarting Snort. Automatic restart of 
      Snort after an update is usually not a good idea either. See the 
      README for more information. If you really want to do an automatic 
@@ -147,10 +177,10 @@ A6:  No. This functionality does not belong in Oinkmaster since almost
 
 
 
-Q7:  Can I tell Oinkmaster to not touch certain SIDs in sid-msg.map so 
+Q8:  Can I tell Oinkmaster to not touch certain SIDs in sid-msg.map so 
      the entries I add for my local rules don't get deleted?
 
-A7:  No. What you may want to consider instead is to use a separate
+A8:  No. What you may want to consider instead is to use a separate
      sid-msg.map for your local rules (and not touch the map for the
      official rules), and then join the two before feeding it to 
      Barnyard/whatever. Or, what is probably even better, is to generate 
@@ -162,12 +192,12 @@ A7:  No. What you may want to consider instead is to use a separate
 
 
 
-Q8:  I want to copy the rules archive from a remote host to the sensor 
+Q9:  I want to copy the rules archive from a remote host to the sensor 
      via scp without having to supply a password or passphrase, but I also 
      don't want to give the sensors full access to that host. Can this be 
      done?
 
-A8:  Yes. You should really rely on the OpenSSH documentation on how to 
+A9:  Yes. You should really rely on the OpenSSH documentation on how to 
      do this as it is well documented there, but an attempt at 
      explaining how it could be done follows. The instructions assumes 
      OpenSSH on both client and server. 
@@ -233,9 +263,9 @@ A8:  Yes. You should really rely on the OpenSSH documentation on how to
 
 
 
-Q9:  How do I setup proxy configuration?
+Q10: How do I setup proxy configuration?
 
-A9:  If you download the snort rules archive from a web site (e.g. 
+A10: If you download the snort rules archive from a web site (e.g. 
      www.snort.org) and you are a behind an http proxy, you need to tell 
      Oinkmaster to use that proxy or the download will fail. How you do 
      that depends if you use wget (i.e. use use_external_bins=1 in 
@@ -262,9 +292,9 @@ A9:  If you download the snort rules archive from a web site (e.g.
 
 
 
-Q10: Can Oinkmaster be used to update rules from www.whitehats.com?
+Q11: Can Oinkmaster be used to update rules from www.whitehats.com?
 
-A10: No, the Snort rules on www.whitehats.com has currently not been 
+A11: No, the Snort rules on www.whitehats.com has currently not been 
      maintained for a long long time and should not be used, although the 
      arachNIDS database is still a good source of information for older 
      rules. Use the rules on www.snort.org instead.
@@ -275,9 +305,9 @@ A10: No, the Snort rules on www.whitehats.com has currently not been
 
 
 
-Q11: Will Oinkmaster fail when new keywords are introduced in the rules?
+Q12: Will Oinkmaster fail when new keywords are introduced in the rules?
 
-A11: No. (Not unless there is a bug in Oinkmaster anyway.) Oinkmaster was 
+A12: No. (Not unless there is a bug in Oinkmaster anyway.) Oinkmaster was 
      designed to be stupid and not try to understand every single part of 
      the rules. Basically, for a rule to be successfully identified by 
      Oinkmaster, it must start with one of the keywords in 'rule_actions' 
@@ -293,10 +323,10 @@ A11: No. (Not unless there is a bug in Oinkmaster anyway.) Oinkmaster was
 
 
 
-Q12: Under what license are the official Snort rules released, and
+Q13: Under what license are the official Snort rules released, and
      can I modify them without violating it?
 
-A12: The Snort people have answered this a few times on the Snort
+A13: The Snort people have answered this a few times on the Snort
      lists, but here is a small summary. The official Snort
      signatures are part of Snort and are therefore also released
      under GPL. You can modify them locally as much as you want,
@@ -305,41 +335,13 @@ A12: The Snort people have answered this a few times on the Snort
 
 
 
-Q13: Is there a GUI for Oinkmaster?
+Q14: Is there a GUI for Oinkmaster?
 
-A13: Yes, check out README.gui and contrib/oinkgui.pl.
+A14: Yes, check out README.gui and contrib/oinkgui.pl.
      This is just a primitive front-end for Oinkmaster though.
      Oinkmaster was designed to be simple and also easy to use in scripts,
      so if you want a more advanced graphical interface for maintaining
      Snort rules, you should probably be looking at another tool instead.
-
-
-
-Q14: Oinkmaster says the file in URL does not exist (or it exists but
-     doesn't work with my Snort).
-
-A14: Check the "url = ..." line in oinkmaster.conf (or argument to "-u" 
-     if you specify it on command line). The URL you should use depends 
-     on the version of Snort you run. This means that the default URL does
-     not work for everyone! So, you must make sure you really use the one 
-     that is right for you. Visit http://www.snort.org/dl/rules/, read 
-     the instructions there, and pick the right URL. As the official Snort 
-     rules archives now have version information in the filenames, you 
-     must remember to update the URL info for Oinkmaster when upgrading to 
-     a new major version of Snort. You can also make a tiny wrapper to 
-     create the right URL string on the fly by using the output from 
-     "snort -V". Keep in mind though that the Snort people can change the 
-     download layout again at any time, so if you experience problems, go 
-     to the Snort web site and see if anything is mentioned there.
-
-     If you are absolutely sure you use the right rules for your version
-     of Snort but still have problems, you may need to read the Snort
-     manual because it is likely that your local configuration is broken.
-     For example, the new rules maybe contains new variables that you
-     forgot to add. But of course there can be times when the rules
-     archive actually is broken somehow (remember that auto-update of the
-     rules with automatic Snort restart is bad unless you are careful).
-     These issues are often mentioned on the Snort mailing lists.
 
 
 
