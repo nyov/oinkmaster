@@ -8,7 +8,7 @@ use File::Copy;
 use POSIX qw(strftime);
 use Cwd;
 
-sub show_usage;
+sub show_usage();
 sub parse_cmdline;
 sub read_config($ $);
 sub sanity_check;
@@ -50,9 +50,8 @@ my (
    );
 
 my (
-      %file_ignore_list, %config, %changes, %added_files,
-      %new_files, %new_rules, %new_other, %old_rules, %old_other, %printed,
-      %modified_files, %sid_modify_list
+      %config, %changes, %added_files, %new_files, %new_rules, %new_other,
+      %old_rules, %old_other, %printed, %modified_files
    );
 
 
@@ -93,12 +92,13 @@ download_rules;
 unpack_rules_archive;
 
 # Add filenames to update from the downloaded archive to the list of new
-# files, unless filename exists in %file_ignore_list.
+# files, unless filename exists in %config{file_ignore_list}.
 opendir(NEWRULES, "$TMPDIR/rules")
   or clean_exit("Could not open directory $TMPDIR/rules: $!");
+
 while ($_ = readdir(NEWRULES)) {
     $new_files{$_}++
-      if (/$config{update_files}/ && !exists($file_ignore_list{$_}));
+      if (/$config{update_files}/ && !exists($config{file_ignore_list}{$_}));
 }
 closedir(NEWRULES);
 
@@ -200,7 +200,7 @@ if ($check_removed) {
 
     while ($_ = readdir(OLDRULES)) {
         $removed_files .= "    -> $_\n"
-          if (/$config{update_files}/ && !exists($file_ignore_list{$_})
+          if (/$config{update_files}/ && !exists($config{file_ignore_list}{$_})
             && !exists($new_files{$_}));
     }
     closedir(OLDRULES);
@@ -313,29 +313,36 @@ clean_exit;
 
 
 
-sub show_usage
+sub show_usage()
 {
-    print STDERR "$VERSION\n\n".
-                 "Usage: $0 -o <dir> [options]\n\n".
-		 "<dir> is where to put the new files.\n".
-	         "This should be the directory where you store your snort.org rules.\n".
-                 "Note that your current files will be overwritten by the new ones\n".
-                 "if they had been modified.\n".
-                 "\nOptions:\n".
-		 "-C <cfg>   Use this config file instead of the default ($config_file)\n".
-		 "-b <dir>   Backup old rules into <dir> if anything had changed\n".
-		 "-u <url>   Download from this URL (http://, ftp:// or file:// ...tar.gz)\n".
-                 "           instead of the URL specified in $config_file\n".
-		 "-c         Careful mode. Don't update anything, just check for changes\n".
-		 "-e         Re-enable all rules that are disabled by default in the rules distribution.\n".
-                 "           (They are disabled for a reason so use with care)\n".
-                 "-r         Check for rules files that exist in the output directory\n".
-                 "           but not in the downloaded rules archive (i.e. files that may\n".
-                 "           have been removed from the archive).\n".
-                 "-q         Quiet mode. No output unless changes were found\n".
-		 "-v         Verbose mode\n".
-                 "-h         Show usage help\n\n";
-    exit(0);
+    print STDERR << "EOU";
+
+$VERSION
+
+Usage: $0 -o <dir> [options]
+
+<dir> is where to put the new files.
+This should be the directory where you store your snort.org rules.
+Note that your current files will be overwritten by the new ones
+if they had been modified.
+
+Options:
+-C <cfg>   Use this config file instead of the default ($config_file)
+-b <dir>   Backup old rules into <dir> if anything had changed
+-u <url>   Download from this URL (http://, ftp:// or file:// ...tar.gz)
+           instead of the URL specified in $config_file
+           Careful mode. Don't update anything, just check for changes
+-e         Re-enable all rules that are disabled by default in the rules 
+           distribution (they are disabled for a reason so use with care)
+-r         Check for rules files that exist in the output directory
+           but not in the downloaded rules archive (i.e. files that may
+           have been removed from the distribution archive)
+-q         Quiet mode - no output unless changes were found
+-v         Verbose mode
+-h         Show usage help
+
+EOU
+    exit;
 }
 
 
@@ -368,6 +375,7 @@ sub parse_cmdline
 
 
 
+# Read stuff from the configuration file.
 sub read_config($ $)
 {
     my $config_file = shift;
@@ -397,14 +405,14 @@ sub read_config($ $)
                     warn("WARNING: line $linenum in $config_file is invalid, ignoring\n")
 	        }
 	    }
-        } elsif (/^modifysid\s+(\d+)\s+(.*)/i) {           # modifysid
-            push(@{$sid_modify_list{$1}}, $2);
+        } elsif (/^modifysid\s+(\d+)\s+(.*)/i) {           # modifysid <sid> <regexp>
+            push(@{$$cfgref{sid_modify_list}{$1}}, $2);
        } elsif (/^skipfiles*\s+(.*)/i) {                   # skipfile
 	    my $args = $1;
 	    foreach $_ (split(/\s*,\s*/, $args)) {
 	        if (/^\S.*\S$/) {
                     $verbose && print STDERR "Adding file to ignore list: $_.\n";
-                    $file_ignore_list{$_}++;
+                    $$cfgref{file_ignore_list}{$_}++;
 		} else {
                     warn("WARNING: line $linenum in $config_file is invalid, ignoring\n")
 		}
@@ -424,13 +432,12 @@ sub read_config($ $)
 
 
 
-
 # Make a few basic tests to make sure things look ok.
 # Will also set a new (temporary) PATH as defined in the config file.
 sub sanity_check
 {
-   my @req_config   = qw (path update_files);
-   my @req_binaries = qw (which gzip rm tar wget);
+   my @req_config   = qw (path update_files);  # Required parameters in oinkmaster.conf.
+   my @req_binaries = qw (which gzip rm tar);  # These binaries are always required.
 
   # Can't use both -q and -v.
     die("Both quiet mode and verbose mode at the same time doesn't make sense.\nExiting")
@@ -447,15 +454,22 @@ sub sanity_check
     $ENV{'IFS'}  = '';
 
   # Make sure all required binaries can be found.
+  # (Wget is not required if user specifies file:// as url. That check is done below.)
     foreach $_ (@req_binaries) {
-        die("\"$_\" binary not found\nExiting")
+        die("\"$_\" binary not found ".
+            "(perhaps you must edit $config_file and change 'path')\nExiting")
           if (system("which \"$_\" >/dev/null 2>&1"));
     }
 
   # Make sure $url is defined (either by -u <url> or url=... in the conf).
     die("Incorrect URL or URL not specified in neither $config_file nor command line.\nExiting")
-      unless (exists($config{'url'}) && $config{'url'} 
+      unless (exists($config{'url'}) && $config{'url'}
         =~ /^(?:http|ftp|file):\/\/\S+.*\.tar\.gz$/);
+
+  # Wget must be found if url is http:// or ftp://.
+    die("\"wget\" binary not found ".
+        "(perhaps you must edit $config_file and change 'path')\nExiting")
+          if ($config{'url'} =~ /^(http|ftp):/ && system("which \"wget\" >/dev/null 2>&1"));
 
   # Make sure the output directory exists and is readable.
     die("The output directory \"$output_dir\" doesn't exist or isn't readable by you.\nExiting")
@@ -612,11 +626,11 @@ sub disable_rules
 	    }
 
           # Modify rule, if requested.
-            foreach $_ (@{$sid_modify_list{$sid}}) {
-	        print STDERR "Modifying sid $sid with expression: $_\n  Before:$line"
+            foreach my $regexp (@{$config{sid_modify_list}{$sid}}) {
+	        print STDERR "Modifying sid $sid with expression: $regexp\n  Before:$line"
 		  if ($verbose);
-		eval "\$line =~ $_";
-		warn("WARNING: error in expression \"$_\": $@\n")
+		eval "\$line =~ $regexp";
+		warn("WARNING: error in expression \"$regexp\": $@\n")
 		  if ($@);
 		print STDERR "  After:$line\n"
                   if ($verbose);
@@ -748,7 +762,7 @@ sub do_backup
     while ($_ = readdir(OLDRULES)) {
         copy("$output_dir/$_", "$tmpbackupdir/")
           or warn("WARNING: error copying $output_dir/$_ to $tmpbackupdir: $!")
-            if (/$config{update_files}/ && !exists($file_ignore_list{$_}));
+            if (/$config{update_files}/ && !exists($config{file_ignore_list}{$_}));
     }
     closedir(OLDRULES);
 
