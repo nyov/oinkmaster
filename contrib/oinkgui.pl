@@ -80,6 +80,7 @@ my @oinkmaster_conf = qw(
 my @urls = qw(
     http://www.snort.org/dl/rules/snortrules-snapshot-2_0.tar.gz
     http://www.snort.org/dl/rules/snortrules-snapshot-2_1.tar.gz
+    http://www.snort.org/dl/rules/snortrules-snapshot-2_2.tar.gz
     http://www.snort.org/dl/rules/snortrules-snapshot-CURRENT.tar.gz
 );
 
@@ -101,10 +102,10 @@ my %color = (
 my %config = (
     animate          => 1,
     careful          => 0,
-    minimize_diff    => 0,
     enable_all       => 0,
     check_removed    => 0,
-    mode             => 'normal',
+    output_mode      => 'normal',
+    diff_mode        => 'detailed',
     perl             => $^X,
     oinkmaster       => "",
     oinkmaster_conf  => "",
@@ -135,8 +136,6 @@ my %help = (
   # Checkbuttons.
     careful       => 'In careful mode, Oinkmaster will just check for changes, '.
                      'not update anything.',
-    minimize_diff => 'Simplify the result by removing common leading and trailing '.
-                     'parts in modified rules before printing them.',
     enable        => 'Some rules may be commented out by default (for a reason!). '.
                      'This option will make Oinkmaster enable those.',
     removed       => 'Check for rules files that exist in the output directory but not '.
@@ -382,11 +381,6 @@ $balloon->attach(
 );
 
 $balloon->attach(
-  create_checkbutton($left_frame, "Minimize diff", \$config{minimize_diff}),
-  -statusmsg => $help{minimize_diff}
-);
-
-$balloon->attach(
   create_checkbutton($left_frame, "Enable all", \$config{enable_all}),
   -statusmsg => $help{enable}
 );
@@ -401,22 +395,35 @@ $balloon->attach(
 $left_frame->Label(
   -text        => "Output mode:",
   -background  => "$color{label}",
-)->pack(-side  => 'top',
-        -fill  => 'x',
+)->pack(
+  -side        => 'top',
+  -fill        => 'x',
 );
 
 # Create mode radiobuttons in the left frame.
-create_radiobutton($left_frame, "super-quiet", \$config{mode});
-create_radiobutton($left_frame, "quiet",       \$config{mode});
-create_radiobutton($left_frame, "normal",      \$config{mode});
-create_radiobutton($left_frame, "verbose",     \$config{mode});
+create_radiobutton($left_frame, "super-quiet", \$config{output_mode});
+create_radiobutton($left_frame, "quiet",       \$config{output_mode});
+create_radiobutton($left_frame, "normal",      \$config{output_mode});
+create_radiobutton($left_frame, "verbose",     \$config{output_mode});
 
+# Create "Diff mode" label.
+$left_frame->Label(
+  -text        => "Diff  mode:",
+  -background  => "$color{label}",
+)->pack(
+  -side  => 'top',
+  -fill  => 'x',
+);
+
+create_radiobutton($left_frame, "detailed",      \$config{diff_mode});
+create_radiobutton($left_frame, "summarized",    \$config{diff_mode});
+create_radiobutton($left_frame, "remove common", \$config{diff_mode});
 
 
 # Create "activity messages" label.
 $main->Label(
   -text       => "Output messages:",
-  -width      => '110',
+  -width      => '130',
   -background => "$color{label}",
 )->pack(
   -side       => 'top',
@@ -434,7 +441,7 @@ $out_frame->pack(
 
 # Pack help label below output window.
 $help_label->pack(
-    -fill       => 'x',
+    -fill     => 'x',
 );
 
 
@@ -1008,12 +1015,13 @@ sub create_cmdline($)
       "-o", "$outdir");
 
     push(@$cmd_ref, "-c")               if ($config{careful});
-    push(@$cmd_ref, "-m")               if ($config{minimize_diff});
     push(@$cmd_ref, "-e")               if ($config{enable_all});
     push(@$cmd_ref, "-r")               if ($config{check_removed});
-    push(@$cmd_ref, "-q")               if ($config{mode} eq "quiet");
-    push(@$cmd_ref, "-Q")               if ($config{mode} eq "super-quiet");
-    push(@$cmd_ref, "-v")               if ($config{mode} eq "verbose");
+    push(@$cmd_ref, "-q")               if ($config{output_mode} eq "quiet");
+    push(@$cmd_ref, "-Q")               if ($config{output_mode} eq "super-quiet");
+    push(@$cmd_ref, "-v")               if ($config{output_mode} eq "verbose");
+    push(@$cmd_ref, "-m")               if ($config{diff_mode}   eq "remove common");
+    push(@$cmd_ref, "-s")               if ($config{diff_mode}   eq "summarized");
     push(@$cmd_ref, "-U", "$varfile")   if ($varfile);
     push(@$cmd_ref, "-b", "$backupdir") if ($backupdir);
 
