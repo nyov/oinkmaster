@@ -253,12 +253,12 @@ sub read_config($ $)
     my $linenum     = 0;
 
     unless (-e "$config_file") {
-        clean_exit("configuration file \"$config_file\" does not exist.\n".
-                   "Put it there or use the -C argument.");
+        die("configuration file \"$config_file\" does not exist.\n".
+            "Put it there or use the -C argument.\n");
     }
 
     open(CONF, "<$config_file")
-      or clean_exit("could not open config file \"$config_file\": $!");
+      or die("could not open config file \"$config_file\": $!");
 
     while (<CONF>) {
         $linenum++;
