@@ -454,6 +454,7 @@ sub unpack_rules_archive($)
     } else {
         exec("tar","tf","$archive");
     }
+    close(TAR);
 
   # For each filename in the archive...
     foreach my $filename (@tar_test) {
