@@ -478,7 +478,7 @@ sub sanity_check()
     }
 
   # Make sure $url is defined (either by -u <url> or url=... in the conf).
-   clean_exit("incorrect URL or URL not specified in either $config_file or command line.")
+    clean_exit("incorrect URL or URL not specified in either $config_file or command line.")
       unless (exists($config{'url'}) &&
         (($config{'url'}) = $config{'url'} =~ /^((?:https*|ftp|file|scp):\/\/.+\.tar\.gz)$/));
 
@@ -527,6 +527,10 @@ sub sanity_check()
 
   # Also untaint it.
     $tmp_basedir = untaint_path($tmp_basedir);
+
+  # Make sure stdout is a tty if we're running in interactive mode.
+    clean_exit("you can not run in interactive mode if standard output is not a TTY.")
+      if ($interactive && !-t STDOUT);
 }
 
 
