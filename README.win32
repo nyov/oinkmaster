@@ -57,7 +57,7 @@ ActivePerl
 
 - Done!
 
-Now you should be able to run Oinkmaster. Usage exmple:
+Now you should be able to run Oinkmaster. Usage example:
 
 c:\perl\bin\perl c:\oink\oinkmaster.pl -C c:\oink\oinkmaster.conf -o c:\oink\rules
 

@@ -67,7 +67,7 @@ A2:  Yes, there are several situations where Oinkmaster can be handy when
         like a USB memory stick, for example. If you pushed the archive to
         the sensors, they should run Oinkmaster with '-u file:///...' and
         point to this file. In each local oinkmaster.conf, you can then
-        adjust things so they fit this perticular sensor.
+        adjust things so they fit this particular sensor.
 
 
 
@@ -94,10 +94,10 @@ A3:  Yes! This can be done almost exactly like in the example above.
 Q4:  In which order will 'modifysid'/'disablesid'/'enablesid' be processed?
 
 A4:  All the 'modifysid' will be processed first, then 'disablesid' and last
-     'enablesid'. The order they apperar in oinkmaster.conf does not matter.
+     'enablesid'. The order they appear in oinkmaster.conf does not matter.
      So if you use both "enablesid 1" and "disablesid 1" in
-     oinkmaster.conf (in any order), sid 1 will first be disabled and then
-     enabled. So if sid 1 was enabled by default in the downloaded rules
+     oinkmaster.conf (in any order), SID 1 will first be disabled and then
+     enabled. So if SID 1 was enabled by default in the downloaded rules
      archive, this is a NOOP. Disabling a disabled rule is also a NOOP, as
      is enabling an enabled rule.
 
@@ -137,7 +137,7 @@ A7:  No. What you may want to consider instead is to use a separate
      automatically yourself after each update. There is one script in 
      Snort's contrib directory that does this, and there is also one that 
      comes with Oinkmaster (contrib/create-sidmap.pl). The latter handles
-     multiline rules and can also take an arbitrary number of rules
+     multi-line rules and can also take an arbitrary number of rules
      directories as argument.
 
 

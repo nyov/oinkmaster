@@ -25,7 +25,7 @@ Oinkmaster is most often used to grab the latest official rules tarball from
 www.snort.org and apply a set of modifications to them (such as disabling 
 unwanted rules) before merging the changes into your local rules files, 
 but it can just as well be used to manage/distribute both official and 
-local local rules to multiple sensors with ability to finetune the rules 
+local local rules to multiple sensors with ability to fine-tune the rules 
 on each sensor or group of sensors. 
 
 Oinkmaster is based on the (now extremely obsolete) arachNIDS snort rules 
@@ -60,16 +60,16 @@ Again, use it at your own risk!
 What problem does Oinkmaster solve?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To have any use of your NIDS, you must keep ýour signatures (or "rules") 
+To have any use of your NIDS, you must keep your signatures (or "rules") 
 current. On www.snort.org, there is a rules tarball that is updated with
-new and improved rules on a regaular basis. Very soon you will realize 
+new and improved rules on a regular basis. Very soon you will realize 
 that this tarball contains rules that are not suitable for your 
 environment, so you delete (or comment out) them from your local rules 
 files. Everything is fine until it's time to update the rules, since you 
 will have to apply all these modifications again (and you must also keep 
 track of these modifications so you can repeat them after each update). 
 This clearly becomes a boring and difficult task if you do it manually, 
-especially if you have many sensors and make lots of local finetunes of 
+especially if you have many sensors and make lots of local fine-tunes of 
 the rules.
 
 This is where Oinkmaster comes in - it will automatically do those boring 
@@ -343,7 +343,7 @@ o Oinkmaster never deletes any rules files from your system.
   So if you use a separate directory for your Snort rules from snort.org
   (i.e. you have possible local rules files in another directory) you
   probably want to use the "-r" argument. Otherwise it will be very
-  missleading since your local rules files obviously don't exist in the
+  misleading since your local rules files obviously don't exist in the
   rules distribution, and will therefore be regarded as removed every time.
 
 o Don't depend too much on this script for the rules updating process.

@@ -14,7 +14,7 @@ o You can now run without external binaries if you have the required
   the default. 0 means to use the Perl modules, 1 means to use external
   binaries. It's set to 0 by default on Win32 (since the required
   Perl modules are already included in ActivePerl), and 1 on other systems 
-  (i.e. same behaviour as before). This makes it much easier to install 
+  (i.e. same behavior as before). This makes it much easier to install 
   Oinkmaster on Windows/ActivePerl. See the new default oinkmaster.conf
   for more information.
 o A fully featured graphical multi-platform front-end to Oinkmaster 
@@ -51,7 +51,7 @@ o You can now specify "-i" for interactive mode. You will be asked to
 o Added 'enablesid' option to oinkmaster.conf.
 o Slightly improved rules parsing (order of sid and msg does not matter).
 o oinkmaster.conf will be searched for in /etc/ and /usr/local/etc/ by default.
-o Make contrib/create-sidmap.pl and contrib/addsid.pl take an arbtitrary number
+o Make contrib/create-sidmap.pl and contrib/addsid.pl take an arbitrary number
   of directories as argument.
 o Added a FAQ.
 o wget is now always run in verbose mode, although the output is not displayed
@@ -146,7 +146,7 @@ o Don't require write permission in the output directory when running with -c.
   Pointed out by arjones@simultan.dyndns.org.
 o Don't care about trailing whitespaces for non-rule lines (to avoid getting
   a diff where the same line appears to have been both added and removed when
-  only a traling whitespace has been removed etc).
+  only a trailing whitespace has been removed etc).
 o Allow umask to be specified in oinkmaster.conf.
 o Many internal cleanups and minor bug fixes.
 
