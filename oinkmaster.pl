@@ -39,8 +39,8 @@ my $preserve_comments = 1;
 
 # Regexp to match a snort rule line.
 # Multiline rules are currently not handled, but at this time,
-# all of the official rules are one rule per line.
-# The msg string will go into $1 and the sid will go into $2 if the regexp matches.
+# all of the official rules are one rule per line. The msg string
+# will go into $1 and the sid will go into $2 if the regexp matches.
 my $SNORT_RULE_REGEXP = '^\s*#*\s*(?:alert|log|pass) .+msg\s*:\s*"(.+?)"\s*;.+sid\s*:\s*(\d+)\s*;';
 
 use vars qw
@@ -87,13 +87,13 @@ read_config($config_file, \%config);
 sanity_check();
 
 # Download the rules archive.
-# This will leave us with the file $TMPDIR/$outfile (/tmp/oinkmaster.$$/snortrules.tar.gz).
-# Will exit if download fails.
+# This will leave us with the file $TMPDIR/$outfile
+# (/tmp/oinkmaster.$$/snortrules.tar.gz). Will exit if download fails.
 download_rules("$config{'url'}", "$TMPDIR/$outfile");
 
 # Verify and unpack archive. This will leave us with a directory
-# called "rules/" in the same directory as the archive, containing the new rules.
-# Will exit if something fails.
+# called "rules/" in the same directory as the archive, containing the
+# new rules. Will exit if something fails.
 unpack_rules_archive("$TMPDIR/$outfile");
 
 # Create list of new files that we care about from the downloaded archive.
@@ -423,11 +423,13 @@ sub unpack_rules_archive($)
        chomp;
 
       # Make sure the leading char is valid (not an absolute path, for example).
-        clean_exit("Error: forbidden leading character in filename in tar archive. Offending file/line:\n$_")
+        clean_exit("Error: forbidden leading character in filename in tar archive. ".
+                   "Offending file/line:\n$_")
           unless (/^[$ok_lead]/);
 
       # We don't want to have any weird characters anywhere in the filename.
-        clean_exit("Error: forbidden characters in filename in tar archive. Offending file/line:\n$_")
+        clean_exit("Error: forbidden characters in filename in tar archive. ".
+                   "Offending file/line:\n$_")
           if (/[^$ok_chars]/);
 
       # We don't want to unpack any "../../" junk.
@@ -773,7 +775,8 @@ sub print_changes($ $)
   # Print list of possibly removed files, if requested.
     if ($check_removed) {
         if (keys(%{$$ch_ref{removed_files}}) > 0) {
-            print "\n[*] Files possibly removed from the archive (consider removing them from your snort.conf): [*]\n";
+            print "\n[*] Files possibly removed from the archive ".
+                  "(consider removing them from your snort.conf): [*]\n";
             foreach my $removed_file (keys(%{$$ch_ref{removed_files}})) {
                 print "    -> $removed_file\n";
 	    }
