@@ -1184,6 +1184,8 @@ sub get_next_entry($ $ $ $)
 # of just exit(0).
 sub clean_exit($)
 {
+    chdir('/');
+
     system("rm","-r","-f","$tmpdir")
       and warn("WARNING: unable to remove temporary directory $tmpdir.\n");
 
