@@ -167,7 +167,7 @@ if ($something_changed) {
 
         update_rules($config{output_dir}, keys(%{$changes{modified_files}}));
 
-        add_new_vars(\%changes, $config{local_snort_conf})
+        add_new_vars(\%changes, $config{varfile})
           if ($update_vars);
     }
 } else {
@@ -376,10 +376,10 @@ sub sanity_check()
   # it must exist. It must also be writable unless we're in careful mode.
     if (exists($config{varfile})) {
         clean_exit("file $config{varfile} does not exist.")
-          unless (-e "$config{local_snort_conf}");
+          unless (-e "$config{varfile}");
 
         clean_exit("file $config{varfile} is not writable by you.")
-          if (!$careful && !-w "$config{local_snort_conf}");
+          if (!$careful && !-w "$config{varfile}");
     }
 
   # Make sure all required binaries can be found.
