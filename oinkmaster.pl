@@ -133,8 +133,8 @@ if ($#{$config{config_files}} == -1) {
 
 read_config($_, \%config) for @{$config{config_files}};
 
-# Now substitute "%ACTIONS%" with $config{rule_actions}, which may have been
-# modified after reading the config file.
+# Now substitute "%ACTIONS%" with $config{rule_actions}, which may have
+# been modified after reading the config file.
 $SINGLELINE_RULE_REGEXP =~ s/%ACTIONS%/$config{rule_actions}/;
 $MULTILINE_RULE_REGEXP  =~ s/%ACTIONS%/$config{rule_actions}/;
 
@@ -178,7 +178,7 @@ download_file("$config{url}", "$tmpdir/$OUTFILE");
 unpack_rules_archive("$tmpdir/$OUTFILE", $RULES_DIR);
 
 # Create list of new files that we care about from the downloaded
-# Filenames (with full path) will be stored as %new_files{filenme}.
+# Filenames (with full path) will be stored as %new_files{filename}.
 my $num_files = get_new_filenames(\my %new_files, "$tmpdir/$RULES_DIR");
 
 # Make sure we have at least the minumum number of files.
@@ -197,7 +197,7 @@ clean_exit("not enough rules in downloaded archive (is it broken?)\n".
            "Number of rules is $num_rules but minimum is set to $config{min_rules}.")
   if ($num_rules < $config{min_rules});
 
-# Setup rules hash.
+# Setup a hash containing the content of all rules files.
 my %rh = setup_rules_hash(\%new_files, $config{output_dir});
 
 # Compare the new rules to the old ones.
@@ -290,8 +290,8 @@ Options:
 -r         Check for rules files that exist in the output directory
            but not in the downloaded rules archive
 -T         Test configuration and then exit
--u <url>   Download from this URL (must be http://, https://, ftp://, file://
-           or scp:// ...tar.gz) instead of the URL in the configuration file
+-u <url>   Download from this URL instead of the one in the configuration file
+           (must be http://, https://, ftp://, file:// or scp:// ... .tar.gz) 
 -U <file>  Merge new variables from downloaded snort.conf into <file>
 -v         Verbose mode
 -V         Show version and exit
@@ -663,7 +663,7 @@ sub download_file($ $)
             print STDERR "done.\n" unless ($config{quiet});
         }
 
-  # Use LWP if URL starts with http[s] and use_external_bins=0.
+  # Use LWP if URL starts with "http[s]" or "ftp" and use_external_bins=0.
     } elsif (!$config{use_external_bins} && $url =~ /^(?:https*|ftp)/) {
         print STDERR "Downloading file from $url... "
           unless ($config{quiet});
@@ -794,8 +794,7 @@ sub unpack_rules_archive($ $)
     clean_exit("could not list files in tar archive (is it broken?)")
       if ($#tar_content < 0);
 
-  # For each filename in the archive, do some basic (pretty useless)
-  # sanity checks.
+  # For each filename in the archive, do some basic sanity checks.
     foreach my $filename (@tar_content) {
        chomp($filename);
 
@@ -809,7 +808,7 @@ sub unpack_rules_archive($ $)
                    "$OK_PATH_CHARS\nOffending file/line:\n$filename")
           if ($filename =~ /[^$OK_PATH_CHARS]/);
 
-      # We don't want to unpack any "../../" junk.
+      # We don't want to unpack any "../../" junk (check is useless now though).
         clean_exit("filename in tar archive contains \"..\".\n".
                    "Offending file/line:\n$filename")
           if ($filename =~ /\.\./);
@@ -825,7 +824,7 @@ sub unpack_rules_archive($ $)
     } else {
         mkdir("$rules_dir") or clean_exit("could not create \"$rules_dir\" directory: $!\n");
         foreach my $file ($tar->list_files) {
-            next unless ($file =~ /^$rules_dir\/[^\/]+$/);
+            next unless ($file =~ /^$rules_dir\/[^\/]+$/);  # only ^rules/<file>$
 
             my $content = $tar->get_content($file);
 
@@ -1187,7 +1186,7 @@ sub print_changes($ $)
     my $ch_ref = shift;
     my $rh_ref = shift;
 
-    print "\n[***] Results from Oinkmaster started " . 
+    print "\n[***] Results from Oinkmaster started " .
           scalar(localtime) . " [***]\n";
 
   # Print new variables.
@@ -1326,10 +1325,10 @@ sub print_changes($ $)
 
 
 
-# Help-function for print_changes().
+# Helper for print_changes().
 sub print_changetype($ $ $ $)
 {
-    my $type   = shift;   # $PRINT_OLD, $PRINT_NEW or $PRINT_BOTH
+    my $type   = shift;   # $PRINT_OLD|$PRINT_NEW|$PRINT_BOTH
     my $string = shift;   # string to print before filename
     my $ch_ref = shift;   # reference to an entry in the rules changes hash
     my $rh_ref = shift;   # reference to rules hash
@@ -1440,7 +1439,7 @@ sub get_changes($ $ $)
         }
 
       # Check for added non-rule lines.
-        get_first_only(\my @added, 
+        get_first_only(\my @added,
                        \@{$$rh_ref{new}{other}{$file}},
                        \@{$$rh_ref{old}{other}{$file}});
 
@@ -1518,7 +1517,7 @@ sub is_in_path($)
     my $file = shift;
 
     foreach my $dir (File::Spec->path()) {
-        if ((-f "$dir/$file" && -x "$dir/$file") 
+        if ((-f "$dir/$file" && -x "$dir/$file")
           || (-f "$dir/$file.exe" && -x "$dir/$file.exe")) {
             print STDERR "Found $file binary in $dir\n"
               if ($config{verbose});
@@ -1533,7 +1532,7 @@ sub is_in_path($)
 
 # get_next_entry() will parse the array referenced in the first arg
 # and return the next entry. The array should contain a rules file,
-# and the returned entry will be removed from it.
+# and the returned entry will be removed from the array.
 # An entry is one of:
 # - single-line rule (put in 2nd ref)
 # - multi-line rule (put in 3rd ref)
@@ -1625,6 +1624,8 @@ sub get_next_entry($ $ $ $ $ $)
             $$multi_ref  =~ s/^#+\s*/#/;
 
             return (1);   # return multi
+
+      # Invalid multi-line rule.
         } else {
             warn("\nWARNING: invalid multi-line rule: $$single_ref\n")
               if ($config{verbose} && $$multi_ref !~ /^\s*#/);
@@ -1645,14 +1646,18 @@ sub get_next_entry($ $ $ $ $ $)
 
             return (1);   # return non-rule
         }
-     } elsif (parse_singleline_rule($line, $msg_ref, $sid_ref)) {
+
+  # Check if it's a regular single-line rule.
+    } elsif (parse_singleline_rule($line, $msg_ref, $sid_ref)) {
         $$single_ref = $line;
         $$single_ref =~ s/^\s*//;
         $$single_ref =~ s/^#+\s*/#/;
         $$single_ref =~ s/\s*\n$/\n/;
 
         return (1);   # return single
-    } else {                          # non-rule line
+
+  # Non-rule line.
+    } else {
 
       # Do extra check and warn if it *might* be a rule anyway,
       # but that we just couldn't parse for some reason.
@@ -1757,7 +1762,8 @@ sub add_new_vars($ $)
 
 
 
-# Convert msdos style path to cygwin style.
+# Convert msdos style path to cygwin style, e.g.
+# c:\foo => /cygdrive/c/foo
 sub msdos_to_cygwin_path($)
 {
     my $path_ref = shift;
@@ -1842,12 +1848,15 @@ sub approve_changes()
 
 
 # Check a string and return 1 if it's a valid snort rule, or otherwise 0.
-# Msg string is put in second arg, and sid in third.
+# Msg string is put in second arg, sid in third.
 sub parse_singleline_rule($ $ $)
 {
     my $line    = shift;
     my $msg_ref = shift;
     my $sid_ref = shift;
+
+    undef($$msg_ref);
+    undef($$sid_ref);
 
     if ($line =~ /$SINGLELINE_RULE_REGEXP/oi) {
 
