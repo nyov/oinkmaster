@@ -18,7 +18,7 @@ my $MULTILINE_RULE_REGEXP  = '^\s*(?:%ACTIONS%)'.
 my $SINGLELINE_RULE_REGEXP = '^\s*(?:%ACTIONS%)'.
                              '\s.+;\s*\)\s*$'; # ';
 
-my $USAGE   = "usage: $0 <rulesdir> [rulesdir2, ...]\n";
+my $USAGE   = "usage: $0 <rulesdir> [rulesdir2, ... ]\n";
 my $verbose = 1;
 
 my (%sidmap, %config);

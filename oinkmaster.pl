@@ -275,7 +275,7 @@ $VERSION
 Usage: $progname -o <outdir> [options]
 
 <outdir> is where to put the new files.
-This should be the directory where you store the snort rules.
+This should be the directory where you store your Snort rules.
 
 Options:
 -b <dir>   Backup your old rules into <dir> before overwriting them
