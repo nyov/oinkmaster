@@ -30,6 +30,7 @@ sub get_new_vars($ $ $);
 sub add_new_vars($ $);
 sub write_new_vars($ $);
 sub msdos_to_cygwin_path($);
+sub parse_mod_expr($ $ $ $);
 sub clean_exit($);
 
 
@@ -323,17 +324,21 @@ sub read_config($ $)
 
       # disablesid <SID[,SID, ...]>
         if (/^disablesids*\s+(\d.*)/i) {
-	    my $args = $1;
-	    foreach my $sid (split(/\s*,\s*/, $args)) {
+	    my $sid_list = $1;
+	    foreach my $sid (split(/\s*,\s*/, $sid_list)) {
   	        if ($sid =~ /^\d+$/) {
                     $$cfg_ref{sid_disable_list}{$sid}++;
 	        } else {
                     warn("WARNING: line $linenum in $config_file is invalid, ignoring\n");
 	        }
 	    }
-      # modifysid <SID> "substthis" | "withthis"
-        } elsif (/^modifysid\s+(\d+)\s+(".+"\s*\|\s*".+")/i) {
-            push(@{$$cfg_ref{sid_modify_list}{$1}}, $2);
+
+      # modifysid <SID[,SID, ...]> "substthis" | "withthis"
+        } elsif (/^modifysids*\s+(\d+.*)\s+"(.+)"\s+\|\s+"(.*)"\s*$/i) {
+            my ($sid_list, $subst, $repl) = ($1, $2, $3);
+            warn("WARNING: line $linenum in $config_file is invalid, ignoring\n")
+              unless(parse_mod_expr(\%{$$cfg_ref{sid_modify_list}}, $sid_list, $subst, $repl));
+
       # skipfile <file[,file, ...]>
         } elsif (/^skipfiles*\s+(.*)/i) {
 	    my $args = $1;
@@ -345,21 +350,29 @@ sub read_config($ $)
                     warn("WARNING: line $linenum in $config_file is invalid, ignoring\n");
 		}
 	    }
+
 	} elsif (/^url\s*=\s*(.*)/i) {                   # URL to use
 	    $$cfg_ref{url} = $1
               unless (exists($$cfg_ref{url}));           # may already be defined by -u <url>
+
 	} elsif (/^path\s*=\s*(.+)/i) {                  # $PATH to be used
 	    $$cfg_ref{path} = $1;
+
 	} elsif (/^update_files\s*=\s*(.+)/i) {          # regexp of files to be updated
 	    $$cfg_ref{update_files} = $1;
+
         } elsif (/^umask\s*=\s*([0-7]{4})$/i) {          # umask
 	  $$cfg_ref{umask} = oct($1);
+
         } elsif (/^min_files\s*=\s*(\d+)/i) {            # min_files
           $min_files = $1;
+
         } elsif (/^min_rules\s*=\s*(\d+)/i) {            # min_rules
           $min_rules= $1;
+
         } elsif (/^tmpdir\s*=\s*(.+)/i) {                # tmpdir
           $tmp_basedir = $1;
+
         } else {                                         # invalid line
             warn("WARNING: line $linenum in $config_file is invalid, ignoring\n");
         }
@@ -645,28 +658,22 @@ sub disable_and_modify_rules($ $ $)
 		}
 	    }
 
-          # Modify rule if requested (mod = "substthis" | "withthis").
-            foreach my $mod (@{$$modify_sid_ref{$sid}}) {
+          # Modify rule if requested.
+            foreach my $mod_expr (@{$$modify_sid_ref{$sid}}) {
+                my ($subst, $repl) = ($mod_expr->[0], $mod_expr->[1]);
 
-              # Remove leading/trailing ".
-	        $mod =~ s/^"//;
-                $mod =~ s/"$//;
-
-                my ($sub, $repl) = split(/"\s*\|\s*"/, $mod);
-
-		if ($multi =~ /\Q$sub\E/) {
-  	            print STDERR "Modifying SID $sid with expression: $mod\n" .
+		if ($multi =~ /$subst/) {
+  	            print STDERR "Modifying SID $sid, subst=$subst, repl=$repl\n" .
                                  "Before: $multi\n"
 		      if ($verbose);
 
-                    $multi =~ s/\Q$sub\E/$repl/;
+                    $multi =~ s/$subst/$repl/ee;
 
   	  	    print STDERR "After:  $multi\n"
                       if ($verbose);
 		} else {
-                   print STDERR "\nWARNING: SID $sid does not contain modifysid-string ".
-                                "\"$sub\", skipping\n"
-                     unless ($quiet);
+                    print STDERR "\nWARNING: SID $sid does not match modifysid expression ".
+                                 "\"$subst\", skipping\n";
                 }
 	    }
 
@@ -1423,6 +1430,40 @@ sub msdos_to_cygwin_path($)
     }
 
     return (0);
+}
+
+
+
+# Parse and process a modifysid expression. 
+# Return 1 if valid, or otherwise 0.
+sub parse_mod_expr($ $ $ $)
+{
+    my $mod_list_ref = shift;     # where to store valid modifysid entries
+    my $sid_list     = shift;     # comma-separated list of SIDs
+    my $subst        = shift;     # regexp to look for
+    my $repl         = shift;     # regexp to replace it with
+
+    $sid_list =~ s/\s+$//;
+
+    foreach my $sid (split(/\s*,\s*/, $sid_list)) {
+        return (0) unless ($sid =~ /^\d+$/);
+
+     # Make sure the regexps doesn't generate invalid code.
+        my $repl_qq   = "qq/$repl/";
+        my $dummy_sig = "alert ip any any -> any any";
+
+        eval '$dummy_sig =~ s/$subst/$repl/ee';
+
+        if ($@) {
+            warn($@);
+            return (0);
+        }
+
+      # It's valid, so add to list.
+        push(@{$$mod_list_ref{$sid}}, [$subst, $repl_qq]);
+    }
+
+    return (1);
 }
 
 
