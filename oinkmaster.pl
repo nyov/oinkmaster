@@ -37,7 +37,7 @@ sub untaint_path($);
 sub clean_exit($);
 
 
-my $VERSION           = 'Oinkmaster v0.8 by Andreas Östling <andreaso@it.su.se>';
+my $VERSION           = 'Oinkmaster v0.9 by Andreas Östling <andreaso@it.su.se>';
 my $OUTFILE           = "snortrules.tar.gz";
 my $DIST_SNORT_CONF   = "rules/snort.conf";
 
