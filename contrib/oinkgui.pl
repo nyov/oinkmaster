@@ -45,6 +45,7 @@ my @editors = qw(
     kwrite kate kedit gedit xemacs xedit wordpad notepad
 );
 
+
 # List of URLs that will show up in the URL BrowseEntry.
 my @urls = qw(
     http://www.snort.org/dl/rules/snortrules-stable.tar.gz
@@ -152,16 +153,12 @@ foreach my $file (@oinkmaster_conf) {
 EDITOR:foreach my $ed (@editors) {
     foreach my $dir (File::Spec->path()) {
         my $file = "$dir/$ed";
-        if (-f "$file" && -x "$file") {
-            $config{editor} = $file;
-            last EDITOR;
-        } elsif (-f "$file.exe" && -x "$file.exe") {
+        if ((-f "$file" && -x "$file") || (-f "$file.exe" && -x "$file.exe")) {
             $config{editor} = $file;
             last EDITOR;
         }
     } 
 }
-
 
 # Find out where the GUI config file is (it's not required).
 if ($ENV{HOME}) {
@@ -702,7 +699,7 @@ sub create_fileSelectFrame($ $ $ $ $ $)
                                      system($config{editor}, $$var_ref); # MainLoop will be put on hold...
                                      $main->Unbusy;
                                  } else {
-                                     logmsg("No suitable editor found.\n\n", 'ERROR');
+                                     logmsg("No suitable editor found (looked for @editors in path).\n\n", 'ERROR');
                                  }
                              }
         )->pack(
