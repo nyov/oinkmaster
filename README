@@ -12,6 +12,12 @@ http://nitzer.dhs.org/oinkmaster/
 Browsable CVS repository:
 http://devel.it.su.se/cgi-bin/local/cvsweb.cgi/oinkmaster/
 
+Or to do a CVS checkout via command line, set the CVSROOT environment 
+variable to ":pserver:cvs@cvs.it.su.se:/afs/su.se/services/cvs/public/cvsroot"
+and then do "cvs login" with "cvs" as password. Then you can do the regular
+CVS commands, like "cvs co oinkmaster" (remember that this will get you the
+current development snapshot, which may not be what you want).
+
 
 
 Intro
