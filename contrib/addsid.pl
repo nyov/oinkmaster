@@ -4,100 +4,93 @@
 
 use strict;
 
-sub get_next_entry($ $ $ $);
+
+sub get_next_entry($ $ $ $ $);
+sub get_highest_sid($);
 
 
 my $USAGE = "usage: $0 <rulesdir>\n";
 
-# SID must not be required in this regexp.
-my $SNORT_RULE_REGEXP = '^\s*#*\s*(?:alert|log|pass) .+msg\s*:\s*"(.+?)"\s*;.*\)\s*$';
+# Regexp to match a snort rule line. SID must not be required in this one.
+# We only care about active rules.
+my $SINGLELINE_RULE_REGEXP = '^\s*(?:alert|log|pass) '.
+                             '.+msg\s*:\s*"(.+?)"\s*;.*\)\s*$'; # ';
+
+# Regexp to match the start (the first line) of a possible multi-line rule.
+my $MULTILINE_RULE_REGEXP = '^\s*(?:alert|log|pass)\s.*\\\\\s*\n$'; # ';
+
 
 # Set this to the default classtype you want to add, if missing.
-# Comment out if you don't want to add a classtype.
-my $classtype = "misc-attack";
+# Set to 0 if you don't want to add a classtype.
+my $CLASSTYPE = "misc-attack";
 
-# Only >= 1000000 is reserved for personal use.
-my $min_sid = 1000000;
+# If ADD_REV is set to 1, "rev: 1;" will be added to rule if it has no rev.
+my $ADD_REV = 1;
 
-my %sids;
+# Minimum SID to add. Normally, the next available SID will be used,
+# unless it's below this value. Only SIDs >= 1000000 are reserved for personal use.
+my $MIN_SID = 1000000;
+
+
+my %allsids;
 
 my $rulesdir = shift || die("$USAGE");
 
 
 # Find out the next available SID.
+my $sid = get_highest_sid($rulesdir);
+
+# If it's below MIN_SID, use MIN_SID instead.
+$sid = $MIN_SID if ($sid < $MIN_SID);
+
 
 opendir(RULESDIR, "$rulesdir") or die("could not open $rulesdir: $!\n");
 
 while (my $file = readdir(RULESDIR)) {
     next unless ($file =~ /\.rules$/);
 
-    open(OLDFILE, "$rulesdir/$file") or die("could not open $rulesdir/$file: $!\n");
-    my @file = <OLDFILE>;
-    close(OLDFILE);
-
-    my ($single, $multi, $nonrule);
-    while (get_next_entry(\@file, \$single, \$multi, \$nonrule)) {
-        if (defined($single) && $single =~ /sid\s*:(\d+)\s*;/) {
-	    my $tmpsid = $1;
-	    if (exists($sids{$tmpsid})) {
-	        print STDERR "WARNING: duplicate sid: $tmpsid\n";
-	    }
-	    $sids{$tmpsid}++;
-        }
-    }
-}
-
-@_ = sort {$a <=> $b} keys(%sids);
-my $sid = pop(@_);
-$sid = $min_sid unless(defined($sid));
-print STDERR "highest current: $sid\n";
-
-$sid++;
-$sid = $min_sid if ($sid < $min_sid);
-print STDERR "using start sid: $sid\n\n";
-
-opendir(RULESDIR, "$rulesdir") or die("could not open $rulesdir: $!\n");
-
-while (my $file = readdir(RULESDIR)) {
-    next unless ($file =~ /\.rules$/);
-
-    open(OLDFILE, "$rulesdir/$file") or die("could not open $rulesdir/$file: $!\n");
+    open(OLDFILE, "$rulesdir/$file")
+      or die("could not open $rulesdir/$file: $!\n");
     print STDERR "Processing $file\n";
     my @file = <OLDFILE>;
     close(OLDFILE);
 
-    open(NEWFILE, ">$rulesdir/$file") or die("could not open $rulesdir/$file for writing: $!\n");
+    open(NEWFILE, ">$rulesdir/$file")
+      or die("could not open $rulesdir/$file for writing: $!\n");
 
     my ($single, $multi, $nonrule);
-    while (get_next_entry(\@file, \$single, \$multi, \$nonrule)) {
+    while (get_next_entry(\@file, \$single, \$multi, \$nonrule, 0)) {
 
         if (defined($nonrule)) {
 	    print NEWFILE "$nonrule";
 	    next;
         }
 
+      # Grab msg.
+        $single =~ /$SINGLELINE_RULE_REGEXP/oi;
+        my $msg = $1;
+
         $multi = $single unless (defined($multi));
 
+      # Add SID.
         if ($single !~ /sid\s*:\s*\d+\s*;/) {
+            print "Adding SID $sid to rule \"$msg\"\n";
             $multi =~ s/\)\s*\n/sid:$sid;)\n/;
             $sid++;
         }
 
-        if ($single !~ /rev\s*:\s*\d+\s*;/) {
+      # Add revision.
+        if ($ADD_REV && $single !~ /rev\s*:\s*\d+\s*;/) {
             $multi =~ s/\)\s*\n/rev:1;)\n/;
         }
 
-        if (defined($classtype)) {
-            if ($single !~ /classtype\s*:\s*.+\s*;/) {
-                $multi =~ s/\)\s*\n/classtype:$classtype;)\n/;
-            }
+      # Add classtype.
+        if ($CLASSTYPE && $single !~ /classtype\s*:\s*.+\s*;/) {
+            $multi =~ s/\)\s*\n/classtype:$CLASSTYPE;)\n/;
         }
 
-
         print NEWFILE "$multi";
-
     }
-
 
     close(NEWFILE);
 
@@ -106,13 +99,13 @@ closedir(RULESDIR);
 
 
 
-sub
-get_next_entry($ $ $ $)
+sub get_next_entry($ $ $ $ $)
 {
-    my $arr_ref     = shift;
-    my $single_ref  = shift;
-    my $multi_ref   = shift;
-    my $nonrule_ref = shift;
+    my $arr_ref        = shift;
+    my $single_ref     = shift;
+    my $multi_ref      = shift;
+    my $nonrule_ref    = shift;
+    my $print_warnings = shift;
 
     undef($$single_ref);
     undef($$multi_ref);
@@ -120,18 +113,20 @@ get_next_entry($ $ $ $)
 
     my $line = shift(@$arr_ref) || return(0);
 
-    if ($line =~ /^\s*#*\s*(?:alert|log|pass) .*\\\s*\n$/) {    # start multi-line rule?
+    if ($line =~ /$MULTILINE_RULE_REGEXP/oi) {    # start multi-line rule?
         $$single_ref = $line;
         $$multi_ref  = $line;
 
       # Keep on reading as long as line ends with "\".
         while ($line =~ /\\\s*\n$/) {
-            $$single_ref =~ s/\s*\\\s*\n//;    # remove "\" for single-line version
+            $$single_ref =~ s/\\\s*\n//;    # remove trailing "\" for single-line version
 
           # If there are no more lines, this can not be a valid multi-line rule.
-            if (!($line = shift(@$arr_ref)) || $line =~ /^\s*#/) {
 
-		$$multi_ref .= $line if (defined($line));
+            if (!($line = shift(@$arr_ref))) {
+
+                warn("WARNING: got EOF while parsing multi-line rule: $$multi_ref\n")
+                  if ($print_warnings);
 
                 @_ = split(/\n/, $$multi_ref);
 
@@ -140,26 +135,39 @@ get_next_entry($ $ $ $)
 
               # First line of broken multi-line rule will be returned as a non-rule line.
                 $$nonrule_ref = shift(@_) . "\n";
+                $$nonrule_ref =~ s/\s*\n$/\n/;            # remove trailing whitespaces
 
               # The rest is put back to the array again.
                 foreach $_ (reverse((@_))) {
-                    unshift(@$arr_ref, "$_\n");
-	        }
+                   unshift(@$arr_ref, "$_\n");
+                }
 
-		return (1);
-	    }
+                return (1);   # return non-rule
+            }
 
+          # Multi-line continuation.
+            $$multi_ref .= $line;
+            $line =~ s/^\s*#*\s*//;     # In single-line version, remove leading #'s first
             $$single_ref .= $line;
-            $$multi_ref  .= $line;
-        }
+        } # while line ends with "\"
+
 
       # Single-line version should now be a valid rule.
       # If not, it wasn't a valid multi-line rule after all.
-        if ($$single_ref =~ /$SNORT_RULE_REGEXP/) {
-	    return (1);
-        } else {
-            print "invalid multi:\n$$single_ref";             # XXX debug
+        if ($$single_ref =~ /$SINGLELINE_RULE_REGEXP/oi) {
 
+            $$single_ref =~ s/^\s*//;        # remove leading whitespaces
+            $$single_ref =~ s/^#+\s*/#/;     # remove whitespaces next to the leading #
+            $$single_ref =~ s/\s*\n$/\n/;    # remove trailing whitespaces
+
+            $$multi_ref  =~ s/^\s*//;
+            $$multi_ref  =~ s/\s*\n$/\n/;
+            $$multi_ref  =~ s/^#+\s*/#/;
+
+            return (1);   # return multi
+        } else {
+            warn("WARNING: invalid multi-line rule: $$single_ref\n")
+              if ($print_warnings);
             @_ = split(/\n/, $$multi_ref);
 
             undef($$multi_ref);
@@ -167,21 +175,71 @@ get_next_entry($ $ $ $)
 
           # First line of broken multi-line rule will be returned as a non-rule line.
             $$nonrule_ref = shift(@_) . "\n";
+            $$nonrule_ref =~ s/\s*\n$/\n/;   # remove trailing whitespaces
 
           # The rest is put back to the array again.
             foreach $_ (reverse((@_))) {
                 unshift(@$arr_ref, "$_\n");
-	    }
+            }
 
-	    return (1);
+            return (1);   # return non-rule
         }
 
-    } elsif ($line =~ /$SNORT_RULE_REGEXP/) {                   # single-line rule?
+    } elsif ($line =~ /$SINGLELINE_RULE_REGEXP/oi) {  # single-line rule?
         $$single_ref = $line;
-	return (1);
-    } else {                                                    # non-rule line?
+        $$single_ref =~ s/^\s*//;            # remove leading whitespaces
+        $$single_ref =~ s/^#+\s*/#/;         # remove whitespaces next to the leading #
+        $$single_ref =~ s/\s*\n$/\n/;        # remove trailing whitespaces
+        return (1);   # return single
+    } else {                                 # non-rule line?
+
+      # Do extra check and warn if it *might* be a rule anyway, but that we couldn't parse.
+        warn("WARNING: line may be a rule but I could not parse it: $line\n")
+          if ($print_warnings && $line =~ /^\s*alert /);
+
         $$nonrule_ref = $line;
-	return (1);
+        $$nonrule_ref =~ s/\s*\n$/\n/;       # remove trailing whitespaces
+        return (1);   # return non-rule
     }
 }
 
+
+
+# Read in *.rules in given directory and return highest SID.
+sub
+get_highest_sid($)
+{
+    my $dir = shift;
+
+    opendir(RULESDIR, "$dir") or die("could not open $dir: $!\n");
+
+  # Only care about *.rules.
+    while (my $file = readdir(RULESDIR)) {
+        next unless ($file =~ /\.rules$/);
+
+        open(OLDFILE, "<$dir/$file") or die("could not open $dir/$file: $!\n");
+        my @file = <OLDFILE>;
+        close(OLDFILE);
+
+        my ($single, $multi, $nonrule);
+
+        while (get_next_entry(\@file, \$single, \$multi, \$nonrule, 1)) {
+            if (defined($single) && $single =~ /sid\s*:(\d+)\s*;/) {
+	        my $tmpsid = $1;
+
+                print STDERR "WARNING: duplicate sid: $tmpsid\n"
+	          if (exists($allsids{$tmpsid}));
+
+	        $allsids{$tmpsid}++;
+            }
+        }
+    }
+
+  # Sort sids and use highest one + 1, unless it's below MIN_SID.
+    @_ = sort {$a <=> $b} keys(%allsids);
+    my $sid = pop(@_);
+    $sid = $MIN_SID unless(defined($sid));
+    $sid++;
+
+    return ($sid)
+}
