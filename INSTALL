@@ -12,13 +12,12 @@ o Put oinkmaster.pl in some suitable directory, for example
   copy the man page (oinkmaster.1) to something like /usr/local/man/man1/.
 
 
-o Edit oinkmaster.conf, or at least have a look at it to make sure 
-  everything looks ok. There are some options you may want to change 
-  before running Oinkmaster, although the defaults should work for most 
-  people. One particular option you must make sure is correctly set is 
-  "url", which specifies the location of the rules archive. What URL to 
-  use depends on which version of Snort you run (see comments inside
-  oinkmaster.conf or the FAQ for more information).
+o Edit oinkmaster.conf. Most defaults should be fine for most users, 
+  although one thing you must change is "url = ...", which specifies 
+  the location of the rules archive. What URL to use depends on which 
+  version of Snort you run and also what type of rules you want to use. 
+  Some may require registration. See Q28 in the FAQ for more 
+  information.
 
   In oinkmaster.conf you will then also tell Oinkmaster which SIDs 
   or files you want to disable/enable/modify/ignore. If you already have 
@@ -46,7 +45,8 @@ o Done!
 
   oinkmaster.pl -o /etc/snort/rules
 
-  You should really check out the entire README before doing anything 
-  though. You may also run oinkmaster.pl -h to list all available command
-  line options. They are described in more detail in the Oinkmaster manual
-  page. See the FAQ if you need to setup proxy configuration.
+  You should really check out the entire FAQ and README before doing 
+  anything though. You may also run oinkmaster.pl -h to list all 
+  available command line options. They are described in more detail in 
+  the Oinkmaster manual page. See the FAQ if you need to setup proxy 
+  configuration.
