@@ -441,7 +441,7 @@ sub sanity_check()
         "foo" =~ /$config{update_files}/;
     };
 
-    clean_exit("update_files ($config{update_files} is not a valid regexp: $@")
+    clean_exit("update_files ($config{update_files}) is not a valid regexp: $@")
       if ($@);
 
   # If a variable file (probably local snort.conf) has been specified,
