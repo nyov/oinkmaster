@@ -534,7 +534,9 @@ sub disable_rules
 
           # Some rules may be commented out by default, but we want our oinkmaster.conf
           # to decide what to disable, so uncomment all rules by default.
-            $line =~ s/^\s*#*\s*//;
+          # Also remove all leading whitespaces.
+	    $line =~ s/^\s*//;
+            $line =~ s/^#*\s*//;
 
             if (exists($sid_disable_list{$sid})) {      # should this sid be disabled?
                 if ($verbose) {
@@ -580,8 +582,8 @@ sub setup_rule_hashes
 	    while (<OLDFILE>) {
                 if (/$snort_rule_regexp/) {
 		    $sid = $2;
-		    s/^\s*//;
-		    s/^#+\s+/#/;  # make sure comment syntax is how we want it
+		    s/^\s*//;     # remove leading whitespaces
+		    s/^#+\s+/#/;  # make sure comment syntax is how we like it
                     $old_rules{$file}{$sid} = $_;
                 } else {
                     push(@{$old_other{$file}}, $_);
@@ -662,8 +664,8 @@ sub do_backup
     $old_dir = getcwd or clean_exit("Could not get current directory: $!");
     chdir("$tmpdir")  or clean_exit("Could not change directory to $tmpdir: $!");
 
-  # Execute tar command.
-  # This will archive "rules-backup-$date/" into the file rules-backup-$date.tar, placed in $tmpdir.
+  # Execute tar command. This will archive "rules-backup-$date/"
+  # into the file rules-backup-$date.tar, placed in $tmpdir.
     print STDERR "Warning: tar command did not exit with status 0 when archiving backup files.\n"
       if (system("tar","cf","rules-backup-$date.tar","rules-backup-$date"));
 
