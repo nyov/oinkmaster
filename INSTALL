@@ -8,14 +8,16 @@ o Put oinkmaster.pl in some suitable directory, for example
   (this is where Oinkmaster will search for it by default). If you want to 
   have oinkmaster.conf in some other directory, you must run Oinkmaster 
   with the -C argument. Make sure that the ownership/permission on the 
-  above files are suitable for your environment.
+  above files are suitable for your environment. You may also want to
+  copy the man page (oinkmaster.1) to something like /usr/local/man/man1/.
 
 o Edit oinkmaster.conf, or at least have a look at it to make sure 
   everything looks ok. There are some options you may want to change 
   before running Oinkmaster, although the defaults should work for most 
   people. One particular option you should make sure is correctly set is 
   "url", which specifices the location of the rules archive. What URL to 
-  use depends on which version of Snort you run.
+  use depends on which version of Snort you run (see comments inside
+  oinkmaster.conf for more information).
 
   In oinkmaser.conf you will then also tell Oinkmaster which SIDs or 
   files you want to disable/enable/modify. If you already have several 
