@@ -25,6 +25,7 @@ o A fully featured graphical multi-platform front-end to Oinkmaster
   Oinkmaster's homepage.
 o The new oinkmaster.conf has been updated with more and better
   examples (mostly "modifysid" stuff).
+o Perl version is checked on startup and must be >= 5.6.1.
 o Permission on all rules files in the output directory that are subject
   to become updated by Oinkmaster (i.e. files matching the "update_rules"
   regexp and that are not ignore by a "skipfile") are now checked
