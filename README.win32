@@ -132,9 +132,10 @@ without first starting a Cygwin shell.
 - Done!
 
 Now you should be able to run Oinkmaster. (You probably want to start a 
-cmd.exe shell first so you see what's going on.) You run it by 
-calling the Cygwin perl.exe with oinkmaster.pl and its options as argument.
+cmd.exe shell first so you see what's going on.)
+You must start Oinkmaster by calling the Perl interpreter with "-T" and
+oinkmaster.pl and it's options as argument. 
 For example, if Cygwin is installed in c:\cygwin and Oinkmaster and the 
 rules directory is in c:\oink\, you can run:
 
-c:\cygwin\bin\perl c:\oink\oinkmaster.pl -C c:\oink\oinkmaster.conf -o c:\oink\rules
+c:\cygwin\bin\perl -T c:\oink\oinkmaster.pl -C c:\oink\oinkmaster.conf -o c:\oink\rules
