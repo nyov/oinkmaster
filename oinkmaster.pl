@@ -136,6 +136,7 @@ $MULTILINE_RULE_REGEXP  =~ s/%ACTIONS%/$config{rule_actions}/;
 
 # If we're told not to use external binaries, load the required modules.
 unless ($config{use_external_bins}) {
+    print STDERR "Loading Perl modules.\n" if ($config{verbose});
     eval {
         require IO::Zlib;
         require Archive::Tar;
