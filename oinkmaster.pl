@@ -36,16 +36,16 @@ sub clean_exit($);
 
 my $VERSION           = 'Oinkmaster v0.8 by Andreas Östling <andreaso@it.su.se>';
 my $OUTFILE           = "snortrules.tar.gz";
-my $DIST_SNORT_CONF   = "rules/snort.conf";  # where (inside tmpdir) to look for new variables
+my $DIST_SNORT_CONF   = "rules/snort.conf";
 
 my $PRINT_NEW         = 1;
 my $PRINT_OLD         = 2;
 my $PRINT_BOTH        = 3;
 
-my $min_rules         = 1;                   # default minimum number of required rules
-my $min_files         = 1;                   # default minimum number of required files
+my $min_rules         = 1;
+my $min_files         = 1;
 
-my $config_file       = "/usr/local/etc/oinkmaster.conf";  # default config file
+my $config_file       = "/usr/local/etc/oinkmaster.conf";
 
 my $verbose           = 0;
 my $careful           = 0;
@@ -66,15 +66,8 @@ my $SINGLELINE_RULE_REGEXP = '^\s*#*\s*(?:alert|log|pass)\s.+msg\s*:\s*"(.+?)'.
 my $MULTILINE_RULE_REGEXP = '^\s*#*\s*(?:alert|log|pass)\s.*\\\\\s*\n$'; # ';
 
 # Set default temporary base directory.
-my $tmp_basedir;
+my $tmp_basedir = $ENV{TMP} || $ENV{TMPDIR} || $ENV{TEMPDIR} || '/tmp';
 
-if (exists($ENV{tmp})) {
-    $tmp_basedir = $ENV{tmp};
-} elsif (exists($ENV{TMP})) {
-    $tmp_basedir = $ENV{TMP};
-} else {
-    $tmp_basedir = "/tmp";
-}
 
 use vars qw
    (
@@ -222,7 +215,7 @@ This should be the directory where you store the snort rules.
 
 Options:
 -b <dir>   Backup your old rules into <dir> before overwriting them
--c         Careful mode - only check for changes, but do not update anything
+-c         Careful mode - only check for changes and do not update anything
 -C <cfg>   Use this config file instead of $config_file
 -e         Re-enable all rules that are disabled by default in the rules
            distribution (they are disabled for a reason, so use with care)

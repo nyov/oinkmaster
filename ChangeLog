@@ -9,8 +9,9 @@ o The 'modifysid' keyword now regards the arguments as regular expressions.
   So if you already use this function, you may have to adjust the arguments.
   Based on a patch from operator@email.it.
 o Added sample systrace policy to contrib section.
-o The default temporary directory is now the 'tmp' environment variable if set,
-  or otherwise "/tmp". You can also override this in oinkmaster.conf.
+o The default temporary directory will be checked for in the environment
+  variables TMP, TMPDIR and TEMPDIR. "/tmp" will be used if none was set.
+  You can override this by setting tmpdir in oinkmaster.conf.
 o deleted.rules is skipped in default oinkmaster.conf ("skipfile deleted.rules")
 o A bunch of Win32/Cygwin fixes, mostly from Ueli Kistler <iuk@gmx.ch>.
 o A bunch of fixes that makes it work on native Win32 with ActivePerl.
