@@ -8,6 +8,7 @@ use File::Basename;
 use File::Copy;
 use Getopt::Std;
 
+
 sub show_usage();
 sub parse_cmdline($);
 sub read_config($ $);
@@ -31,6 +32,7 @@ sub add_new_vars($ $);
 sub write_new_vars($ $);
 sub msdos_to_cygwin_path($);
 sub parse_mod_expr($ $ $ $);
+sub untaint_path($);
 sub clean_exit($);
 
 
@@ -63,7 +65,7 @@ my $SINGLELINE_RULE_REGEXP = '^\s*#*\s*(?:alert|log|pass)\s.+msg\s*:\s*"(.+?)'.
                              '"\s*;.*sid\s*:\s*(\d+)\s*;.*\)\s*$'; # ';
 
 # Regexp to match the start (the first line) of a possible multi-line rule.
-my $MULTILINE_RULE_REGEXP = '^\s*#*\s*(?:alert|log|pass)\s.*\\\\\s*\n$'; # ';
+my $MULTILINE_RULE_REGEXP  = '^\s*#*\s*(?:alert|log|pass)\s.*\\\\\s*\n$'; # ';
 
 # Set default temporary base directory.
 my $tmp_basedir = $ENV{TMP} || $ENV{TMPDIR} || $ENV{TEMPDIR} || '/tmp';
@@ -88,6 +90,14 @@ select(STDERR);
 $| = 1;
 select(STDOUT);
 $| = 1;
+
+# Find out if we're running with tainting checks enabled.
+# Assume we are if we can't find a var to check against.
+my $taint_mode = 1;
+my $taint_var  = $ENV{PWD} || $ENV{PATH};
+
+$taint_mode = ! eval { eval("#" . substr(join("", $taint_var), 0, 0)); 1 }
+  if ($taint_var);
 
 my $start_date = scalar(localtime);
 
@@ -157,6 +167,7 @@ get_new_vars(\%changes, $config{varfile}, "$tmpdir/$DIST_SNORT_CONF")
 
 # Find out if something had changed.
 my $something_changed = 0;
+
 $something_changed = 1
   if (keys(%{$changes{modified_files}}) ||
       keys(%{$changes{added_files}})    ||
@@ -428,6 +439,8 @@ sub sanity_check()
   # If a variable file (probably local snort.conf) has been specified,
   # it must exist. It must also be writable unless we're in careful mode.
     if ($update_vars) {
+	$config{varfile} = untaint_path($config{varfile});
+
         clean_exit("file $config{varfile} does not exist.")
           unless (-e "$config{varfile}");
 
@@ -443,27 +456,33 @@ sub sanity_check()
     }
 
   # Make sure $url is defined (either by -u <url> or url=... in the conf).
-    clean_exit("incorrect URL or URL not specified in $config_file or command line.")
+   clean_exit("incorrect URL or URL not specified in either $config_file or command line.")
       unless (exists($config{'url'}) &&
-        $config{'url'}  =~ /^(?:http|ftp|file):\/\/\S+.*\.tar\.gz$/);
+        (($config{'url'}) = $config{'url'} =~ /^((?:http|ftp|file):\/\/.+\.tar\.gz)$/));
 
   # Wget must be found if url is http:// or ftp://.
     clean_exit("\"wget\" not found in PATH ($ENV{PATH}).")
       if ($config{'url'} =~ /^(http|ftp):/ && !is_in_path("wget"));
 
+  # Untaint output directory string.
+    $config{output_dir} = untaint_path($config{output_dir});
+
   # Make sure the output directory exists and is readable.
     clean_exit("the output directory \"$config{output_dir}\" doesn't exist ".
                "or isn't readable by you.")
       if (!-d "$config{output_dir}" || !-x "$config{output_dir}");
-
+ 
   # Make sure the output directory is writable unless running in careful mode.
     clean_exit("the output directory \"$config{output_dir}\" isn't writable by you.")
       if (!$careful && !-w "$config{output_dir}");
 
   # Make sure the backup directory exists and is writable if running with -b.
-    clean_exit("the backup directory \"$config{backup_dir}\" doesn't exist or ".
-               "isn't writable by you.")
-      if ($make_backup && (!-d "$config{backup_dir}" || !-w "$config{backup_dir}"));
+    if ($make_backup) {
+      $config{backup_dir} = untaint_path($config{backup_dir});
+      clean_exit("the backup directory \"$config{backup_dir}\" doesn't exist or ".
+                 "isn't writable by you.")
+        if (!-d "$config{backup_dir}" || !-w "$config{backup_dir}");
+    }
 
   # Convert tmp_basedir to cygwin style if running cygwin and msdos style was specified.
     if ($^O eq "cygwin" && $tmp_basedir =~ /^[a-zA-Z]:[\/\\]/) {
@@ -474,6 +493,9 @@ sub sanity_check()
   # Make sure temporary directory exists.
     clean_exit("the temporary directory $tmp_basedir does not exist or isn't writable by you.")
       if (!-d "$tmp_basedir" || !-w "$tmp_basedir");
+
+  # Also untaint it.
+    $tmp_basedir = untaint_path($tmp_basedir);
 }
 
 
@@ -536,12 +558,13 @@ sub download_rules($ $)
 sub unpack_rules_archive($)
 {
     my $archive  = shift;
-    my $ok_lead  = 'a-zA-Z0-9_\.';       # allowed leading char in filenames
-    my $ok_chars = 'a-zA-Z0-9_~\.\-/';   # allowed chars in filenames
-
-    my $dir = dirname($archive);
+    my $ok_lead  = 'a-zA-Z\d_\.';       # allowed leading char in filenames
+    my $ok_chars = 'a-zA-Z\d_~\.\-/';   # allowed chars in filenames
 
     my $old_dir = getcwd or clean_exit("could not get current directory: $!");
+    $old_dir = untaint_path($old_dir);
+    
+    my $dir = dirname($archive);
     chdir("$dir") or clean_exit("could not change directory to \"$dir\": $!");
 
   # Run integrity check (gzip -t) on the gzip file.
@@ -599,7 +622,7 @@ sub unpack_rules_archive($)
     clean_exit("no \"rules/\" directory found in tar file.")
       unless (-d "$dir/rules");
 
-    chdir("$old_dir")
+    chdir($old_dir)
       or clean_exit("could not change directory back to $old_dir: $!");
 
     print STDERR "done.\n" unless ($quiet);
@@ -823,7 +846,7 @@ sub find_line($ $)
 sub make_backup($ $)
 {
     my $src_dir  = shift;    # dir with the rules to be backed up
-    my $dest_dir = shift;    # where to put the backup tarball.
+    my $dest_dir = shift;    # where to put the backup tarball
 
     (undef, my $min, my $hour, my $mday, my $mon, my $year, undef, undef, undef)
       = localtime(time);
@@ -832,6 +855,10 @@ sub make_backup($ $)
                        $year + 1900, $mon + 1, $mday, $hour, $min);
 
     my $backup_tmp_dir = "$tmpdir/rules-backup-$date";
+
+  # Get current directory and untaint it.
+    my $old_dir = getcwd or clean_exit("could not get current directory: $!");
+    $old_dir = untaint_path($old_dir);
 
     print STDERR "Creating backup of old rules..."
       unless ($quiet);
@@ -844,9 +871,13 @@ sub make_backup($ $)
       or clean_exit("could not open directory $src_dir: $!");
 
     while ($_ = readdir(OLDRULES)) {
+
+      # Untaint source filename.
+	my $src_file = untaint_path("$src_dir/$_");
+
         if (/$config{update_files}/) {
-          copy("$src_dir/$_", "$backup_tmp_dir/")
-            or warn("WARNING: error copying $src_dir/$_ to $backup_tmp_dir: $!")
+            copy("$src_file", "$backup_tmp_dir/")
+              or warn("WARNING: error copying $src_file to $backup_tmp_dir: $!");
 	}
     }
 
@@ -860,8 +891,7 @@ sub make_backup($ $)
 
   # Change directory to $tmpdir (so we'll be right below the directory where
   # we have our rules to be backed up).
-    my $old_dir = getcwd or clean_exit("could not get current directory: $!");
-    chdir("$tmpdir")     or clean_exit("could not change directory to $tmpdir: $!");
+    chdir("$tmpdir") or clean_exit("could not change directory to $tmpdir: $!");
 
   # Execute tar command. This will archive "rules-backup-$date/"
   # into the file rules-backup-$date.tar, placed in $tmpdir.
@@ -1498,6 +1528,24 @@ sub parse_mod_expr($ $ $ $)
     }
 
     return (1);
+}
+
+
+
+# Untaint a path. Die if it contains illegal chars.
+# Just return the argument untouched if we aren't in tainted mode.
+sub untaint_path($)
+{
+    my $path          = shift;
+    my $orig_path     = $path;
+    my $OK_PATH_CHARS = 'a-zA-Z\d\ _\.\-+:\\\/~';
+
+    if ($taint_mode) {
+        (($path) = $path =~ /^([$OK_PATH_CHARS]+)$/)
+          or clean_exit("illegal characterss in path/filename \"$orig_path\", allowed are $OK_PATH_CHARS");
+    }
+
+    return ($path);
 }
 
 

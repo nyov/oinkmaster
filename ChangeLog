@@ -9,6 +9,7 @@ o The 'modifysid' keyword now regards the arguments as regular expressions.
   So if you already use this function, you may have to adjust the arguments.
   Based on a patch from operator@email.it.
 o Added sample systrace policy to contrib section.
+o You can now start Perl with tainting checks enabled you like.
 o The default temporary directory will be checked for in the environment
   variables TMP, TMPDIR and TEMPDIR. "/tmp" will be used if none was set.
   You can override this by setting tmpdir in oinkmaster.conf.
