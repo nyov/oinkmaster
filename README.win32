@@ -124,6 +124,7 @@ without first starting a Cygwin shell.
   c:\oink\strict.pm
   c:\oink\cwd.pm
   c:\oink\carp.pm
+  c:\oink\config.pm
   c:\oink\exporter.pm
   c:\oink\base.pm
   c:\oink\warnings.pm
