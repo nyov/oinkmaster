@@ -276,7 +276,7 @@ sub read_config($ $)
                     warn("WARNING: line $linenum in $config_file is invalid, ignoring\n");
 	        }
 	    }
-        } elsif (/^modifysid\s+(\d+)\s+(.+\|.+)/i) {     # modifysid <SID> <substthis|withthis>
+        } elsif (/^modifysid\s+(\d+)\s+(".+"\s*\|\s*".+")/i) {   # modifysid <SID> "substthis" | "withthis"
             push(@{$$cfg_ref{sid_modify_list}{$1}}, $2);
         } elsif (/^skipfiles*\s+(.*)/i) {                # skipfile <file[,file, ...]>
 	    my $args = $1;
@@ -544,9 +544,14 @@ sub disable_and_modify_rules($ $ @)
 		}
 	    }
 
-          # Modify rule if requested.
+          # Modify rule if requested (mod = "substthis" | "withthis").
             foreach my $mod (@{$$modify_sid_ref{$sid}}) {
-                my ($sub, $repl) = split(/\|/, $mod);
+
+              # Remove leading/trailing ".
+	        $mod =~ s/^"//;
+                $mod =~ s/"$//;
+
+                my ($sub, $repl) = split(/"\s*\|\s*"/, $mod);
 		if ($line =~ /\Q$sub\E/) {
   	            print STDERR "Modifying SID $sid with expression: $mod\n" .
                                  "Before: $line"
