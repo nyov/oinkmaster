@@ -288,7 +288,8 @@ Options:
 -u <url>   Download from this URL (must be http://, https://, ftp://, file://
            or scp:// ...tar.gz) instead of the URL in the configuration file
 -U <file>  Variables that exist in downloaded snort.conf but not in <file>
-           will be added to this file (usually your production snort.conf)
+           will be added to this file, which must exist and not be updated
+           by Oinkmaster (it's usually your production snort.conf)
 -v         Verbose mode
 -V         Show version and exit
 
