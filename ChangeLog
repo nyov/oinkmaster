@@ -1,4 +1,4 @@
-# $Id$ #
+# $Id #
 
 v0.9 - 200xxxxx
 ~~~~~~~~~~~~~~~
@@ -42,6 +42,7 @@ o You can now specify a wildcard ('*') to the modifysid keyword, like
   matching rules. This enables you to do stuff like convert all rules of a
   certain classtype to 'drop' rules, or replace all 'flow' keywords with 
   "flags: A+;", and so on. See oinkmaster.conf for examples.
+o Include seconds in filename of backup tarball.
 o Many other minor improvements.
 
 
