@@ -548,9 +548,9 @@ sub sanity_check()
   # Also untaint it.
     $tmp_basedir = untaint_path($tmp_basedir);
 
-  # Make sure stdout is a tty if we're running in interactive mode.
-    clean_exit("you can not run in interactive mode if standard output is not a TTY.")
-      if ($interactive && !-t STDOUT);
+  # Make sure stdin and stdout are ttys if we're running in interactive mode.
+    clean_exit("you can not run in interactive mode if STDIN/STDOUT is not a TTY.")
+      if ($interactive && !(-t STDIN && -t STDOUT));
 }
 
 
