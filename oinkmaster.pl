@@ -406,9 +406,9 @@ sub read_config
                 $verbose && print STDERR "Adding file to ignore list: $_.\n";
                 $file_ignore_list{$_}++;
 	    }
-	} elsif (/^URL\s*=\s*(.*)/i) {                             # URL to use
+	} elsif (/^url\s*=\s*(.*)/i) {                             # URL to use
 	    $url = $1 unless (defined($url));                      # may already be defined by -u <url>
-	} elsif (/^PATH\s*=\s*(.*)/i) {                            # $PATH to be used
+	} elsif (/^path\s*=\s*(.*)/i) {                            # $PATH to be used
 	    $config{path} = $1;
 	} elsif (/^update_files\s*=\s*(.*)/i) {                    # regexp of files to be updated
 	    $config{update_files} = $1;
@@ -441,7 +441,7 @@ sub sanity_check
           unless (exists($config{$_}));
     }
 
-  # We now know a path was defined in the config, so set it. 
+  # We now know a path was defined in the config, so set it.
     local $ENV{"PATH"} = $config{path};
 
   # Make sure all required binaries are found.
@@ -614,7 +614,7 @@ sub setup_rule_hashes
                 if (/$snort_rule_regexp/) {
 		    $sid = $2;
 		    s/^\s*//;     # remove leading whitespaces
-		    s/^#+\s+/#/;  # make sure comment syntax is how we like it
+		    s/^#+\s*/#/;  # make sure comment syntax is how we like it
 		    print STDERR "WARNING: duplicate SID in your local rules: SID $sid\n"
 		      if (exists($old_rules{"$file"}{"$sid"}));
                     $old_rules{$file}{$sid} = $_;
@@ -641,14 +641,14 @@ sub find_line
     my $line = shift;   # line to look for
     my @arr  = @_;      # array to look in
 
-    return 1 unless ($line =~ /\S/);                       # skip blank lines
-    return 1 if     ($line =~ /\s*#+\s*\$I\S:.+Exp\s*\$/); # also skip CVS Id tag
+    return 1 unless ($line =~ /\S/);                         # skip blank lines
+    return 1 if     ($line =~ /^\s*#+\s*\$I\S:.+Exp\s*\$/);  # also skip CVS Id tag
 
     foreach $_ (@arr) {
-        return 1 if ($_ eq $line);                         # string found
+        return 1 if ($_ eq $line);                           # string found
     }
 
-    return 0;                                              # string not found
+    return 0;                                                # string not found
 }
 
 
