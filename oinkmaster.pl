@@ -1142,7 +1142,7 @@ sub process_rules($ $ $ $ $ $)
 
           # Is it a dup? If so, see if this seems to be more recent (higher rev).
             if (exists($sids{$sid})) {
-                warn("WARNING: duplicate SID in downloaded archive, SID=$sid\n")
+                warn("\nWARNING: duplicate SID in downloaded archive, SID=$sid\n")
                   unless($config{super_quiet});
 
                 my ($old_rev) = ($sids{$sid}{single} =~ /\brev\s*:\s*(\d+)\s*;/);
@@ -1172,7 +1172,6 @@ sub process_rules($ $ $ $ $ $)
 
   # Phase #2 - read all rules files again, but when writing active rules
   # back to the files, use the one stored in the sid hash (which is free of dups).
-
     foreach my $file (sort(keys(%$newfiles_ref))) {
 
         open(INFILE, "<", "$file")
@@ -1282,7 +1281,7 @@ sub process_rules($ $ $ $ $ $)
         }
     }
 
-  # Print warnings on attempt at modifysid'ing non-existent stuff in all modes 
+  # Print warnings on attempt at modifysid'ing non-existent stuff in all modes
   # except super quiet, as they are usually more important.
     unless ($config{super_quiet}) {
         my %new_files;
@@ -1429,7 +1428,16 @@ sub setup_rules_hash($ $)
 
 	while (get_next_entry(\@newfile, \$single, \$multi, \$nonrule, \$msg, \$sid)) {
 	    if (defined($single)) {
-		$rh{new}{rules}{"$file"}{"$sid"} = $single;
+
+              # If there are dups in the temporary files now, it means that
+              # we can blame the user for this since it was create by a bad
+              # modifysid.
+                if (exists($rh{new}{rules}{"$file"}{"$sid"})) {
+                    warn("\nWARNING: duplicate SID in downloaded archive (probably caused by bad modifysid), SID=$sid\n")
+                      unless($config{super_quiet});
+                } else {
+  		    $rh{new}{rules}{"$file"}{"$sid"} = $single;
+                }
 	    } else {
 	        push(@{$rh{new}{other}{"$file"}}, $nonrule);
 	    }
@@ -1445,7 +1453,7 @@ sub setup_rules_hash($ $)
 
 	    while (get_next_entry(\@oldfile, \$single, \$multi, \$nonrule, undef, \$sid)) {
 	        if (defined($single)) {
-		    warn("WARNING: duplicate SID in your local rules, SID ".
+		    warn("\nWARNING: duplicate SID in your local rules, SID ".
                          "$sid exists multiple times, please fix this manually!\n")
 		      if (exists($old_sids{$sid}));
 
