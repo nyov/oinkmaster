@@ -345,7 +345,7 @@ sub show_usage
                  "           Some rules may be disabled by default in the rules distribution\n".
                  "           and Oinkmaster will re-enable them unless -p is specified\n".
                  "-q         Quiet mode. No output unless changes were found\n".
-		 "-v         Verbose mode\n".
+		 "-v         Verbose mode (usually not needed)\n".
                  "-h         Show usage help\n\n";
     exit(0);
 }
@@ -610,7 +610,7 @@ sub setup_rule_hashes
 	    if (/$snort_rule_regexp/) {
 	        $sid = $2;
 		print STDERR "WARNING: duplicate SID in downloaded rules archive: SID $sid\n"
-		  if (exists($new_rules{"$file"}{"$sid"}));
+		  if (exists($new_rules{"$file"}{"$sid"}) && !$quiet);
 	        $new_rules{"$file"}{"$sid"} = $_;
 	    } else {
 	        push(@{$new_other{"$file"}}, $_);  # use array so the lines stay sorted
@@ -628,7 +628,7 @@ sub setup_rule_hashes
 		    s/\s*\n$/\n/; # remove trailing whitespaces
 		    s/^#+\s*/#/;  # make sure comment syntax is how we like it
 		    print STDERR "WARNING: duplicate SID in your local rules: SID $sid\n"
-		      if (exists($old_rules{"$file"}{"$sid"}));
+		      if (exists($old_rules{"$file"}{"$sid"}) && !$quiet);
                     $old_rules{$file}{$sid} = $_;
                 } else {
                     push(@{$old_other{$file}}, $_);
