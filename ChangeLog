@@ -34,7 +34,7 @@ o Don't require write permission in the output directory when running with -c.
 o Don't care about trailing whitespaces for non-rule lines (to avoid getting
   a diff where the same line appears to have been both added and removed when
   only a traling whitespace has been removed etc).
-o Allow umask to be set in oinkmaster.conf.
+o Allow umask to be specified in oinkmaster.conf.
 o Many internal cleanups and minor bug fixes.
 
 
