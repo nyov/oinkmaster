@@ -18,11 +18,6 @@ but first a few general useful notes about Oinkmaster/Windows.
 A few useful notes regarding Oinkmaster and Windows
 ---------------------------------------------------
 
-o It's best to start Oinkmaster by calling the Perl interpreter
-  with oinkmaster.pl and it's options as argument. 
-  Depending on your setup, it may also work by simply calling oinkmaster.pl
-  directly though.
-
 o You must always specify the -C argument and point to your oinkmaster.conf 
   file since it's looked for in a UNIX directory by default.
 
@@ -73,11 +68,13 @@ ActivePerl
 
 - Done!
 
-Now you should be able to run Oinkmaster. (You probably want to start a 
-cmd.exe shell first so you see what's going on.) You run it by calling 
-perl.exe with oinkmaster.pl and its options as argument, for example:
+Now you should be able to run Oinkmaster. 
+you must start Oinkmaster by calling the Perl interpreter with "-T" and
+oinkmaster.pl and it's options as argument. 
+Calling oinkmaster.pl directly will yield a 'Too late for "-T" option ...'
+error message. Usage exmple:
 
-c:\perl\bin\perl c:\oink\oinkmaster.pl -C c:\oink\oinkmaster.conf -o c:\oink\rules
+c:\perl\bin\perl -T c:\oink\oinkmaster.pl -C c:\oink\oinkmaster.conf -o c:\oink\rules
 
 Again, your paths may be different.
 
