@@ -23,6 +23,8 @@ Q8:  I want to copy the rules archive from a remote host to the sensor
 Q9:  How do I setup proxy configuration?
 Q10: Can Oinkmaster be used to update rules from www.whitehats.com?
 Q11: Will Oinkmaster fail when new keywords are introduced in the rules?
+Q12: What license are the official Snort rules reeased under, and
+     can I modify them without violating it?
 
 
 
@@ -282,3 +284,14 @@ A11: No. (Not unless there is a bug in Oinkmaster anyway.) Oinkmaster was
      it's a multi-line rule). Since non-rule lines are also compared and 
      updated by Oinkmaster, things will work as usual anyway except that
      actions such as disablesid on that rule will have no effect.
+
+
+
+Q12: What license are the official Snort rules reeased under, and
+     can I modify them without violating it?
+
+A12: Brian Caswell has answered this a few times on the Snort lists,
+     but here is a small summary. The official Snort signatures are
+     part of Snort and are therefore also released under GPL.
+     You can modify them locally as much as you want, but if
+     distributing them, they need to be GPL-licensed as well.
