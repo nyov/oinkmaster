@@ -16,7 +16,7 @@ o New option -m to minimize/simplify the resulting output for modified
   see. Some characters to the left and right of the diffing parts
   are kept to get some context. More information and example output can
   be found in the updated manual page (oinkmaster.1).
-o Support -m in the GUI as well (the "minimize diff" checkbox).
+o Support -s and -m in the GUI as well (the "diff mode" buttons)
 o Better handling of duplicate rules (i.e. rules with the same sid) for 
   files in the downloaded archive:
   - If all the duplicates are disabled, only one of them is passed on to 
