@@ -818,7 +818,8 @@ sub print_changes($ $)
      if (exists($$ch_ref{other}{added})) {
         print "\n[+++]      Added non-rule lines:     [+++]\n";
         foreach my $file (sort({uc($a) cmp uc($b)} keys(%{$$ch_ref{other}{added}}))) {
-            print "\n     -> File $file:\n";
+            my $num = $#{$$ch_ref{other}{added}{$file}} + 1;
+            print "\n     -> File $file ($num):\n";
             foreach my $line (@{$$ch_ref{other}{added}{$file}}) {
                 print "        $line";
             }
@@ -829,7 +830,8 @@ sub print_changes($ $)
     if (keys(%{$$ch_ref{other}{removed}}) > 0) {
         print "\n[---]     Removed non-rule lines:    [---]\n";
         foreach my $file (sort({uc($a) cmp uc($b)} keys(%{$$ch_ref{other}{removed}}))) {
-            print "\n     -> File $file:\n";
+            my $num = $#{$$ch_ref{other}{removed}{$file}} + 1;
+            print "\n     -> File $file ($num):\n";
             foreach my $other (@{$$ch_ref{other}{removed}{$file}}) {
 	        print "        $other";
             }
@@ -875,7 +877,8 @@ sub print_changetype($ $ $)
     my $rh_ref = shift;
 
     foreach my $file (sort({uc($a) cmp uc($b)} keys(%$ch_ref))) {
-        print "\n     -> File $file:\n";
+        my $num = keys(%{$$ch_ref{$file}});
+        print "\n     -> File $file ($num):\n";
         foreach my $sid (keys(%{$$ch_ref{$file}})) {
 	    if ($type == $PRINT_OLD) {
                 print "        $$rh_ref{old}{rules}{$file}{$sid}"
