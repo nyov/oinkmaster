@@ -1636,14 +1636,17 @@ sub print_changetype($ $ $ $)
             } elsif ($type == $PRINT_NEW) {
                 print "        $$rh_ref{new}{rules}{$file}{$sid}"
 	    } elsif ($type == $PRINT_BOTH) {
+
+                my $old = $$rh_ref{old}{rules}{$file}{$sid};
+                my $new = $$rh_ref{new}{rules}{$file}{$sid};
+
                 if ($config{minimize_diff}) {
-                    my ($old, $new) = minimize_diff($$rh_ref{old}{rules}{$file}{$sid},
-                                                    $$rh_ref{new}{rules}{$file}{$sid});
-                    print "        old SID $sid: $old";
+                    my ($old, $new) = minimize_diff($old, $new);
+                    print "\n        old SID $sid: $old";
                     print "        new SID $sid: $new";
                 } else {
-                    print "        old: $$rh_ref{old}{rules}{$file}{$sid}";
-                    print "        new: $$rh_ref{new}{rules}{$file}{$sid}";
+                    print "\n        old: $old";
+                    print "        new: $new";
                 }
 	    }
         }
