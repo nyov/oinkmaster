@@ -2,6 +2,7 @@
 
 # $Id$ #
 
+
 use strict;
 use File::Spec;
 use Tk;
@@ -26,47 +27,47 @@ sub create_fileSelectFrame($ $ $ $ $ $);
 sub create_checkbutton($ $ $);
 sub create_radiobutton($ $ $);
 sub create_actionbutton($ $ $);
+sub execute_oinkmaster(@);
 sub logmsg($ $);
 
 
-my $version     = 'Oinkmaster GUI v0.1';
+my $version = 'Oinkmaster GUI v0.1';
+
+my @oinkmaster_conf = qw(
+  ./oinkmaster.conf
+  /etc/oinkmaster.conf
+  /usr/local/etc/oinkmaster.conf
+);
+
+# Graphical editors to look for.
+my @editors = qw(
+  kwrite kate kedit gedit xemacs xedit notepad wordpad
+);
+
+# List of URLs that will show up in the URL BrowseEntry.
+my @urls = qw(
+  http://www.snort.org/dl/rules/snortrules-stable.tar.gz
+  http://www.snort.org/dl/rules/snortrules-current.tar.gz
+);
+
+my %color = (
+  background        => 'Bisque3',
+  button            => 'Bisque2',
+  label             => 'Bisque1',
+  notebook          => 'Bisque2',
+  file_label_ok     => '#00e000',
+  file_label_not_ok => 'red',
+  out_frame_fg      => 'white',
+  out_frame_bg      => 'black',
+);
 
 my %config;
 
-my @oinkmaster_conf = qw(./oinkmaster.conf
-                         /etc/oinkmaster.conf
-                         /usr/local/etc/oinkmaster.conf
-                        );
+$config{careful}         = 0;
+$config{enable_all}      = 0;
+$config{check_removed}   = 0;
 
-# Graphical editors to look for.
-my @editors = qw (kwrite kate kedit gedit xemacs xedit notepad wordpad);
-
-# List of URLs that will show up in the URL BrowseEntry.
-my @urls = qw(http://www.snort.org/dl/rules/snortrules-stable.tar.gz
-              http://www.snort.org/dl/rules/snortrules-current.tar.gz
-             );
-
-
-my %color = (
-    background        => 'Bisque3',
-    button            => 'Bisque2',
-    label             => 'Bisque1',
-    notebook          => 'Bisque2',
-    file_label_ok     => '#00e000',
-    file_label_not_ok => 'red',
-    out_frame_fg      => 'white',
-    out_frame_bg      => 'black',
-);
-
-
-
-$config{careful}       = 0;
-$config{enable_all}    = 0;
-$config{check_removed} = 0;
-
-$config{mode} = 'normal';
-
-my $animate = 0;
+$config{mode}            = 'normal';
 
 $config{oinkmaster}      = "";
 $config{oinkmaster_conf} = "";
@@ -75,9 +76,10 @@ $config{url}             = "";
 $config{varfile}         = "";
 $config{backupdir}       = "";
 
-my $gui_config_file     = "";
-my $editor = "";
+my $gui_config_file      = "";
+my $editor               = "";
 
+my $animate = 0;
 
 my %help = (
 
@@ -88,7 +90,7 @@ my %help = (
                     'store your rules.',
 
     url          => 'Alternate location of rules archive to download/copy. '.
-                    'If empty, the location in oinkmaster.conf is used.',
+                    'Leave empty to use the location set in oinkmaster.conf.',
     varfile      => 'Variables that exist in downloaded snort.conf but not in '.
                     'this file will be added to it. Leave empty to skip.',
     backupdir    => 'Directory to put tarball of old rules before overwriting them. '.
@@ -97,8 +99,8 @@ my %help = (
   # Checkbuttons.
     careful      => 'In careful mode, Oinkmaster will just check for changes '.
                     'and not update anything.',
-    enable       => 'Some rules may be commented out by default. '.
-                    'This option will make Oinkmaster enable those rules.',
+    enable       => 'Some rules may be commented out by default (for a reason!). '.
+                    'This option will make Oinkmaster enable those.',
     removed      => 'Check for rules files that exist in the output directory but not '.
                     'in the downloaded rules archive.',
 
@@ -122,15 +124,7 @@ select STDOUT;
 $| = 1;
 
 
-# Find out which oinkmaster config file to use.
-foreach my $file (@oinkmaster_conf) {
-    if (-e "$file") {
-        $config{oinkmaster_conf} = $file;
-        last;
-    }
-}
-
-# Find out which oinkmaster.pl file to use.
+# Find out which oinkmaster.pl file to default to.
 foreach my $dir (File::Spec->path()) {
     my $file = "$dir/oinkmaster";
     if (-f "$file" && (-x "$file" || $^O eq 'MSWin32')) {
@@ -140,6 +134,14 @@ foreach my $dir (File::Spec->path()) {
         $config{oinkmaster} = "$file.pl";
         last;
     } 
+}
+
+# Find out which oinkmaster config file to default to.
+foreach my $file (@oinkmaster_conf) {
+    if (-e "$file") {
+        $config{oinkmaster_conf} = $file;
+        last;
+    }
 }
 
 # Find out which editor to use.
@@ -430,17 +432,15 @@ load_config();
 
 
 # Warn if any required file/directory is not set.
-logmsg("No oinkmaster.pl set, please select one above!\n", 'ERROR')
+logmsg("No oinkmaster.pl set, please select one above!\n\n", 'ERROR')
   if ($config{oinkmaster} !~ /\S/);
 
-logmsg("No oinkmaster configuration file set, please select one above!\n", 'ERROR')
+logmsg("No oinkmaster configuration file set, please select one above!\n\n", 'ERROR')
   if ($config{oinkmaster_conf} !~ /\S/);
 
-logmsg("Output directory is not set, please select one above!\n", 'ERROR')
+logmsg("Output directory is not set, please select one above!\n\n", 'ERROR')
 if ($config{outdir} !~ /\S/);
 
-
-logmsg("\n", 'MISC');
  
 MainLoop;
 
@@ -752,12 +752,9 @@ sub show_help()
 
 
 
-sub test_config()
-{
-    my @cmd;
+sub execute_oinkmaster(@) {
+    my @cmd = @_;
 
-    create_cmdline(\@cmd) || return;
-    push(@cmd, "-T");
     logmsg("@cmd:\n", 'EXEC');
 
     if ($^O eq 'MSWin32') {
@@ -783,6 +780,17 @@ sub test_config()
 
 
 
+sub test_config()
+{
+    my @cmd;
+
+    create_cmdline(\@cmd) || return;
+    push(@cmd, "-T");
+    execute_oinkmaster(@cmd);
+}
+
+
+
 sub clear_messages()
 {
     $out_frame->delete('1.0','end');
@@ -797,29 +805,8 @@ sub update_rules()
 
     clear_messages();
     $main->Busy(-recurse => 1);
-
     create_cmdline(\@cmd) || return;
-    logmsg("@cmd:\n", 'EXEC');
-
-    if ($^O eq 'MSWin32') {
-        open(OINK, "@cmd 2>&1|");
-        while (<OINK>) {
-            logmsg($_, 'OUTPUT');
-        }
-        close(OINK);
-    } else {
-        if (open(OINK,"-|")) {
-            while (<OINK>) {
-                logmsg($_, 'OUTPUT');
-            }
-        } else {
-            open(STDERR, '>&', 'STDOUT');
-            exec(@cmd);
-        }
-        close(OINK);
-    }
-
-    logmsg("Done.\n\n", 'EXEC');
+    execute_oinkmaster(@cmd);
     $main->Unbusy;
 }
 
@@ -841,6 +828,7 @@ sub create_cmdline($)
         $url = "file://$url" unless ($url =~ /(?:http|ftp|file):\/\//);
     }
 
+  # Clean leading/trailing whitespaces, also add leading/trailing "" if win32.
     foreach my $var_ref (\$oinkmaster, \$oinkmaster_conf, \$outdir, 
                          \$varfile, \$url, \$backupdir) {
         $$var_ref =~ s/^\s+//;
