@@ -51,9 +51,7 @@ Q17: Should I run Oinkmaster as root?
 
 Q18: I get "/usr/bin/perl: bad interpreter" when starting.
 
-Q19: I've run Oinkmaster several times and it still says there are no
-     changes in the rules, how often are the rules tarballs on 
-     www.snort.org updated?
+Q19: How often should I run Oinkmaster?
 
 Q20: Can Oinkmaster send email or execute a command when the rules have
      been modified?
@@ -65,7 +63,7 @@ Q22: I want to disable rules by editing the files directly and putting
      a "#" in front of the rules. How do these changes become permanent?
 
 Q23: How do I update the rules from multiple sources, like the official 
-     ones from www.snort.org and the ones at www.bleedingsnort.com?
+     ones at www.snort.org and the ones at www.bleedingsnort.com?
 
 --------------
 
@@ -444,26 +442,27 @@ A18: By default, Oinkmaster assumes that Perl is found as /usr/bin/perl.
 
 
 
-Q19: I've run Oinkmaster several times and it still says there are no
-     changes in the rules, how often are the rules tarballs on 
-     www.snort.org updated?
+Q19: How often should I run Oinkmaster?
 
-A19: The tarballs are currently generated from the CVS repository many 
-     times a day, but that does not mean there are always any changes in 
-     it. My experience is that the rules are sometimes updated daily, 
-     and sometimes in bursts with several days/weeks apart (also 
-     depending on which rules tarball you use). If you run Oinkmaster 
-     for several days and it still says that nothing has changed, this 
-     does not automatically mean anything is wrong. You can verify this 
-     by doing some arbitrary modifications in some rules file in your 
-     rules directory and then run Oinkmaster. If those 'arbitrary 
-     changes' are noticed by Oinkmaster, everything probably works as 
-     expected. If you are behind a web proxy, make sure it is not trying 
-     to be nice by caching the rules archive and always give you the old 
-     version instead of actually polling the Snort site for an updated 
-     version (see Q10). Check out http://www.snort.org/ for the latest
-     information about the rules and the rules release process 
-     (Oinkmaster and its author has nothing to do with this).
+A19: The short answer would be that once a day is probably reasonable in 
+     most cases. The official rules tarballs on www.snort.org are 
+     currently generated from the CVS repository many times a day, but 
+     that does not mean there are always any changes in it. My 
+     experience is that the rules are sometimes updated daily, and 
+     sometimes in bursts with several days/weeks apart (also depending 
+     on which rules tarball you use). If you've run Oinkmaster several 
+     times for a few days and it still says that nothing has changed, 
+     this does not automatically mean anything is wrong. If you want to 
+     verify that Oinkmaster is working you can do some arbitrary 
+     modifications in some rules file in your rules directory and then 
+     run Oinkmaster. If those changes are noticed by Oinkmaster, 
+     everything probably works as expected. If you are behind a web 
+     proxy, make sure it is not trying to be nice by caching the rules 
+     archive and always give you the old version instead of actually 
+     polling the real site for an updated version (see Q10). Check out 
+     http://www.snort.org/ for the latest information about the rules 
+     and the rules release process (Oinkmaster and its author has 
+     nothing to do with this).
 
 
 
@@ -599,7 +598,7 @@ A22: As can be read elsewhere in this FAQ, you shouldn't ever modify
 
 
 Q23: How do I update the rules from multiple sources, like the official 
-     ones from www.snort.org and the ones at www.bleedingsnort.com?
+     ones at www.snort.org and the ones at www.bleedingsnort.com?
 
 A23: You cannot update from multiple sources at the same time (i.e. in 
      a single Oinkmaster run) as it would introduce too many potential 
