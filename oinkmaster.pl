@@ -1,4 +1,4 @@
-#!/usr/bin/perl -Tw
+#!/usr/bin/perl -T -w
 
 # $Id$ #
 
@@ -16,7 +16,7 @@ sub read_config($ $);
 sub sanity_check();
 sub download_rules($ $);
 sub unpack_rules_archive($);
-sub disable_and_modify_rules($ $ $);
+sub process_rules($ $ $);
 sub setup_rules_hash($);
 sub find_line($ $);
 sub print_changes($ $);
@@ -76,6 +76,9 @@ my $MULTILINE_RULE_REGEXP  = '^\s*#*\s*(?:alert|drop|log|pass|reject|sdrop)'.
 # Match var line where var name goes into $1.
 my $VAR_REGEXP = '^\s*var\s+(\S+)\s+\S+';
 
+# Allowed characters in misc paths/filenames, including the ones in the tarball.
+my $OK_PATH_CHARS = 'a-zA-Z\d\ _\.\-+:\\\/~@,=';
+
 # Set default temporary base directory.
 my $tmp_basedir = $ENV{TMP} || $ENV{TMPDIR} || $ENV{TEMPDIR} || '/tmp';
 
@@ -99,14 +102,6 @@ select(STDERR);
 $| = 1;
 select(STDOUT);
 $| = 1;
-
-# Find out if we're running with tainting checks enabled.
-# Assume we are if we can't find a var to check against.
-my $taint_mode = 1;
-my $taint_var  = $ENV{PWD} || $ENV{PATH};
-
-$taint_mode = !eval { eval("#" . substr(join("", $taint_var), 0, 0)); 1 }
-  if ($taint_var);
 
 my $start_date = scalar(localtime);
 
@@ -152,9 +147,9 @@ clean_exit("not enough rules files in downloaded archive (is it broken?)\n".
   if ($num_files < $min_files);
 
 # Disable/modify/clean downloaded rules.
-my $num_rules = disable_and_modify_rules(\%{$config{sid_disable_list}},
-                                         \%{$config{sid_modify_list}},
-                                         \%new_files);
+my $num_rules = process_rules(\%{$config{sid_disable_list}},
+                              \%{$config{sid_modify_list}},
+                              \%new_files);
 
 # Make sure the number of rules is at least $min_rules.
 clean_exit("not enough rules in downloaded archive (is it broken?)\n".
@@ -563,6 +558,7 @@ sub download_rules($ $)
             clean_exit("unable to download rules from $url (got error code from wget).")
               if (system("wget","-nv","-O","$localfile","$url"));        # normal mode
         }
+
   # Grab file from local filesystem if file://...
     } elsif ($url =~ /^file/) {
         $url =~ s/^file:\/\///;
@@ -581,6 +577,8 @@ sub download_rules($ $)
 
         print STDERR "done.\n"
 	  unless ($quiet);
+
+  # Grab file using scp if scp://...
     } elsif ($url =~ /^scp/) {
         $url =~ s/^scp:\/\///;
 
@@ -616,8 +614,6 @@ sub download_rules($ $)
 sub unpack_rules_archive($)
 {
     my $archive  = shift;
-    my $OK_LEAD  = 'a-zA-Z\d_\.';           # allowed leading char in filenames
-    my $OK_CHARS = 'a-zA-Z\d\ _\.\-+:\/~';  # allowed chars in filenames
 
     my $old_dir = getcwd or clean_exit("could not get current directory: $!");
     $old_dir = untaint_path($old_dir);
@@ -660,15 +656,10 @@ sub unpack_rules_archive($)
     foreach my $filename (@tar_test) {
        chomp($filename);
 
-      # Make sure the leading char is valid (not an absolute path, for example).
-        clean_exit("illegal leading character in filename in tar archive. ".
-                   "Offending file/line:\n$filename")
-          unless ($filename =~ /^[$OK_LEAD]/);
-
       # We don't want to have any weird characters anywhere in the filename.
         clean_exit("illegal characters in filename in tar archive. ".
                    "Offending file/line:\n$filename")
-          if ($filename =~ /[^$OK_CHARS]/);
+          if ($filename =~ /[^$OK_PATH_CHARS]/);
 
       # We don't want to unpack any "../../" junk.
         clean_exit("filename in tar archive contains \"..\".\n".
@@ -698,7 +689,7 @@ sub unpack_rules_archive($)
 # Open all rules files in the temporary directory and disable/modify all
 # rules/lines as requested in oinkmaster.conf, and then write back to the
 # same files. Also clean unwanted whitespaces and duplicate sids from them.
-sub disable_and_modify_rules($ $ $)
+sub process_rules($ $ $)
 {
     my $disable_sid_ref = shift;
     my $modify_sid_ref  = shift;
@@ -1597,18 +1588,14 @@ sub parse_mod_expr($ $ $ $)
 
 
 # Untaint a path. Die if it contains illegal chars.
-# Just return the argument untouched if tainting checks are disabled.
 sub untaint_path($)
 {
     my $path          = shift;
     my $orig_path     = $path;
-    my $OK_PATH_CHARS = 'a-zA-Z\d\ _\.\-+:\\\/~@,=';
 
-    if ($taint_mode) {
-        (($path) = $path =~ /^([$OK_PATH_CHARS]+)$/)
-          or clean_exit("illegal characterss in path/filename ".
-                        "\"$orig_path\", allowed are $OK_PATH_CHARS\n");
-    }
+    (($path) = $path =~ /^([$OK_PATH_CHARS]+)$/)
+      or clean_exit("illegal characterss in path/filename ".
+                    "\"$orig_path\", allowed are $OK_PATH_CHARS\n");
 
     return ($path);
 }
