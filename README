@@ -207,7 +207,7 @@ To silently check for updates as a cron job and not sending any e-mail
 unless there were updates available, you could use something like this 
 (wrapped for readability):
 
-30 2 * * * TMP=`mktemp /tmp/oinkmaster.XXXXXX` &&
+30 2 * * * TMP=`mktemp /tmp/oinkmaster.XXXXXXXX` &&
 (oinkmaster.pl -o /etc/snort/rules/ -q -c > $TMP 2>&1;
 if [ -s $TMP ]; then mail -s "subject" you@example.com < $TMP; fi; rm $TMP)
 
