@@ -9,13 +9,6 @@ Feedback is of course appreciated.
 Homepage:
 http://oinkmaster.sourceforge.net/
 
-Browsable CVS repository:
-http://cvs.sourceforge.net/viewcvs.py/oinkmaster/
-
-Or to do a CVS checkout via command line, use this command 
-(remember that this will get you the current development snapshot):
-cvs -z3 -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/oinkmaster co oinkmaster 
-
 
 
 Introduction
