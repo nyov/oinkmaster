@@ -1,4 +1,5 @@
 .\" $Id$
+.\" Copyright (c) 2004, Andreas Östling <andreaso@it.su.se>
 .\"
 .\" Command to generate the man page: groff -man -Tascii oinkmaster.1
 .\"
@@ -30,7 +31,7 @@ Optional arguments:
 .IP "\fB-b \fIdir\fP
 If the rules have been modified, a tarball of your old rules will be put 
 in
-.I directory
+.I dir
 before overwriting them with the new files. No backup if done if no file 
 has changed or if Oinkmaster is running in careful mode.
 .IP "\fB-c
@@ -44,22 +45,22 @@ You can specify multiple
 .B -C
 .I cfg
 to load multiple configuration files.
-They will be loaded in order of appearance on the command line an if an 
+They will be loaded in order of appearance on the command line, and if an 
 option is redefined, it overrides the previous value.
 .IP "\fB-e
 Enable rules that are disabled by default in the downloaded rules archive 
 by removing all the leading "#" from them. If there are any disabled rules 
 in the archive, they will stay that way unless you use this option. 
-Remember that they are disabled for a reason (they may be broken), so use this 
-option with care.
+Remember that they are disabled for a reason (they may not even work), so 
+use this option with care.
 .IP "\fB-h
 Show valid command line arguments with short descriptions
 .IP "\fB-i
 Enable interactive mode. You will be asked to approve the changes (if 
 any) before updating anything.
 .IP "\fB-q
-Run in quiet mode. Nothing is printed unless there were changes in the 
-rules or if there were any error messages.
+Run in quiet mode. Nothing is printed unless there are changes in the 
+rules or if there are any error messages.
 .IP "\fB-Q
 Run in super-quiet mode. This is the same as
 .B -q
@@ -72,14 +73,18 @@ but not in the
 downloaded rules archive, i.e. files that may have been removed from the 
 distribution archive.
 .IP "\fB-T
-Test the syntax of the configuration file(s) and then exit.
+Test if the configuration file(s) seems to be in order and then exit.
 .IP "\fB-u \fIurl\fP
 Download the rules archive from
 .I url
-instead of from the location specified in the configuration file.
+instead of the location specified in the configuration file.
 It must start with file://, ftp://, http://, https:// or scp:// and
 end with ".tar.gz". It must contain a directory called "rules", holding
-all the rules files.
+all the rules files. 
+(For the official Snort rules, the URL you should 
+use depends on the version of Snort you run. Visit the rules download 
+section at the Snort web site to find the right URL. It may need to be 
+updated when upgrading to a new major version of Snort.)
 .IP "\fB-U \fIfile\fP
 Variables that exist in downloaded snort.conf but not in
 .I file
@@ -134,13 +139,22 @@ command is available on the system:
 \fB    you@example.com < $TMP; fi; rm $TMP) \fP
 .fi
 .PP
+.SH FILES
+The configuration file will be looked for here by default:
+.br
+.B /etc/oinkmaster.conf
+.br
+.B /usr/local/etc/oinkmaster.conf
 .SH BUGS
 If you find a bug, report it by e-mail to the author. Always include as 
 much information as possible.
 .SH HISTORY
 The first version of this script was called arachnids_upd and was 
-released in early 2001. It was designed to work with the ArachNIDS Snort 
-rules but as times changed it was redesigned to work with the official 
-Snort rules instead, and the new name became Oinkmaster.
+released in early 2001. It worked only with the ArachNIDS Snort rules but 
+as times changed it was redesigned to work with the official Snort rules 
+instead, and the new name became Oinkmaster.
 .SH AUTHOR
 Andreas Ostling <andreaso@it.su.se>
+.SH SEE ALSO
+The online documentation at http://oinkmaster.sf.net/ contains more 
+information.
