@@ -11,6 +11,7 @@ o The default temporary directory is now the 'tmp' environment variable if set,
 o deleted.rules is skipped in default oinkmaster.conf ("skipfile deleted.rules")
 o A bunch of Win32/Cygwin fixes, mostly from Ueli Kistler <iuk@gmx.ch>.
 o A bunch of fixes that makes it work on native Win32 with ActivePerl.
+o Added a README.win32 with information about Oinkmaster on Windows.
 o Better check for duplicate SIDs. Check is done across all files now, and
   duplicate SIDs in downloaded archive are discarded (only first one is 
   kept) and not copied to the local files. This will avoid some annoying 
