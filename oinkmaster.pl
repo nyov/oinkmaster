@@ -48,7 +48,6 @@ my $preserve_comments = 1;
 # Multiline rules are currently not handled, but at this time,
 # all of the official rules are one rule per line. The msg string
 # will go into $1 and the sid will go into $2 if the regexp matches.
-my $SNORT_RULE_REGEXP = '^\s*#*\s*(?:alert|log|pass) .+msg\s*:\s*"(.+?)"\s*;.+sid\s*:\s*(\d+)\s*;';
 my $SNORT_RULE_REGEXP = '^\s*#*\s*(?:alert|log|pass) .+msg\s*:\s*"(.+?)"\s*;.+sid\s*:\s*(\d+)\s*;.*;\s*\)\s*$';
 
 use vars qw
