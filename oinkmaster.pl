@@ -194,7 +194,7 @@ RTFM
 sub parse_cmdline($)
 {
     my $cfg_ref    = shift;
-    my $cmdline_ok = getopts('b:cC:eho:pqru:vV');
+    my $cmdline_ok = getopts('b:cC:eho:qru:vV');
 
     $$cfg_ref{backup_dir} = $opt_b if (defined($opt_b));
     $config_file          = $opt_C if (defined($opt_C));
