@@ -64,10 +64,7 @@ $start_date = scalar(localtime);
 parse_cmdline;
 die("Don't run as root!\nExiting") if (!$>);
 read_config;
-sanity_check;
-
-# Set new (temporary) PATH.
-local $ENV{"PATH"} = $config{path};
+sanity_check;  # will also set a new PATH
 
 # Create empty temporary directory.
 mkdir("$tmpdir", 0700)
@@ -427,6 +424,8 @@ sub read_config
 
 
 
+# Make a few basic tests to make sure things look ok.
+# Will also set a new (temporary) PATH as defined in the config file.
 sub sanity_check
 {
    my @req_config   = qw (path update_files);
@@ -441,6 +440,9 @@ sub sanity_check
         die("$_ not defined in $config_file\nExiting")
           unless (exists($config{$_}));
     }
+
+  # We now know a path was defined in the config, so set it. 
+    local $ENV{"PATH"} = $config{path};
 
   # Make sure all required binaries are found.
     foreach $_ (@req_binaries) {
