@@ -6,11 +6,11 @@ o Added create-sidmap.pl to contrib section. It's a script that generates
   a SID map from a directory with rules files. (Like snort's regen-sidmap,
   but this one handles multi-line rules).
 o Added sample systrace policy to contrib section.
-o Temporary directory can now be specified in oinkmaster.conf.
+o The default temporary directory is now the 'tmp' environment variable if set,
+  or otherwise "/tmp". You can also override this in oinkmaster.conf.
 o deleted.rules is skipped in default oinkmaster.conf ("skipfile deleted.rules")
-o A bunch of Win32/Cygwin fixes, mostly from Ueli Kistler <iuk@gmx.ch>
-  To avoid problems when running under Win32/Cygwin, you should only use
-  Cygwin-style paths (e.g. "/cygdrive/c/foo" instead of "c:\foo").
+o A bunch of Win32/Cygwin fixes, mostly from Ueli Kistler <iuk@gmx.ch>.
+o A bunch of fixes that makes it work on native Win32 with ActivePerl.
 o Better check for duplicate SIDs. Check is done across all files now, and
   duplicate SIDs in downloaded archive are discarded (only first one is 
   kept) and not copied to the local files. This will avoid some annoying 

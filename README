@@ -45,7 +45,8 @@ Requirements
 It should work on most UNIX-like systems that have Perl, tar, gzip and wget
 (ftp://ftp.gnu.org/gnu/wget/) installed.
 So far it has been successfully tested on OpenBSD, FreeBSD, NetBSD, Linux,
-AIX, Solaris, OpenDarwin/x86 and also under Cygwin on Windows XP.
+AIX, Solaris and OpenDarwin/x86. You can also run it under Cygwin on Windows
+or with ActivePerl on native Win32.
 Let me know if you manage to run it on an unlisted platform.
 
 Again, use it at your own risk!
