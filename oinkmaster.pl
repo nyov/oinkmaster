@@ -18,6 +18,7 @@ sub disable_and_modify_rules($ $ @);
 sub setup_rules_hash($ @);
 sub find_line($ $);
 sub print_changes($ $);
+sub print_changetype($ $ $);
 sub make_backup($ $);
 sub get_modified_files($ $);
 sub get_changes($ $);
@@ -30,11 +31,16 @@ sub clean_exit($);
 my $VERSION           = 'Oinkmaster v0.7 by Andreas Östling <andreaso@it.su.se>';
 my $TMPDIR            = "/tmp/oinkmaster.$$";
 
+my $PRINT_NEW         = 1;
+my $PRINT_OLD         = 2;
+my $PRINT_BOTH        = 3;
+
 my $config_file       = "/usr/local/etc/oinkmaster.conf";
 my $outfile           = "snortrules.tar.gz";
 my $verbose           = 0;
 my $careful           = 0;
 my $quiet             = 0;
+my $super_quiet       = 0;
 my $check_removed     = 0;
 my $preserve_comments = 1;
 
@@ -47,7 +53,7 @@ my $SNORT_RULE_REGEXP = '^\s*#*\s*(?:alert|log|pass) .+msg\s*:\s*"(.+?)"\s*;.+si
 use vars qw
    (
       $opt_b $opt_c $opt_C $opt_e $opt_h $opt_o
-      $opt_q $opt_r $opt_u $opt_v $opt_V
+      $opt_q $opt_Q $opt_r $opt_u $opt_v $opt_V
    );
 
 my (
@@ -175,8 +181,8 @@ Options:
 -e         Re-enable all rules that are disabled by default in the rules
            distribution (they are disabled for a reason so use with care)
 -h         Show this usage information
-
 -q         Quiet mode - no output unless changes were found
+-Q         über-quiet mode (like -q but even more quiet when printing results)
 -r         Check for rules files that exist in the output directory
            but not in the downloaded rules archive (i.e. files that may
            have been removed from the distribution archive)
@@ -195,7 +201,7 @@ RTFM
 sub parse_cmdline($)
 {
     my $cfg_ref    = shift;
-    my $cmdline_ok = getopts('b:cC:eho:qru:vV');
+    my $cmdline_ok = getopts('b:cC:eho:qQru:vV');
 
     $$cfg_ref{backup_dir} = $opt_b if (defined($opt_b));
     $config_file          = $opt_C if (defined($opt_C));
@@ -205,6 +211,11 @@ sub parse_cmdline($)
     $quiet                = 1      if (defined($opt_q));
     $check_removed        = 1      if (defined($opt_r));
     $verbose              = 1      if (defined($opt_v));
+
+    if (defined($opt_Q)) {
+        $quiet       = 1;
+        $super_quiet = 1;
+    }
 
     show_usage()                   if (defined($opt_h));
     die("$VERSION\n")              if (defined($opt_V));
@@ -256,7 +267,7 @@ sub read_config($ $)
       # Skip blank lines.
         next unless (/\S/);
 
-        if (/^disablesids*\s+(\d.*)/i) {                   # disablesid <SID[,SID, ...]>
+        if (/^disablesids*\s+(\d.*)/i) {                 # disablesid <SID[,SID, ...]>
 	    my $args = $1;
 	    foreach $_ (split(/\s*,\s*/, $args)) {
   	        if (/^\d+$/) {
@@ -724,51 +735,75 @@ sub print_changes($ $)
 
     print "\n[***] Results from Oinkmaster started " . scalar(localtime) . " [***]\n";
 
+    print "\n[*] Rules modifications: [*]\n    None.\n"
+      if (!keys(%{$$ch_ref{rules}}) && !$super_quiet);
 
-  # Print rules changes.
-    print "\n[*] Rules modifications: [*]\n";
-
-    foreach my $type (sort(keys(%{$$ch_ref{rules}}))) {
-        print "\n  $type\n";
-
-        foreach my $file (sort({uc($a) cmp uc($b)} keys(%{$$ch_ref{rules}{"$type"}}))) {
-            print "\n     -> File $file:\n";
-            foreach my $sid (keys(%{$$ch_ref{rules}{"$type"}{"$file"}})) {
-	      # Print old and new if the rule was modified.
-	        if ($type =~ /modified/i) {
-	            print "        old: $rh{old}{rules}{$file}{$sid}";
-	            print "        new: $rh{new}{rules}{$file}{$sid}";
-	      # Print only the new one if the rule was added, enabled or disabled.
-	        } elsif ($type =~ /added/i || $type =~ /enabled/i || $type =~ /disabled/i) {
-	            print "        $rh{new}{rules}{$file}{$sid}";
-	      # Print only the old one if the rule was removed.
-		} elsif ($type =~ /removed/i) {
-	            print "        $rh{old}{rules}{$file}{$sid}";
-		}
-  	    }
-        }
+  # Print added rules.
+    if (exists($$ch_ref{rules}{added})) {
+        print "\n[+++]         Added rules:          [+++]\n";
+	print_changetype($PRINT_NEW, \%{$$ch_ref{rules}{added}}, $rh_ref);
     }
-    print "    None.\n" if (keys(%{$$ch_ref{rules}}) < 1);
+
+  # Print enabled rules.
+    if (exists($$ch_ref{rules}{ena})) {
+        print "\n[+++]        Enabled rules:          [+++]\n";
+	print_changetype($PRINT_NEW, \%{$$ch_ref{rules}{ena}}, $rh_ref);
+    }
+
+  # Print enabled + modified rules.
+    if (exists($$ch_ref{rules}{ena_mod})) {
+        print "\n[+++]  Enabled and modified rules:   [+++]\n";
+	print_changetype($PRINT_BOTH, \%{$$ch_ref{rules}{ena_mod}}, $rh_ref);
+    }
+
+  # Print modified active rules.
+    if (exists($$ch_ref{rules}{mod_act})) {
+        print "\n[///]     Modified active rules:     [///]\n";
+	print_changetype($PRINT_BOTH, \%{$$ch_ref{rules}{mod_act}}, $rh_ref);
+    }
+
+  # Print modified inactive rules.
+    if (exists($$ch_ref{rules}{mod_ina})) {
+        print "\n[///]    Modified inactive rules:    [///]\n";
+	print_changetype($PRINT_BOTH, \%{$$ch_ref{rules}{mod_ina}}, $rh_ref);
+    }
+
+  # Print disabled + modified rules.
+    if (exists($$ch_ref{rules}{dis_mod})) {
+        print "\n[---]  Disabled and modified rules:  [---]\n";
+	print_changetype($PRINT_BOTH, \%{$$ch_ref{rules}{dis_mod}}, $rh_ref);
+    }
+
+  # Print disabled rules.
+    if (exists($$ch_ref{rules}{dis})) {
+        print "\n[---]        Disabled rules:         [---]\n";
+	print_changetype($PRINT_NEW, \%{$$ch_ref{rules}{dis}}, $rh_ref);
+    }
+
+  # Print removed rules.
+    if (exists($$ch_ref{rules}{removed})) {
+        print "\n[---]        Removed rules:          [---]\n";
+	print_changetype($PRINT_OLD, \%{$$ch_ref{rules}{removed}}, $rh_ref);
+    }
 
 
-  # Print non-rule changes.
-    print "\n[*] Non-rule modifications: [*]\n";
+    print "\n[*] Non-rule modifications: [*]\n    None.\n"
+      if (!keys(%{$$ch_ref{other}}) && !$super_quiet);
 
   # Print added non-rule lines.
-    if (keys(%{$$ch_ref{other}{added}}) > 0) {
-        print "\n  [+++]      Added non-rule lines:     [+++]\n";
-        foreach my $file (sort({uc($a) cmp uc($b)} keys(%{$$ch_ref{other}{added}}))) {
+     if (exists($$ch_ref{other}{added})) {
+        print "\n[+++]      Added non-rule lines:     [+++]\n";
+        foreach my $file (keys(%{$$ch_ref{other}{added}})) {
             print "\n     -> File $file:\n";
-            foreach my $other (@{$$ch_ref{other}{added}{$file}}) {
-	        print "        $other";
+            foreach my $line (@{$$ch_ref{other}{added}{$file}}) {
+                print "        $line";
             }
         }
     }
 
-
   # Print removed non-rule lines.
     if (keys(%{$$ch_ref{other}{removed}}) > 0) {
-        print "\n  [---]    Removed non-rule lines:     [---]\n";
+        print "\n[---]    Removed non-rule lines:     [---]\n";
         foreach my $file (sort({uc($a) cmp uc($b)} keys(%{$$ch_ref{other}{removed}}))) {
             print "\n     -> File $file:\n";
             foreach my $other (@{$$ch_ref{other}{removed}{$file}}) {
@@ -777,37 +812,57 @@ sub print_changes($ $)
         }
     }
 
-    print "    None.\n"
-      if (keys(%{$$ch_ref{other}{removed}}) < 1) && (keys(%{$$ch_ref{other}{added}}) < 1);
-
-
   # Print list of added files.
-    if (keys(%{$$ch_ref{added_files}}) > 0) {
-        print "\n[*] Files added (consider updating your snort.conf to include them): [*]\n";
+    if (keys(%{$$ch_ref{added_files}})) {
+        print "\n[+] Added files (consider updating your snort.conf to include them): [+]\n";
         foreach my $added_file (sort({uc($a) cmp uc($b)} keys(%{$$ch_ref{added_files}}))) {
             print "    -> $added_file\n";
         }
     } else {
-         print "\n[*] Added files: [*]\n" .
-               "    None.\n";
+        print "\n[+] Added files: [+]\n    None.\n"
+          unless ($super_quiet);
     }
 
 
   # Print list of possibly removed files, if requested.
     if ($check_removed) {
-        if (keys(%{$$ch_ref{removed_files}}) > 0) {
-            print "\n[*] Files possibly removed from the archive ".
-                  "(consider removing them from your snort.conf): [*]\n";
+        if (keys(%{$$ch_ref{removed_files}})) {
+            print "\n[-] Files possibly removed from the archive ".
+                  "(consider removing them from your snort.conf): [-]\n";
             foreach my $removed_file (sort({uc($a) cmp uc($b)} keys(%{$$ch_ref{removed_files}}))) {
                 print "    -> $removed_file\n";
 	    }
         } else {
-             print "\n[*] Files possibly removed from the archive: [*]\n" .
-                   "    None.\n";
+             print "\n[-] Files possibly removed from the archive: [-]\n    None.\n"
+               unless ($super_quiet);
         }
     }
 
     print "\n";
+}
+
+
+
+# Help-function for print_changes().
+sub print_changetype($ $ $)
+{
+    my $type   = shift;
+    my $ch_ref = shift;
+    my $rh_ref = shift;
+
+    foreach my $file (keys(%$ch_ref)) {
+        print "\n     -> File $file:\n";
+        foreach my $sid (keys(%{$$ch_ref{$file}})) {
+	    if ($type == $PRINT_OLD) {
+                print "        $$rh_ref{old}{rules}{$file}{$sid}"
+            } elsif ($type == $PRINT_NEW) {
+                print "        $$rh_ref{new}{rules}{$file}{$sid}"
+	    } elsif ($type == $PRINT_BOTH) {
+                print "        old: $$rh_ref{old}{rules}{$file}{$sid}";
+                print "        new: $$rh_ref{new}{rules}{$file}{$sid}";
+	    }
+        }
+    }
 }
 
 
@@ -894,28 +949,29 @@ sub get_changes($ $)
 
 		    unless ($new_rule eq $old_rule) {           # are they identical?
                         if ("#$old_rule" eq $new_rule) {                          # rule disabled?
- 	                    $changes{rules}{"[---]        Disabled rules:         [---]"}{$file}{$sid}++;
+ 	                    $changes{rules}{dis}{$file}{$sid}++;
                         } elsif ($old_rule eq "#$new_rule") {                     # rule enabled?
- 	                    $changes{rules}{"[+++]        Enabled rules:          [+++]"}{$file}{$sid}++;
+ 	                    $changes{rules}{ena}{$file}{$sid}++;
                         } elsif ($old_rule =~ /^\s*#/ && $new_rule !~ /^\s*#/) {  # rule enabled and modified?
- 	                    $changes{rules}{"[+++]  Enabled and modified rules:   [+++]"}{$file}{$sid}++;
+ 	                    $changes{rules}{ena_mod}{$file}{$sid}++;
                         } elsif ($old_rule !~ /^\s*#/ && $new_rule =~ /^\s*#/) {  # rule disabled and modified?
- 	                    $changes{rules}{"[---]  Disabled and modified rules:  [---]"}{$file}{$sid}++;
+ 	                    $changes{rules}{dis_mod}{$file}{$sid}++;
                         } elsif ($old_rule =~ /^\s*#/ && $new_rule =~ /^\s*#/) {  # inactive rule modified?
- 	                    $changes{rules}{"[///]    Modified inactive rules:    [///]"}{$file}{$sid}++;
+ 	                    $changes{rules}{mod_ina}{$file}{$sid}++;
                         } else {                                                  # active rule modified?
- 	                    $changes{rules}{"[///]     Modified active rules:     [///]"}{$file}{$sid}++;
+ 	                    $changes{rules}{mod_act}{$file}{$sid}++;
 	  	        }
+
 		    }
 	        } else {    # sid not found in old file so it must have been added
-  	            $changes{rules}{"[+++]          Added rules           [+++]"}{$file}{$sid}++;
+  	            $changes{rules}{added}{$file}{$sid}++;
 	        }
         } # foreach sid
 
       # Check for removed rules, i.e. sids that exist in the old file but not in the new one.
         foreach my $sid (keys(%{$rh{old}{rules}{$file}})) {
             unless (exists($rh{new}{rules}{$file}{$sid})) {
-	        $changes{rules}{"[---]         Removed rules:         [---]"}{$file}{$sid}++;
+	        $changes{rules}{removed}{$file}{$sid}++;
             }
         }
 
