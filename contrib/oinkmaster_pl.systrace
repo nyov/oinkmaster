@@ -51,7 +51,7 @@ Policy: /path/to/oinkmaster.pl, Emulation: native
 
       # You may want to replace this with something more restrictive.
 	native-fswrite: filename eq "/dev/null" then permit
-	native-fswrite: filename match "/dev/tty" then permit
+	native-fswrite: filename eq "/dev/tty" then permit
 	native-fswrite: filename match "/tmp/*" then permit
 	native-fswrite: filename sub "/rules-backup-" then permit
 	native-fswrite: filename sub "/rules/" then permit
