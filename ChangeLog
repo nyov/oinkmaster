@@ -17,6 +17,12 @@ o Many updates to the FAQ, especially regarding how to update rules
 o Process modifysid/use_template statements of all types in the exact
   order as specified in the config file. Previously, all the wildcards
   were processed last.
+o You can now download multiple rules archives from different URLs,
+  either by specifying several -u <url> on the command line or by using
+  several url=<url> directives in the Oinkmaster configuration file(s).
+  It's probably safest to still run Oinkmaster once for each URL and
+  use separate output directories though. See the default
+  oinkmaster.conf and the FAQ for more information.
 
 
 
