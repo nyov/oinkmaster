@@ -46,8 +46,7 @@ use vars qw
    );
 
 my (
-      $output_dir, $sid, $old_rule, $new_rule, $file, $backup_dir,
-      $start_date, $added_files, $removed_files, $url
+      $output_dir, $backup_dir, $start_date, $added_files, $removed_files, $url
    );
 
 my (
@@ -120,16 +119,16 @@ setup_rule_hashes;
 print STDERR "Comparing new files to the old ones... "
   unless ($quiet);
 
-FILELOOP:foreach $file (keys(%new_files)) {                  # for each new file
+FILELOOP:foreach my $file (keys(%new_files)) {                  # for each new file
     next FILELOOP if (exists($added_files{$file}));          # skip diff if it's an added file
 
   # This one will tell us if the filename info has been printed or not.
     undef(%printed);
 
-    foreach $sid (keys(%{$new_rules{$file}})) {         # for each sid in the new file
-        $new_rule = $new_rules{$file}{$sid};            # save the rule in $new_rule for easier access
-            if (exists($old_rules{$file}{$sid})) {      # does this sid also exist in the old rules file?
-                $old_rule = $old_rules{$file}{$sid};    # yes, put old rule in $old_rule for easier access
+    foreach my $sid (keys(%{$new_rules{$file}})) {         # for each sid in the new file
+        my $new_rule = $new_rules{$file}{$sid};            # save the rule in $new_rule for easier access
+            if (exists($old_rules{$file}{$sid})) {         # does this sid also exist in the old rules file?
+                my $old_rule = $old_rules{$file}{$sid};    # yes, put old rule in $old_rule for easier access
 
 		unless ($new_rule eq $old_rule) {                             # are they identical?
 		    $rules_changed = 1;
@@ -162,30 +161,30 @@ FILELOOP:foreach $file (keys(%new_files)) {                  # for each new file
     } # foreach sid
 
   # Check for removed rules, i.e. sids that exist in the old file but not in the new one.
-    foreach $sid (keys(%{$old_rules{$file}})) {
+    foreach my $sid (keys(%{$old_rules{$file}})) {
         unless (exists($new_rules{$file}{$sid})) {
             $rules_changed = 1;
-            $old_rule = $old_rules{$file}{$sid};
+            my $old_rule = $old_rules{$file}{$sid};
 	    fix_fileinfo("removed_del", $file);
             $changes{removed_del} .= "       $old_rule";
         }
     }
 
   # First check for added non-rule lines.
-    foreach $_ (@{$new_other{$file}}) {
-        unless (find_line($_, @{$old_other{$file}})) {
+    foreach my $other_added (@{$new_other{$file}}) {
+        unless (find_line($other_added, @{$old_other{$file}})) {
             $other_changed = 1;
             fix_fileinfo("other_added", $file);
-            $changes{other_added} .= "       $_";
+            $changes{other_added} .= "       $other_added";
         }
     }
 
   # Check for removed non-rule lines.
-    foreach $_ (@{$old_other{$file}}) {
-        unless (find_line($_, @{$new_other{$file}})) {
+    foreach my $other_removed (@{$old_other{$file}}) {
+        unless (find_line($other_removed, @{$new_other{$file}})) {
             $other_changed = 1;
             fix_fileinfo("other_removed", $file);
-            $changes{other_removed} .= "       $_";
+            $changes{other_removed} .= "       $other_removed";
         }
     }
 
