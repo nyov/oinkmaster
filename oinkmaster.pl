@@ -42,7 +42,7 @@ use vars qw
 
 my (
       $output_dir, $sid, $old_rule, $new_rule, $file, $backup_dir,
-      $start_date, $added_files, $removed_files, $url
+      $start_date, $added_files, $removed_files, $url, $skip_diff_files
    );
 
 my (
@@ -117,12 +117,20 @@ setup_rule_hashes;
 # in the old file.  If it does then check if it has been modified,
 # but if it doesn't, it must have been added.
 
-print STDERR "Comparing new files to your old ones... "
+print STDERR "Comparing new files to the old ones... "
   unless ($quiet);
 
-foreach $file (keys(%new_files)) {                      # for each new file
-    next if ($file =~ /$config{skip_diff}/);            # skip comparison for files listed in skip_diff
-    next if (exists($added_files{$file}));              # also skip of its an added file
+FILELOOP:foreach $file (keys(%new_files)) {                      # for each new file
+    next FILELOOP if (exists($added_files{$file}));              # skip of its an added file
+
+  # Skip diff if file maches skip_diff regexp, but see if it needs to be updated.
+    if (exists($config{skip_diff})  && $file =~ /$config{skip_diff}/) {
+	$skip_diff_files .= "    -> $file";
+	$skip_diff_files .= " (local copy updated)" unless ($careful);
+	$skip_diff_files .= "\n";
+	$modified_files{$file}++;
+        next FILELOOP;
+    }
 
     foreach $sid (keys(%{$new_rules{$file}})) {         # for each sid in the new file
         $new_rule = $new_rules{$file}{$sid};            # save the rule in $new_rule for easier access
@@ -205,7 +213,7 @@ print STDERR "done.\n" unless ($quiet);
 # Update files listed in %modified_files (move the new files from the temporary
 # directory into our -o <outout directory>, unless we're running in careful mode.
 # Also create backup first if running with -b.
-if ($rules_changed || $other_changed) {
+if ($rules_changed || $other_changed || defined($skip_diff_files)) {
     if ($careful) {
         print STDERR "No need to backup old files, skipping.\n"
           if (defined($backup_dir) && (!$quiet));
@@ -237,7 +245,7 @@ if (($rules_changed || $other_changed || keys(%added_files) > 0
     || defined($removed_files)) || !$quiet) {
     print "\n[***] Results from Oinkmaster started $start_date [***]\n";
     print "\nNote: Oinkmaster was running in careful mode - no files were really updated or added.\n"
-      if ($careful && $rules_changed || $other_changed || keys(%added_files) > 0);
+      if ($careful);
 
   # Print rule changes.
     print "\n[*] Rules added/removed/modified: [*]\n";
@@ -293,6 +301,12 @@ if (($rules_changed || $other_changed || keys(%added_files) > 0
         } else {
             print "\n[*] Files possibly removed from archive: [*]\n    None.\n";
         }
+    }
+
+  # Print list of possibly modified files that matched config{skip_diff}
+    if (defined($skip_diff_files)) {
+        print "\n[*] Possibly modified files where diff excluded by request: [*]\n".
+              "$skip_diff_files";
     }
 
     print "\n";
