@@ -72,6 +72,9 @@ Q25: Why do I get alerts like "Snort Alert [1:123456:0]", i.e.
 
 Q26: How do I keep my sid-msg.map up-to-date?
 
+Q27: How to I make Snort reload the new rules without stopping the current 
+     Snort process?
+
 
 --------------
 
@@ -730,3 +733,20 @@ A26: When using Barnyard, it's important that the sid-msg.map file is
      You may also want to put in some sanity checks like aborting in case 
      of duplicate SIDs and restarting Barnyard/Snort if everything went ok 
      and there were changes and so on, you get the point.
+
+
+
+Q27: How to I make Snort reload the new rules without stopping the current 
+     Snort process?
+
+A28: This is not really an Oinkmaster question so you may want to check 
+     the Snort documentation for the most current information. 
+     Basically, the answer to the question is that you can't do it. You'll 
+     have to restart the Snort process to reload the rules. If you don't 
+     want to miss any traffic while doing that, one trick is to start a 
+     new Snort process before stopping the old one (possible existing 
+     state information will be lost though). Some might argue that sending
+     a SIGHUP signal will reload the rules without stopping Snort, but 
+     that's not true as that will simply make Snort stop and restart 
+     itself. Also, this requires that you run Snort as root and 
+     non-chrooted. Don't do that.
