@@ -4,11 +4,11 @@ Installation instructions for Oinkmaster v1.0
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 o Put oinkmaster.pl in some suitable directory, for example 
-  /usr/local/bin/. Put oinkmaster.conf in /usr/local/etc/ (this is where 
-  oinkmaster will search for it by default). If you want to have 
-  oinkmaster.conf in some other directory, you must run Oinkmaster with 
-  the -C argument. Make sure that the ownership/permission on the above 
-  files are suitable for your environment.
+  /usr/local/bin/. Put oinkmaster.conf in /etc/ or /usr/local/etc/
+  (this is where Oinkmaster will search for it by default). If you want to 
+  have oinkmaster.conf in some other directory, you must run Oinkmaster 
+  with the -C argument. Make sure that the ownership/permission on the 
+  above files are suitable for your environment.
 
 o Edit oinkmaster.conf, or at least have a look at it to make sure 
   everything looks ok. There are some options you may want to change 
@@ -34,5 +34,6 @@ o Decide in which directory you want to put the new rules. Since you
   oinkmaster.pl -o /etc/snort/rules
 
   You should really check out the entire README before doing anything 
-  though. You may also run oinkmaster.pl -h for more usage information and 
-  options. See the FAQ if you need to setup proxy configuration.
+  though. You may also run oinkmaster.pl -h to list all available command
+  line options. They are described in more detail in the Oinkmaster manual
+  page. See the FAQ if you need to setup proxy configuration.
