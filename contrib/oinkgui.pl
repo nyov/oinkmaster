@@ -34,53 +34,48 @@ sub logmsg($ $);
 my $version = 'Oinkmaster GUI v0.1';
 
 my @oinkmaster_conf = qw(
-  ./oinkmaster.conf
-  /etc/oinkmaster.conf
-  /usr/local/etc/oinkmaster.conf
+    ./oinkmaster.conf
+    /etc/oinkmaster.conf
+    /usr/local/etc/oinkmaster.conf
 );
 
 # Graphical editors to look for.
 my @editors = qw(
-  kwrite kate kedit gedit xemacs xedit wordpad
+    kwrite kate kedit gedit xemacs xedit wordpad
 );
 
 # List of URLs that will show up in the URL BrowseEntry.
 my @urls = qw(
-  http://www.snort.org/dl/rules/snortrules-stable.tar.gz
-  http://www.snort.org/dl/rules/snortrules-current.tar.gz
+    http://www.snort.org/dl/rules/snortrules-stable.tar.gz
+    http://www.snort.org/dl/rules/snortrules-current.tar.gz
 );
 
 my %color = (
-  background        => 'Bisque3',
-  button            => 'Bisque2',
-  label             => 'Bisque1',
-  notebook          => 'Bisque2',
-  file_label_ok     => '#00e000',
-  file_label_not_ok => 'red',
-  out_frame_fg      => 'white',
-  out_frame_bg      => 'black',
-  entry_bg          => 'white',
+    background        => 'Bisque3',
+    button            => 'Bisque2',
+    label             => 'Bisque1',
+    notebook          => 'Bisque2',
+    file_label_ok     => '#00e000',
+    file_label_not_ok => 'red',
+    out_frame_fg      => 'white',
+    out_frame_bg      => 'black',
+    entry_bg          => 'white',
 );
 
-my %config;
-
-$config{careful}         = 0;
-$config{enable_all}      = 0;
-$config{check_removed}   = 0;
-
-$config{mode}            = 'normal';
-
-$config{oinkmaster}      = "";
-$config{oinkmaster_conf} = "";
-$config{outdir}          = "";
-$config{url}             = "";
-$config{varfile}         = "";
-$config{backupdir}       = "";
-
-my $gui_config_file      = "";
-my $editor               = "";
-
-my $animate = 1;
+my %config = (
+    animate          => 0,
+    careful          => 0,
+    enable_all       => 0,
+    check_removed    => 0,
+    mode             => 'normal',
+    oinkmaster       => "",
+    oinkmaster_conf  => "",
+    outdir           => "",
+    url              => "",
+    varfile          => "",
+    backupdir        => "",
+    editor           => "",
+);
 
 my %help = (
 
@@ -98,8 +93,8 @@ my %help = (
                     'Leave empty to skip backup.',
 
   # Checkbuttons.
-    careful      => 'In careful mode, Oinkmaster will just check for changes '.
-                    'and not update anything.',
+    careful      => 'In careful mode, Oinkmaster will just check for changes, '.
+                    'not update anything.',
     enable       => 'Some rules may be commented out by default (for a reason!). '.
                     'This option will make Oinkmaster enable those.',
     removed      => 'Check for rules files that exist in the output directory but not '.
@@ -114,6 +109,9 @@ my %help = (
     help         => 'Execute oinkmaster -h.',
     version      => 'Request version information from Oinkmaster.',
 );
+
+
+my $gui_config_file = "";
 
 
 
@@ -153,10 +151,10 @@ EDITOR:foreach my $ed (@editors) {
     foreach my $dir (File::Spec->path()) {
         my $file = "$dir/$ed";
         if (-f "$file" && -x "$file") {
-            $editor = $file;
+            $config{editor} = $file;
             last EDITOR;
         } elsif (-f "$file.exe" && -x "$file.exe") {
-            $editor = $file;
+            $config{editor} = $file;
             last EDITOR;
         }
     } 
@@ -414,7 +412,7 @@ $balloon->attach(
 );
 
 $balloon->attach(
-  create_actionbutton($left_frame, "Clear messages", \&clear_messages),
+  create_actionbutton($left_frame, "Clear output messages", \&clear_messages),
   -statusmsg => $help{clear}
 );
 
@@ -426,7 +424,7 @@ $balloon->attach(
 
 
 # Now the fun begins.
-if ($animate) {
+if ($config{animate}) {
     foreach (split(//, "Welcome to $version")) {
         logmsg("$_", 'MISC');
         $out_frame->after(5);
@@ -466,7 +464,6 @@ sub fileDialog($ $ $ $)
     my $title     = shift;
     my $type      = shift;
     my $filetypes = shift;
-
     my $dirname;
 
     if ($type eq 'WRDIR') {
@@ -681,11 +678,12 @@ sub create_fileSelectFrame($ $ $ $ $ $)
                                      return;
                                  }
 
-                                 if ($editor) {
+                                 if ($config{editor}) {
                                      $main->Busy(-recurse => 1);
-                                     logmsg("Launching $editor. Close it to continue the GUI.\n\n", 'MISC');
+                                     logmsg("Launching $config{editor}. ".
+                                            "Close it to continue the GUI.\n\n", 'MISC');
                                      sleep(2);
-                                     system($editor, $$var_ref);  # yes, MainLoop will be put on hold...
+                                     system($config{editor}, $$var_ref); # MainLoop will be put on hold...
                                      $main->Unbusy;
                                  } else {
                                      logmsg("No suitable editor found.\n\n", 'ERROR');
@@ -745,7 +743,7 @@ sub show_version()
     logmsg("$cmd:\n", 'EXEC');
     my $output = `$cmd 2>&1` || "Could not execute $config{oinkmaster}: $!\n";
     logmsg("$output", 'OUTPUT');
-    logmsg("$version by Andreas Östling <andreaso\@it.su.se>\n\n", 'OUTPUT');
+    logmsg("$version\n\n", 'OUTPUT');
 }
 
 
@@ -771,7 +769,7 @@ sub show_help()
 sub execute_oinkmaster(@) {
     my @cmd = @_;
 
-    logmsg("\n@cmd:\n", 'EXEC');
+    logmsg("@cmd:\n", 'EXEC');
 
     if ($^O eq 'MSWin32') {
         open(OINK, "@cmd 2>&1|");
@@ -791,7 +789,7 @@ sub execute_oinkmaster(@) {
         close(OINK);
     }
 
-    logmsg("done.\n", 'EXEC');
+    logmsg("done.\n\n", 'EXEC');
 }
 
 
