@@ -1074,7 +1074,15 @@ sub is_in_path($)
 
 
 
-# XXX document
+# get_next_entry() will parse the array referenced in the first arg
+# and return the next entry. The array should contain a rules file,
+# and the returned entry will be removed from it.
+# An entry is one of:
+# - single-line rule (put in 2nd ref)
+# - multi-line rule (put in 3rd ref)
+# - non-rule line (put in 4th ref)
+# If the entry is a multi-line rule, its single-line version is also
+# returned (put in the 2nd ref).
 sub get_next_entry($ $ $ $)
 {
     my $arr_ref     = shift;
