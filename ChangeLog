@@ -25,6 +25,8 @@ o New options in oinkmaster.conf: min_files and min_rules.
 o New command line option, -U <file>. If specified, variable definitions that
   exist in the distribution snort.conf but not in <file>
   will be inserted at the beginning of it. See README for more info.
+o Avoid using move() from File::Copy since some versions of it lies about
+  the error message (e.g. "Cross-device link" instead of "Permission denied").
 
 
 
