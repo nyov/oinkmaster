@@ -1179,8 +1179,10 @@ sub make_backup($ $)
 
       # Write tarball. Print stupid error message if it fails as
       # we can't use $tar->error or Tar::error on all platforms.
-        $tar->write("$backup_tarball", 1)
-          or clean_exit("could not create backup archive: Tar::Archive returned unknown error\n");
+        $tar->write("$backup_tarball", 1);
+
+        clean_exit("could not create backup archive: tarball empty after creation\n")
+          unless (-s "$backup_tarball");
     }
 
   # Change back to old directory (so it will work with -b <directory> as either
