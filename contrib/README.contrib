@@ -1,16 +1,62 @@
----------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+* addsid.pl by Andreas Östling <andreaso@it.su.se>
+
+  A script that parses *.rules in a directory and adds a SID to rules
+  that don't have any. (Actually, rev and classtype are also added if 
+  missing, unless you edit addsid.pl and tune this.) The script first  
+  looks for the current highest SID and starts at SID+1, unless this is 
+  value is below MIN_SID (defined inside addsid.pl). By default, this 
+  value is set to 1000000 since this is the lowest SID assigned for local 
+  usage. Handles multi-line rules.
+
+  Usage: ./addsid.pl <rules directory>
+
+--------------------------------------------------------------------------------
+
+
+
+--------------------------------------------------------------------------------
+* create-sidmap.pl by Andreas Östling <andreaso@it.su.se>
+
+  A script that parses *.rules in a directory and creates a SID map.
+  (Like snort's regen-sidmap, but this one handles multi-line rules.)
+  Result goes to standard output.
+
+  Usage: ./create-sidmap.pl <rules directory>
+
+--------------------------------------------------------------------------------
+
+
+
+--------------------------------------------------------------------------------
+* oinkmaster_pl.systrace by Andreas Östling <andreaso@it.su.se>
+
+  A sample systrace policy for Oinkmaster. It may be too permissive for 
+  you, but it may be a good start. Only tested on OpenBSD.
+  Before using it, you MUST edit it and update the very first line to 
+  point to your oinkmaster.pl, and you probably want to review the rest of 
+  it as well. You use it by running:
+
+  systrace -a -i -f /path/to/oinkmaster_pl.systrace <normal oinkmaster command line>
+
+--------------------------------------------------------------------------------
+
+
+
+--------------------------------------------------------------------------------
 * makesidex.pl by Jerry Applebaum <JApplebaum@APTEGRITY.com>:
 
-  It basicall reads all of your snort rules, strips out the sid's from everything
-  you've commented out, and writes them out in a format that can be
-  appended to the oinkmaster.conf. Useful to new Oinkmaster users.
+  It basicall reads all of your snort rules, strips out the sids from 
+  everything you've commented out, and writes them out in a format that 
+  can be appended to the oinkmaster.conf. Useful to new Oinkmaster users.
 
   Usage: ./makesidex.pl <rules directory>
 
----------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 
 
----------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
 * addmsg.pl by Andreas Östling <andreaso@it.su.se>:
 
   A script that will parse your oinkmaster.conf for "disablesid" lines and
@@ -28,7 +74,8 @@
     disablesid 288             # POP3 EXPLOIT x86 linux overflow
 
   addmsg.pl will not touch disablesid lines that already has a comment in them.
-  It's not able to handle disablesid lists (i.e "disablesid 1,2,3,4,5,..." lines).
+  It's not able to handle disablesid lists (i.e "disablesid 1,2,3,4,5,..." 
+  lines).
 
   Usage: ./addmsg.pl <oinkmaster config file> <rules directory>
 
@@ -36,4 +83,4 @@
   probably want to redirect the output to a file, for example:
   ./addmsg.pl oinkmaster.conf rules/ > oinkmaster.conf.new
   If oinkmaster.conf.new looks ok, simply rename it to oinkmaster.conf.
-----------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
