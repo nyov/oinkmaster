@@ -16,8 +16,8 @@ sub create_cmdline($);
 sub fileDialog($ $);
 sub load_config();
 sub save_config();
-sub update_file_label_color($ $);
-sub create_fileSelectFrame($ $);
+sub update_file_label_color($ $ $);
+sub create_fileSelectFrame($ $ $);
 sub create_checkbutton($ $ $);
 sub create_radiobutton($ $ $);
 sub create_actionbutton($ $ $);
@@ -53,7 +53,7 @@ $gui_config{check_removed} = 0;
 
 $gui_config{mode} = 'normal';
 
-
+my $animate = 0;
 
 $gui_config{oinkmaster}             = "";
 $gui_config{oinkmaster_config_file} = "";
@@ -125,15 +125,15 @@ my $req_tab = $notebook->add("required",
 
 # Create frame with oinkmaster.pl location.
 my ($oinkscript_frame, $oinkscript_label, $oinkscript_entry, $oinkscript_but) = 
-  create_fileSelectFrame($req_tab, "Oinkmaster.pl");
+  create_fileSelectFrame($req_tab, "Oinkmaster.pl", 'FILE');
 
 # Create frame with oinkmaster.pl location.
 my ($oinkconf_frame, $oinkconf_label, $oinkconf_entry, $oinkconf_but) = 
-  create_fileSelectFrame($req_tab, "Oinkmaster.conf");
+  create_fileSelectFrame($req_tab, "Oinkmaster.conf", 'FILE');
 
 # Create frame with output directory. XXX must be able to select dir only.
 my ($outdir_frame, $outdir_label, $outdir_entry, $outdir_but) = 
-  create_fileSelectFrame($req_tab, "Output directory");
+  create_fileSelectFrame($req_tab, "Output directory", 'DIR');
 
 
 
@@ -146,15 +146,15 @@ my $opt_tab = $notebook->add("optional",
 
 # Create frame with alternate URL location. XXX choice between stable/current/local.
 my ($url_frame, $url_label, $url_entry, $url_but) = 
-  create_fileSelectFrame($opt_tab, "Alternate URL");
+  create_fileSelectFrame($opt_tab, "Alternate URL", 'FILE');
 
 # Create frame with variable file.
 my ($varfile_frame, $varfile_label, $varfile_entry, $varfile_but) = 
-  create_fileSelectFrame($opt_tab, "Variable file");
+  create_fileSelectFrame($opt_tab, "Variable file", 'FILE');
 
 # Create frame with backup dir location. XXX must be able to select dir only.
 my ($backupdir_frame, $backupdir_label, $backupdir_entry, $backupdir_but) = 
-  create_fileSelectFrame($opt_tab, "Backup directory");
+  create_fileSelectFrame($opt_tab, "Backup directory", 'DIR');
 
 
 $notebook->pack(
@@ -204,9 +204,9 @@ $opt_frame->Label(
 
 
 # Create checkbuttons in the option frame.
-create_checkbutton($opt_frame, "Careful mode                 ",    \$gui_config{careful});
-create_checkbutton($opt_frame, "Enable all                      ", \$gui_config{enable_all});
-create_checkbutton($opt_frame, "Check for removed files",          \$gui_config{check_removed});
+create_checkbutton($opt_frame, "Careful mode",            \$gui_config{careful});
+create_checkbutton($opt_frame, "Enable all",              \$gui_config{enable_all});
+create_checkbutton($opt_frame, "Check for removed files", \$gui_config{check_removed});
 
 
 # Create "mode" label.
@@ -265,9 +265,13 @@ create_actionbutton($opt_frame, "Exit",               \&exit);
 
 
 # Now the fun begins.
-foreach (split(//, "Welcome to $version")) {
-    logmsg("$_", 'MISC');
-    select(undef, undef, undef, 0.03);
+if ($animate) {
+    foreach (split(//, "Welcome to $version")) {
+        logmsg("$_", 'MISC');
+        select(undef, undef, undef, 0.03);
+    }
+} else {
+    logmsg("Welcome to $version", 'MISC');
 }
 
 logmsg("\n\n", 'MISC');
@@ -282,7 +286,7 @@ if ($gui_config{oinkmaster_config_file} !~ /\S/) {
 } else {
     $oinkconf_entry->delete(0.0, 'end');
     $oinkconf_entry->insert(0.0, "$gui_config{oinkmaster_config_file}");
-    update_file_label_color($oinkconf_label, $oinkconf_entry->get);    
+    update_file_label_color($oinkconf_label, $oinkconf_entry->get, 'FILE'); 
 }
 
 if ($gui_config{oinkmaster} !~ /\S/) {
@@ -290,7 +294,7 @@ if ($gui_config{oinkmaster} !~ /\S/) {
 } else {
     $oinkscript_entry->delete(0.0, 'end');
     $oinkscript_entry->insert(0.0, "$gui_config{oinkmaster}");
-    update_file_label_color($oinkscript_label, $oinkscript_entry->get);    
+    update_file_label_color($oinkscript_label, $oinkscript_entry->get, 'FILE');
 }
 
 if ($gui_config{outdir} !~ /\S/) {
@@ -298,7 +302,7 @@ if ($gui_config{outdir} !~ /\S/) {
 } else {
     $outdir_entry->delete(0.0, 'end');
     $outdir_entry->insert(0.0, "$gui_config{outdir}");
-    update_file_label_color($outdir_label, $outdir_entry->get);    
+    update_file_label_color($outdir_label, $outdir_entry->get, 'DIR');
 }
 
 
@@ -331,12 +335,15 @@ sub fileDialog($ $)
 
 
 
-sub update_file_label_color($ $)
+sub update_file_label_color($ $ $)
 {
     my $label    = shift;
     my $filename = shift;
+    my $type     = shift;  # FILE|DIR
 
-    if ($filename && -e "$filename") {
+    if ($filename && $type eq "FILE" && -f "$filename") {
+        $label->configure(-background => "#00e000");
+    } elsif ($filename && $type eq "DIR" && -d "$filename") {
         $label->configure(-background => "#00e000");
     } else {
         $label->configure(-background => 'red');
@@ -355,12 +362,12 @@ sub create_checkbutton($ $ $)
       -text       => $name,
       -background => $butcolor,
       -variable   => $var_ref,
-      -relief     => 'raise'
+      -relief     => 'raise',
+      -anchor     => 'w',
     )->pack(
       -fill       => 'x',
       -side       => 'top',
       -pady       => '1',
-      -anchor     => 'w'
     );
 }
 
@@ -373,11 +380,11 @@ sub create_actionbutton($ $ $)
     my $func_ref = shift;
 
     $frame->Button(
-      -text       => $name,
+      -text       => "$name",
       -command    => sub { &$func_ref }, 
       -background => "$actbutcolor",
     )->pack(
-      -fill       => 'x'
+      -fill       => 'x',
     );
 }
 
@@ -394,22 +401,23 @@ sub create_radiobutton($ $ $)
       -background => "$butcolor",
       -variable   =>  $mode_ref,
       -relief     => 'raised',
+      -anchor     => 'w',
       -value      => "$name",
     )->pack(
       -side       => 'top',
       -pady       => '1',
       -fill       => 'x',
-      -anchor     => 'w'
     );
 }
 
 
 
 # Create <label><entry><browsebutton> in given frame.
-sub create_fileSelectFrame($ $)
+sub create_fileSelectFrame($ $ $)
 {
     my $win  = shift;
     my $name = shift;
+    my $type = shift;  # FILE|DIR
 
   # Create frame.
     my $frame = $win->Frame->pack(
@@ -430,12 +438,14 @@ sub create_fileSelectFrame($ $)
 
   # Create entry.
     my $entry = $frame->Entry(
-      -background => 'white',
-      -width      => '80',
+      -background      => 'white',
+      -width           => '80',
+      -validate        => 'focus',
+      -validatecommand => sub { update_file_label_color($label, $_[0], $type) },
     )->pack(
-      -side       => 'left',
-      -expand     => 'yes',
-      -fill       => 'x'
+      -side            => 'left',
+      -expand          => 'yes',
+      -fill            => 'x'
    );
 
 
@@ -445,7 +455,7 @@ sub create_fileSelectFrame($ $)
       -background => "$actbutcolor",
       -command    => sub {
                             fileDialog($entry, $name);
-                            update_file_label_color($label, $entry->get);
+                            update_file_label_color($label, $entry->get, $type);
                           }
     )->pack(
       -side       => 'left'
@@ -641,27 +651,27 @@ sub load_config()
 
     $oinkscript_entry->delete(0.0, 'end');
     $oinkscript_entry->insert(0.0, "$gui_config{oinkmaster}");
-    update_file_label_color($oinkscript_label, $oinkscript_entry->get);    
+    update_file_label_color($oinkscript_label, $oinkscript_entry->get, 'FILE');    
 
     $oinkconf_entry->delete(0.0, 'end');
     $oinkconf_entry->insert(0.0, "$gui_config{oinkmaster_config_file}");
-    update_file_label_color($oinkconf_label, $oinkconf_entry->get);    
+    update_file_label_color($oinkconf_label, $oinkconf_entry->get, 'FILE');
 
     $outdir_entry->delete(0.0, 'end');
     $outdir_entry->insert(0.0, "$gui_config{outdir}");
-    update_file_label_color($outdir_label, $outdir_entry->get);    
+    update_file_label_color($outdir_label, $outdir_entry->get, 'DIR');
 
     $url_entry->delete(0.0, 'end');
     $url_entry->insert(0.0, "$gui_config{url}");
-    update_file_label_color($url_label, $url_entry->get);    
+    update_file_label_color($url_label, $url_entry->get, 'FILE');
 
     $varfile_entry->delete(0.0, 'end');
     $varfile_entry->insert(0.0, "$gui_config{varfile}");
-    update_file_label_color($varfile_label, $varfile_entry->get);    
+    update_file_label_color($varfile_label, $varfile_entry->get, 'FILE');
 
     $backupdir_entry->delete(0.0, 'end');
     $backupdir_entry->insert(0.0, "$gui_config{backupdir}");
-    update_file_label_color($backupdir_label, $backupdir_entry->get);    
+    update_file_label_color($backupdir_label, $backupdir_entry->get, 'DIR');
 }
 
 
