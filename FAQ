@@ -9,7 +9,7 @@ Q5:  How can the 'include' statement in oinkmaster.conf be useful?
 Q6:  Can Oinkmaster restart Snort after an update?
 Q7:  Can I tell Oinkmaster to not touch certain SIDs in sid-msg.map so the
 Q8:  I want to copy the rules archive from a remote host to the sensor via scp 
-
+Q9:  How do I setup proxy configuration?
 
 
 
@@ -109,12 +109,13 @@ A5:  There are many situations where this is useful, but perhaps the most
 
 Q6:  Can Oinkmaster restart Snort after an update?
 
-A6:  No. This functionality does not belong in Oinkmaster since almost everyone
-     has their own way of restarting Snort. Automatic restart of Snort
-     after an update is usually no good idea either. See the README
-     for more information. If you really want to do an automatic restart, just
-     write a little wrapper that does what you want, and remember to run snort -T
-     first and refuse to restart if the test was not successful.
+A6:  No. This functionality does not belong in Oinkmaster since almost 
+     everyone has their own way of restarting Snort. Automatic restart of 
+     Snort after an update is usually no good idea either. See the README
+     for more information. If you really want to do an automatic restart, 
+     just write a little wrapper that does what you want, and remember to 
+     run snort -T first and refuse to restart if the test was not 
+     successful.
 
 
 
@@ -125,9 +126,9 @@ A7:  No. What you may want to consider instead is to use a separate
      sid-msg.map for your local rules (and not touch the map for the
      official rules), and then join the two before feeding it to Barnyard.
      Or, what is probably even better, is to generate the sid-msg.map
-     automatically yourself after each update. There is one script in Snort's
-     contrib directory that does this, and there is also one that comes
-     with Oinkmaster (contrib/create-sidmap.pl). The latter handles
+     automatically yourself after each update. There is one script in 
+     Snort's contrib directory that does this, and there is also one that 
+     comes with Oinkmaster (contrib/create-sidmap.pl). The latter handles
      multiline rules and can also take an arbitrary number of rules
      directories as argument.
 
@@ -143,7 +144,7 @@ A8:  Yes. You should really rely on the OpenSSH documentation on how to do
      this, but an attempt at explaining how it could be done follows.
      The instructions assumes OpenSSH on both client and server.
      If you want to automate the process of just copying a file with scp, you
-     should never have to give one host full access to the other. One sollution
+     should never have to give one host full access to the other. One solution
      is to generate a key pair where the private key has no passphrase and the
      public key has restrictions to only allow the copy. (If you don't plan on
      running Oinkmaster unattended, it's of course recommended to use a 
@@ -201,3 +202,31 @@ A8:  Yes. You should really rely on the OpenSSH documentation on how to do
      If you start Oinkmaster in verbose mode (-v), scp will be run in
      verbose mode as well.
 
+
+
+Q9:  How do I setup proxy configuration?
+
+A9:  If you download the snort rules archive from a web site (e.g. 
+     www.snort.org) and you are a behind an http proxy, you need to tell 
+     Oinkmaster to use that proxy or the download will fail. How you do 
+     that depends if you use wget (i.e. use use_external_bins=1 in 
+     oinkmaster.conf) or libwww-perl (use_external_bins=0). You can read 
+     their man pages for complete instructions configuration ("man wget" 
+     or "man LWP::UserAgent").
+
+     Quick instructions for the impatient:
+
+     For wget, you can either edit the wget configuration file (usually
+     /etc/wgetrc for global settings and ~/wgetrc for user settings) and 
+     set the http_proxy option. For example: 
+     "http_proxy = http://your_proxy_host:3128:/"
+     (or http_proxy = http://user:password@your_proxy_host:3128/ if you 
+     are required to authenticate to the proxy). You can also set the 
+     http_proxy environment variable. If you want your proxy server not to 
+     return the file in it's cache but rather get it from the web server 
+     again, add "header = Pragma: no-cache" to your wget configuration 
+     file.
+
+     For libwww-perl, set the http_proxy environment variable as 
+     described above (i.e. "http://your_proxy_host:3128:/" or 
+     "http://user:password@your_proxy_host:3128/").
