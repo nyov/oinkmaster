@@ -77,7 +77,6 @@ my %config = (
     varfile          => "",
     backupdir        => "",
     editor           => "",
-    perl             => "",
 );
 
 my %help = (
@@ -116,6 +115,7 @@ my %help = (
 
 
 my $gui_config_file = "";
+my $perl            = "";
 
 
 
@@ -165,7 +165,7 @@ EDITOR:foreach my $ed (@editors) {
 PERL:foreach my $dir (File::Spec->path()) {
     my $file = "$dir/perl";
     if ((-f "$file" && -x "$file") || (-f "$file.exe" && -x "$file.exe")) {
-        $config{perl} = $file;
+        $perl = $file;
         last PERL;
     }
 }
@@ -174,7 +174,7 @@ PERL:foreach my $dir (File::Spec->path()) {
 if ($ENV{HOME}) {
     $gui_config_file = "$ENV{HOME}/.oinkguirc"
 } elsif ($ENV{HOMEDRIVE} && $ENV{HOMEPATH}) {
-   $gui_config_file = "$ENV{HOMEDRIVE}$ENV{HOMEPATH}\\.oinkguirc";
+    $gui_config_file = "$ENV{HOMEDRIVE}$ENV{HOMEPATH}\\.oinkguirc";
 }
 
 
@@ -493,7 +493,7 @@ sub fileDialog($ $ $ $)
             $dirname = $fs->Show;
         }
         $$var_ref = $dirname if ($dirname);
-    } elsif ($type eq 'EXECFILE' || $type eq 'ROFILE' || $type eq 'WRFILE') {
+    } elsif ($type eq 'EXECFILE' || $type eq 'ROFILE' || $type eq 'WRFILE' || $type eq 'URL') {
         my $filename = $main->getOpenFile(-title => $title, -filetypes => $filetypes);
         $$var_ref = $filename if ($filename);
     } elsif ($type eq 'SAVEFILE') {
@@ -758,7 +758,7 @@ sub show_version()
     $config{oinkmaster} =~ s/^\s+//;
     $config{oinkmaster} =~ s/\s+$//;
 
-    unless ($config{perl} && -x "$config{perl}") {
+    unless ($perl && -x "$perl") {
         logmsg("Perl binary not found in PATH!\n\n", 'ERROR');
         return;
     }
@@ -768,7 +768,7 @@ sub show_version()
         return;
     }
 
-    my $cmd = "$config{perl} $config{oinkmaster} -V";
+    my $cmd = "$perl $config{oinkmaster} -V";
     logmsg("$cmd:\n", 'EXEC');
     my $output = `$cmd 2>&1` || "Could not execute $config{oinkmaster}: $!\n";
     logmsg("$output", 'OUTPUT');
@@ -782,7 +782,7 @@ sub show_help()
     $config{oinkmaster} =~ s/^\s+//;
     $config{oinkmaster} =~ s/\s+$//;
 
-    unless ($config{oinkmaster} && -x "$config{perl}") {
+    unless ($config{oinkmaster} && -x "$perl") {
         logmsg("Perl binary not found in PATH!\n\n", 'ERROR');
         return;
     }
@@ -792,7 +792,7 @@ sub show_help()
         return;
     }
 
-    my $cmd = "$config{perl} $config{oinkmaster} -h";
+    my $cmd = "$perl $config{oinkmaster} -h";
     logmsg("$cmd:\n", 'EXEC');
     my $output = `$cmd 2>&1` || "Could not execute $config{oinkmaster}: $!\n";
     logmsg("$output\n", 'OUTPUT');
@@ -833,7 +833,7 @@ sub test_config()
 {
     my @cmd;
 
-    unless ($config{perl} && -x "$config{perl}") {
+    unless ($perl && -x "$perl") {
         logmsg("Perl binary not found in PATH!\n\n", 'ERROR');
         return;
     }
@@ -929,7 +929,7 @@ sub create_cmdline($)
         }
     }
 
-    unless ($config{perl} && -x "$config{perl}") {
+    unless ($perl && -x "$perl") {
         logmsg("Perl binary not found in PATH!\n\n", 'ERROR');
         return (0);
     }
@@ -950,7 +950,7 @@ sub create_cmdline($)
     }
 
     push(@$cmd_ref, 
-      "$config{perl}", "$oinkmaster",
+      "$perl", "$oinkmaster",
       "-C", "$oinkmaster_conf", 
       "-o", "$outdir");
 
@@ -1012,6 +1012,9 @@ sub save_config()
         logmsg("Could not open $gui_config_file for writing: $!\n\n", 'ERROR');
         return;
     }
+
+    print RC "# Automatically created by Oinkgui. ".
+             "Do not edit directly unless you have to.\n";
 
     foreach my $option (sort(keys(%config))) {
         print RC "$option=$config{$option}\n";
