@@ -520,7 +520,20 @@ sub disable_and_modify_rules($ $ $)
 	open(OUTFILE, ">$file")
           or clean_exit("could not open $file for writing: $!");
 
-	RULELOOP:foreach my $line (@_) {
+        RULELOOP: while (my $line = shift(@_)) {
+
+          # Begin parsing multi-line rule if alert-line ends with "\".
+          # XXX should handle inactive rules without screwing up #examples etc...
+	    if ($line =~ /^\s*(?:alert|log|pass) .*\\\n$/) {
+	        my $multiline = $line;
+
+		while ($multiline =~ /\\\n$/) {
+                    $multiline =~ s/\\\n//;
+		    $multiline .= shift(@_);       # XXX || last?
+		}
+
+		$line = $multiline;
+            }
 
           # Only care about snort rules we understand.
           # (The other lines are printed right back to the file.)
@@ -650,6 +663,18 @@ sub setup_rules_hash($)
 
 	    while (my $oldline = <OLDFILE>) {
 	        $oldline =~ s/\s*\n$/\n/;          # remove trailing whitespaces (for rules and non-rules)
+
+	        if ($oldline =~ /^\s*(?:alert|log|pass) .*\\\n$/) {
+	            my $multiline = $oldline;
+
+  	  	    while ($multiline =~ /\\\n$/) {
+                        $multiline =~ s/\\\n//;
+		        $multiline .= <OLDFILE>;       # XXX || last?
+		    }
+
+		    $oldline = $multiline;
+                }
+
 
                 if ($oldline =~ /$SNORT_RULE_REGEXP/) {  # add rule line to hash
 		    my $sid = $2;
