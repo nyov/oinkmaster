@@ -160,9 +160,9 @@ sub show_usage()
 
 $VERSION
 
-Usage: $0 -o <dir> [options]
+Usage: $0 -o <output dir> [options]
 
-<dir> is where to put the new files.
+<output dir> is where to put the new files.
 This should be the directory where you store your snort.org rules.
 Note that your current files will be overwritten by the new ones
 if they had been modified.
@@ -342,7 +342,7 @@ sub sanity_check()
 
   # Make sure the backup directory exists and is writable if running with -b.
     clean_exit("the backup directory \"$config{backup_dir}\" doesn't exist or ".
-               " isn't writable by you.")
+               "isn't writable by you.")
       if (exists($config{backup_dir}) &&
         (!-d "$config{backup_dir}" || !-w "$config{backup_dir}"));
 }
