@@ -17,6 +17,7 @@ How to install
 
 The Oinkmaster GUI can be found as oinkgui.pl in Oinkmaster's contrib 
 directory. If you're lucky, you can just execute it right away.
+Minimum screen resolution required is 1024x800.
 
 The GUI is simply a front-end used to create the right command line and
 then execute Oinkmaster with it. In other words, oinkmaster.pl can be run 
