@@ -4,6 +4,8 @@
 
 # Copyright (C) 2004 Andreas Östling <andreaso@it.su.se>
 
+use 5.006001;
+
 use strict;
 use File::Spec;
 use Tk;
@@ -47,11 +49,11 @@ my @editors = qw(
     kwrite kate kedit gedit xemacs xedit wordpad
 );
 
-
 # List of URLs that will show up in the URL BrowseEntry.
 my @urls = qw(
-    http://www.snort.org/dl/rules/snortrules-stable.tar.gz
-    http://www.snort.org/dl/rules/snortrules-current.tar.gz
+    http://www.snort.org/dl/rules/snortrules-snapshot-2_0.tar.gz
+    http://www.snort.org/dl/rules/snortrules-snapshot-2_1.tar.gz
+    http://www.snort.org/dl/rules/snortrules-snapshot-CURRENT.tar.gz
 );
 
 my %color = (
@@ -331,10 +333,10 @@ create_actionbutton($left_frame, "Save current settings", \&save_config);
 
 # Create "options" label at the top of the left frame.
 $left_frame->Label(
-  -text       => "Options:",
-  -background => "$color{label}"
-)->pack(side  => 'top',
-        fill  => 'x'
+  -text        => "Options:",
+  -background  => "$color{label}"
+)->pack(-side  => 'top',
+        -fill  => 'x'
 );
 
 
@@ -357,10 +359,10 @@ $balloon->attach(
 
 # Create "mode" label.
 $left_frame->Label(
-  -text       => "Output mode:",
-  -background => "$color{label}"
-)->pack(side  => 'top',
-        fill  => 'x'
+  -text        => "Output mode:",
+  -background  => "$color{label}"
+)->pack(-side  => 'top',
+        -fill  => 'x'
 );
 
 # Create mode radiobuttons in the left frame.
