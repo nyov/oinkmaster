@@ -13,12 +13,15 @@ o You can now run without external binaries if you have the required
   You can set use_external_bins to 0 or 1 in oinkmaster.conf to override
   the default. 0 means to use the Perl modules, 1 means to use external
   binaries. It's set to 0 by default on Win32 (since the required
-  Perl modules are already included in ActivePerl), and 1 on other systems 
-  (i.e. same behavior as before). This makes it much easier to install 
-  Oinkmaster on Windows/ActivePerl. See the new default oinkmaster.conf
-  for more information.
+  Perl modules are already included in ActivePerl 5.8.1+), and 1 on other
+  systems (i.e. same behavior as before). This makes it much easier to
+  install Oinkmaster on Windows/ActivePerl. See the new default
+  oinkmaster.conf for more information.
 o Most contrib scripts have been improved with misc minor feature updates
-  and small bug fixes.
+  and small bug fixes. makesidex.pl has been rewritten to handle 
+  multi-line rules and multiple rules directories. It will now also
+  include the rule's "msg" string as a comment on each disablesid line
+  it prints. Usage syntax is unchanged.
 o A fully featured graphical multi-platform front-end to Oinkmaster 
   written in Perl/Tk is included in the contrib directory (oinkgui.pl). 
   See README.gui for more information. Screenshots are available on
