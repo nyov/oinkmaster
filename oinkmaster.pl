@@ -444,10 +444,10 @@ sub sanity_check()
     if ($update_vars) {
 	$config{varfile} = untaint_path($config{varfile});
 
-        clean_exit("file $config{varfile} does not exist.")
+        clean_exit("variable file $config{varfile} does not exist.")
           unless (-e "$config{varfile}");
 
-        clean_exit("file $config{varfile} is not writable by you.")
+        clean_exit("variable file $config{varfile} is not writable by you.")
           if (!$careful && !-w "$config{varfile}");
     }
 
