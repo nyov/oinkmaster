@@ -25,7 +25,7 @@ information.
 
 The GUI is written in Perl and requires the Perl Tk module.
 You must also make sure the Perl binary is in your PATH (it normally is).
-If you're on Unix and don't have the module already, install it from
+If you're on Unix and don't have the Tk module already, install it from
 your ports/package system or get the latest version from
 http://www.cpan.org/authors/id/NI-S/. At the time of writing, 
 http://www.cpan.org/authors/id/NI-S/Tk-800.024.tar.gz is probably the one 
@@ -33,11 +33,11 @@ you'll want. Unpack it and run "perl Makefile.pl && make && make install"
 and you should then be able to start the GUI by running oinkgui.pl.
 
 If you're on Windows with ActivePerl, you do not need any extra module
-since everything is probably installed already. Should the Tk Perl module 
-be missing, you can install it with the command "ppm install Tk" in a DOS
-shell. If you want a non-ugly interface when browsing for directories, you
-need to install the Win32::FileOp module. This is strongly recommended and
-is as simple as typing "ppm install Win32::FileOp" in a DOS shell.
+since everything is probably installed already. Should the Tk module be 
+missing, you can install it with the command "ppm install Tk" in a DOS
+shell. If you want a non-ugly interface when browsing for directories, 
+you need to install the Win32::FileOp module. This is strongly recommended 
+and is as simple as typing "ppm install Win32::FileOp" in a DOS shell.
 
 After you've made sure you have the Tk module installed, simply execute
 oinkgui.pl (it's found in Oinkmaster's contrib directory, and you may
@@ -53,21 +53,22 @@ Usage
 When you start the GUI for the first time, all required files/directories 
 will not be automatically set (although some of them may be).
 All entries under the "Required files and directories" tab must 
-be set correctly or you will not be able to do anything. When they are set 
-correctly (i.e. when all the labels have turned green), you are ready to 
-go. The files/directories under the "Optional files and directories" 
+be set correctly or you will not be able to do anything. When they are 
+set correctly (i.e. when all the labels have turned green), you are ready 
+to go. The files/directories under the "Optional files and directories" 
 tab are not required and if you leave a field empty, that option will
 simply not be used.
 
 When all required fields are set, it's recommended to push the 
-"Test configuration" button. This will execute Oinkmaster and make it test 
-its configuration and then exit. If the configuration test is successful,
-you should be ready to update the rules.
+"Test configuration" button. This will execute Oinkmaster and make it 
+test its configuration and then exit. If the configuration test is 
+successful, you should be ready to update the rules by pushing the
+"Update rules!" button.
 
 When you're happy with all the filename entries and options, you probably 
-want to push the "Save config" button. All GUI settings will then be saved
-to a configuration file which you can load later with then "Load config" 
-button. It's also loaded automatically on startup.
+want to push the "Save config" button. All GUI settings will then be 
+saved to a configuration file (~/.oinkguirc) which you can load later 
+with the "Load config" button. It's also loaded automatically on startup.
 
 Hint: Place the mouse pointer over a button or filename entry and 
 a short help message will be displayed under the big black output window.
