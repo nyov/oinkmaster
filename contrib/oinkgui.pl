@@ -169,21 +169,21 @@ my $req_tab = $notebook->add("required",
 
 # Create frame with oinkmaster.pl location.
 my ($oinkscript_frame, $oinkscript_label, $oinkscript_entry, $oinkscript_but) = 
-  create_fileSelectFrame($req_tab, "Oinkmaster.pl", 'FILE');
+  create_fileSelectFrame($req_tab, "Oinkmaster.pl", 'EXECFILE');
 
 $balloon->attach($oinkscript_frame, -statusmsg => $help{oinkscript});
 
 
-# Create frame with oinkmaster.pl location.
+# Create frame with oinkmaster.conf location.
 my ($oinkconf_frame, $oinkconf_label, $oinkconf_entry, $oinkconf_but) = 
-  create_fileSelectFrame($req_tab, "Oinkmaster.conf", 'FILE');
+  create_fileSelectFrame($req_tab, "Oinkmaster.conf", 'ROFILE');
 
 $balloon->attach($oinkconf_frame, -statusmsg => $help{oinkconf});
 
 
 # Create frame with output directory. XXX must be able to select dir only.
 my ($outdir_frame, $outdir_label, $outdir_entry, $outdir_but) = 
-  create_fileSelectFrame($req_tab, "Output directory", 'DIR');
+  create_fileSelectFrame($req_tab, "Output directory", 'WRDIR');
 
 $balloon->attach($outdir_frame, -statusmsg => $help{outdir});
 
@@ -198,21 +198,21 @@ my $opt_tab = $notebook->add("optional",
 
 # Create frame with alternate URL location. XXX choice between stable/current/local.
 my ($url_frame, $url_label, $url_entry, $url_but) = 
-  create_fileSelectFrame($opt_tab, "Alternate URL", 'FILE');
+  create_fileSelectFrame($opt_tab, "Alternate URL", 'ROFILE');
 
 $balloon->attach($url_frame, -statusmsg => $help{url});
 
 
 # Create frame with variable file.
 my ($varfile_frame, $varfile_label, $varfile_entry, $varfile_but) = 
-  create_fileSelectFrame($opt_tab, "Variable file", 'FILE');
+  create_fileSelectFrame($opt_tab, "Variable file", 'WRFILE');
 
 $balloon->attach($varfile_frame, -statusmsg => $help{varfile});
 
 
 # Create frame with backup dir location. XXX must be able to select dir only.
 my ($backupdir_frame, $backupdir_label, $backupdir_entry, $backupdir_but) = 
-  create_fileSelectFrame($opt_tab, "Backup directory", 'DIR');
+  create_fileSelectFrame($opt_tab, "Backup directory", 'WRDIR');
 
 $balloon->attach($backupdir_frame, -statusmsg => $help{backupdir});
 
@@ -383,7 +383,7 @@ if ($gui_config{oinkmaster_config_file} !~ /\S/) {
 } else {
     $oinkconf_entry->delete(0.0, 'end');
     $oinkconf_entry->insert(0.0, "$gui_config{oinkmaster_config_file}");
-    update_file_label_color($oinkconf_label, $oinkconf_entry->get, 'FILE'); 
+    update_file_label_color($oinkconf_label, $oinkconf_entry->get, 'ROFILE'); 
 }
 
 if ($gui_config{oinkmaster} !~ /\S/) {
@@ -391,7 +391,7 @@ if ($gui_config{oinkmaster} !~ /\S/) {
 } else {
     $oinkscript_entry->delete(0.0, 'end');
     $oinkscript_entry->insert(0.0, "$gui_config{oinkmaster}");
-    update_file_label_color($oinkscript_label, $oinkscript_entry->get, 'FILE');
+    update_file_label_color($oinkscript_label, $oinkscript_entry->get, 'EXECFILE');
 }
 
 if ($gui_config{outdir} !~ /\S/) {
@@ -399,7 +399,7 @@ if ($gui_config{outdir} !~ /\S/) {
 } else {
     $outdir_entry->delete(0.0, 'end');
     $outdir_entry->insert(0.0, "$gui_config{outdir}");
-    update_file_label_color($outdir_label, $outdir_entry->get, 'DIR');
+    update_file_label_color($outdir_label, $outdir_entry->get, 'WRDIR');
 }
 
 
@@ -426,7 +426,6 @@ sub fileDialog($ $)
     if ($filename) {
         $entry->delete('0.0', 'end');
         $entry->insert('0.0', $filename);
-        logmsg("$filename selected\n\n", 'white');
     }
 }
 
@@ -436,7 +435,7 @@ sub update_file_label_color($ $ $)
 {
     my $label    = shift;
     my $filename = shift;
-    my $type     = shift;  # FILE|DIR
+    my $type     = shift;
 
     $filename =~ s/^\s+//;
     $filename =~ s/\s+$//;
@@ -446,25 +445,45 @@ sub update_file_label_color($ $ $)
         return (1);
     }
 
-    if ($type eq "FILE") {
-        if (-f "$filename") {
+    if ($type eq "ROFILE") {
+        if (-f "$filename" && -r "$filename") {
             $label->configure(-background => "#00e000");
         } else {
             $label->configure(-background => 'red');
         }
         return (1);
-    }
-
-    if ($type eq "DIR") {
+    } elsif ($type eq "EXECFILE") {
+        if (-f "$filename" && -x "$filename") {
+            $label->configure(-background => "#00e000");
+        } else {
+            $label->configure(-background => 'red');
+        }
+        return (1);
+    } elsif ($type eq "WRFILE") {
+        if (-f "$filename" && -w "$filename") {
+            $label->configure(-background => "#00e000");
+        } else {
+            $label->configure(-background => 'red');
+        }
+        return (1);
+    } elsif ($type eq "RODIR") {
+        if (-d "$filename" && -r "$filename") {
+            $label->configure(-background => "#00e000");
+        } else {
+            $label->configure(-background => 'red');
+        }
+        return (1);
+    } elsif ($type eq "WRDIR") {
         if (-d "$filename" && -w "$filename") {
             $label->configure(-background => "#00e000");
         } else {
             $label->configure(-background => 'red');
         }
         return (1);
+    } else {
+       print STDERR "incorrect type ($type)\n";
+       exit;
     }
-
-    return (1);
 }
 
 
@@ -579,7 +598,7 @@ sub create_fileSelectFrame($ $ $)
       -command    => sub {
                             fileDialog($entry, $name);
                             update_file_label_color($label, $entry->get, $type);
-                          }
+                         }
     )->pack(
       -side       => 'left'
     );
@@ -787,27 +806,27 @@ sub load_config()
 
     $oinkscript_entry->delete(0.0, 'end');
     $oinkscript_entry->insert(0.0, "$gui_config{oinkmaster}");
-    update_file_label_color($oinkscript_label, $oinkscript_entry->get, 'FILE');    
+    update_file_label_color($oinkscript_label, $oinkscript_entry->get, 'EXECFILE');    
 
     $oinkconf_entry->delete(0.0, 'end');
     $oinkconf_entry->insert(0.0, "$gui_config{oinkmaster_config_file}");
-    update_file_label_color($oinkconf_label, $oinkconf_entry->get, 'FILE');
+    update_file_label_color($oinkconf_label, $oinkconf_entry->get, 'ROFILE');
 
     $outdir_entry->delete(0.0, 'end');
     $outdir_entry->insert(0.0, "$gui_config{outdir}");
-    update_file_label_color($outdir_label, $outdir_entry->get, 'DIR');
+    update_file_label_color($outdir_label, $outdir_entry->get, 'WRDIR');
 
     $url_entry->delete(0.0, 'end');
     $url_entry->insert(0.0, "$gui_config{url}");
-    update_file_label_color($url_label, $url_entry->get, 'FILE');
+    update_file_label_color($url_label, $url_entry->get, 'ROFILE');
 
     $varfile_entry->delete(0.0, 'end');
     $varfile_entry->insert(0.0, "$gui_config{varfile}");
-    update_file_label_color($varfile_label, $varfile_entry->get, 'FILE');
+    update_file_label_color($varfile_label, $varfile_entry->get, 'WRFILE');
 
     $backupdir_entry->delete(0.0, 'end');
     $backupdir_entry->insert(0.0, "$gui_config{backupdir}");
-    update_file_label_color($backupdir_label, $backupdir_entry->get, 'DIR');
+    update_file_label_color($backupdir_label, $backupdir_entry->get, 'WRDIR');
 }
 
 
