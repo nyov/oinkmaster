@@ -25,7 +25,7 @@ ActivePerl
   installation. It contains all required Perl modules.
 
 - You need a few GNU utilities compiled for native Win32.
-  The required binaries are "rm.exe", "gzip.exe", "tar.exe", and "wget.exe".
+  The required binaries are "gzip.exe", "tar.exe", and "wget.exe".
   The easiest may be to download the latest package from 
   http://unxutils.sourceforge.net/ which contains all of these, among 
   others. Simply copy the previously mentioned binaries from this package 

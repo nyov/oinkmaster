@@ -6,6 +6,7 @@ use strict;
 use Cwd;
 use File::Basename;
 use File::Copy;
+use File::Path;
 use Getopt::Std;
 
 sub show_usage();
@@ -245,7 +246,7 @@ Options:
 -u <url>   Download from this URL (http://, ftp:// or file:// ...tar.gz)
            instead of the URL specified in the configuration file
 -U <file>  Variables that exist in downloaded snort.conf but not in <file>
-           will be added to this file (usually your production snort.conf).
+           will be added to this file (usually your production snort.conf)
 -v         Verbose mode
 -V         Show version and exit
 
@@ -1228,14 +1229,14 @@ sub get_new_filenames($ $)
 
 
 
-# Copy modified rules to the output directory.
+# Simply copy the modified rules files to the output directory.
 sub update_rules($ @)
 {
     my $dst_dir        = shift;
     my @modified_files = @_;
 
     foreach my $file_w_path (@modified_files) {
-        copy("$file_w_path", "$dst_dir/")
+        copy("$file_w_path", "$dst_dir")
           or clean_exit("could not copy $file_w_path to $dst_dir: $!");
     }
 }
@@ -1564,8 +1565,7 @@ sub clean_exit($)
 {
     if (defined($tmpdir)) {
         chdir('/');
-        system("rm","-r","-f","$tmpdir")
-          and warn("WARNING: unable to remove temporary directory $tmpdir.\n");
+        rmtree("$tmpdir", 0, 1);
     }
 
     if ($_[0] eq "") {
