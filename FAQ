@@ -290,7 +290,7 @@ A11: No. (Not unless there is a bug in Oinkmaster anyway.) Oinkmaster was
 Q12: What license are the official Snort rules reeased under, and
      can I modify them without violating it?
 
-A12: Brian Caswell has answered this a few times on the Snort lists,
+A12: The Snort people have answered this a few times on the Snort lists,
      but here is a small summary. The official Snort signatures are
      part of Snort and are therefore also released under GPL.
      You can modify them locally as much as you want, but if
