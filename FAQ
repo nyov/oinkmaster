@@ -1,6 +1,17 @@
 Oinkmaster FAQ
 --------------
 
+Q1:  I want to download the rules archive using the program XXXXX, which I
+Q2:  Can Oinkmaster be useful for distributing rules locally to my sensors?
+Q3:  Can Oinkmaster be useful for distributing my homemade rules to my sensors?
+Q4:  In which order will 'modifysid'/'disablesid'/'enablesid' be processed?
+Q5:  How can the 'include' statement in oinkmaster.conf be useful?
+Q6:  Can Oinkmaster restart Snort after an update?
+Q7:  Can I tell Oinkmaster to not touch certain SIDs in sid-msg.map so the
+Q8:  I want to copy the rules archive from a remote host to the sensor via scp 
+
+
+
 
 Q1:  I want to download the rules archive using the program XXXXX, which I
      can't do with Oinkmaster. What do I do?
