@@ -63,11 +63,11 @@ my $enable_all        = 0;
 
 
 # Regexp to match the start of a multi-line rule.
-my $MULTILINE_RULE_REGEXP  = '^\s*#*\s*(?:alert|drop|log|pass|reject|sdrop)'.
+my $MULTILINE_RULE_REGEXP  = '^\s*#*\s*(?:alert|drop|log|pass|reject|sdrop|activate|dynamic)'.
                              '\s.*\\\\\s*\n$'; # ';
 
 # Regexp to match a single-line rule.
-my $SINGLELINE_RULE_REGEXP = '^\s*#*\s*(?:alert|drop|log|pass|reject|sdrop)'.
+my $SINGLELINE_RULE_REGEXP = '^\s*#*\s*(?:alert|drop|log|pass|reject|sdrop|activate|dynamic)'.
                              '\s.+;\s*\)\s*$';
 
 # Match var line where var name goes into $1.

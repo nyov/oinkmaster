@@ -23,12 +23,12 @@ RTFM
 
 # Regexp to match a snort rule line. The msg string will go into $1 and
 # the sid will go into $2.
-my $SINGLELINE_RULE_REGEXP = '^\s*#*\s*(?:alert|drop|log|pass|reject|sdrop)'.
+my $SINGLELINE_RULE_REGEXP = '^\s*#*\s*(?:alert|drop|log|pass|reject|sdrop|activate|dynamic)'.
                              '\s.+msg\s*:\s*"(.+?)"\s*;.*sid\s*:\s*(\d+)'.
                              '\s*;.*\)\s*$'; # ';
 
 # Regexp to match the start (the first line) of a possible multi-line rule.
-my $MULTILINE_RULE_REGEXP  = '^\s*#*\s*(?:alert|drop|log|pass|reject|sdrop)'.
+my $MULTILINE_RULE_REGEXP  = '^\s*#*\s*(?:alert|drop|log|pass|reject|sdrop|activate|dynamic)'.
                              '\s.*\\\\\s*\n$'; # ';
 
 my $config   = shift || die($USAGE);

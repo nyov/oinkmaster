@@ -23,11 +23,11 @@ my $ADD_REV = 1;
 my $MIN_SID = 1000001;
 
 # Regexp to match a snort rule line. SID must not be required in this one.
-my $SINGLELINE_RULE_REGEXP = '^\s*#*\s*(?:alert|drop|log|pass|reject|sdrop) '.
+my $SINGLELINE_RULE_REGEXP = '^\s*#*\s*(?:alert|drop|log|pass|reject|sdrop|activate|dynamic) '.
                              '.+msg\s*:\s*"(.+?)"\s*;.*\)\s*$'; # ';
 
 # Regexp to match the start (the first line) of a possible multi-line rule.
-my $MULTILINE_RULE_REGEXP = '^\s*#*\s*(?:alert|drop|log|pass|reject|sdrop)\s.*\\\\\s*\n$'; # ';
+my $MULTILINE_RULE_REGEXP = '^\s*#*\s*(?:alert|drop|log|pass|reject|sdrop|activate|dynamic)\s.*\\\\\s*\n$'; # ';
 
 
 my $USAGE = "usage: $0 <rulesdir> [rulesdir2, ...]\n";
