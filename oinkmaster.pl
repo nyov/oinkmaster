@@ -1040,6 +1040,7 @@ sub process_rules($ $ $ $)
 	          if ($config{verbose});
                 $multi =~ s/^#*//;
                 $multi =~ s/\n#*/\n/g;
+                $stats{enabled}++;
 	    }
 
           # Modify rule if requested. For disablesid/enablesid we work
