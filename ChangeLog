@@ -1,5 +1,31 @@
 # $Id$ #
 
+Oinkmaster v1.1 - 200xxxxx
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+o New option -m to minimize/simplify the resulting output for modified
+  rules. This means that identical leading and trailing parts of the
+  new and old rule are removed so the actual change is much easier to
+  see. Some characters to the left and right of the diffing parts
+  are kept to get some context. 
+  Without -m, the output could look like:
+    Old: alert tcp any any -> any 22 (msg: "foo"; flow:established,to_server;)
+    New: alert tcp any any -> any 123 (msg: "foo"; flow:established,to_server;)
+  With -m it would look something like:
+    Old: ... any any -> any 22 (msg: "foo";...
+    New: ... any any -> any 123 (msg: "foo";...
+o Multi-line configuration directives are now allowed in oinkmaster.conf.
+o Support template-based modifysid expressions so you can define a template
+  once and then use that one instead of repeating complex modifysid
+  expressions. More documentation and lots of examples can be found in
+  the template-examples.conf file.
+o All modifysid substitutions on multi-line rules (including when using
+  templates) now work on the single-line version of the rule so that you
+  don't have to care about where the trailing backslashes and newlines are.
+o When running in super quiet mode (-Q), possible warnings about
+  duplicate SIDs in the downloaded rules are suppressed.
+
+
+
 Oinkmaster v1.0 - 20040515
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 o Default URL in distribution oinkmaster.conf is now
