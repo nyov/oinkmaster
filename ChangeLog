@@ -1,6 +1,6 @@
 # $Id$ #
 
-Oinkmaster v1.0 - 200xxxxx
+Oinkmaster v1.0 - 20040509
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 o Default URL in distribution oinkmaster.conf is now
   http://www.snort.org/dl/rules/snortrules-snapshot-2_1.tar.gz. Don't
