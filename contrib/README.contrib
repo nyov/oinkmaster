@@ -1,7 +1,7 @@
 --------------------------------------------------------------------------------
 * addsid.pl by Andreas Östling <andreaso@it.su.se>
 
-  A script that parses *.rules in a directory and adds a SID to rules
+  A script that parses *.rules in a directory and adds a SID to (active) rules
   that don't have any. (Actually, rev and classtype are also added if 
   missing, unless you edit addsid.pl and tune this.) The script first  
   looks for the current highest SID and starts at SID+1, unless this is 
