@@ -69,10 +69,12 @@ my %config = (
 
 # Regexp to match the start of a multi-line rule.
 # %ACTIONS% will be replaced with content of $config{actions} later.
+# sid and msg will then be looked for in parse_singleline_rule().
 my $MULTILINE_RULE_REGEXP  = '^\s*#*\s*(?:%ACTIONS%)'.
                              '\s.*\\\\\s*\n$'; # ';
 
 # Regexp to match a single-line rule.
+# sid and msg will then be looked for in parse_singleline_rule().
 my $SINGLELINE_RULE_REGEXP = '^\s*#*\s*(?:%ACTIONS%)'.
                              '\s.+;\s*\)\s*$'; # ';
 
