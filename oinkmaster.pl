@@ -329,7 +329,7 @@ sub parse_cmdline($)
                  }
     );
 
-    show_usage unless ($cmdline_ok);
+    show_usage unless ($cmdline_ok && $#ARGV == -1);
 
     $$cfg_ref{quiet}       = 1 if ($$cfg_ref{super_quiet});
     $$cfg_ref{update_vars} = 1 if ($$cfg_ref{varfile});
