@@ -133,9 +133,7 @@ $tmpdir = make_tempdir($tmp_basedir);
 # Set new umask if one was specified in the config file.
 umask($config{umask}) if exists($config{umask});
 
-# Download the rules archive.
-# This will leave us with the file $tmpdir/$OUTFILE
-# (/tmp/oinkmaster.$$/snortrules.tar.gz). Will exit if download fails.
+# Download the rules archive. Will exit if it fails.
 download_rules("$config{url}", "$tmpdir/$OUTFILE");
 
 # Verify and unpack archive. This will leave us with a directory
@@ -292,8 +290,7 @@ sub parse_cmdline($)
     }
 
     if (defined($opt_b)) {
-        $$cfg_ref{backup_dir} = $opt_b;
-        $$cfg_ref{backup_dir} ne "/" && $$cfg_ref{backup_dir} =~ s/\/+$//;
+        $$cfg_ref{backup_dir} = File::Spec->canonpath($opt_b);
         $make_backup = 1;
     }
 
@@ -313,8 +310,7 @@ sub parse_cmdline($)
 
   # -o <dir> is the only required option in normal usage.
     if (defined($opt_o)) {
-        $$cfg_ref{output_dir} = $opt_o;
-        $$cfg_ref{output_dir} ne "/" && $$cfg_ref{output_dir} =~ s/\/+$//;
+        $$cfg_ref{output_dir} = File::Spec->canonpath($opt_o);
     } else {
         show_usage();
     }
@@ -1642,7 +1638,7 @@ sub approve_changes()
 sub clean_exit($)
 {
     if (defined($tmpdir)) {
-        chdir('/');
+        chdir(File::Spec->rootdir());
         rmtree("$tmpdir", 0, 1);
     }
 
