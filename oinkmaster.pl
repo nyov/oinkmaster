@@ -375,6 +375,9 @@ sub download_rules($ $)
 	clean_exit("the file $url does not exist.")
           unless (-e "$url");
 
+	clean_exit("the file $url is empty.")
+          unless (-s "$url");
+
         print STDERR "Copying rules archive from $url... "
           unless ($quiet);
 
@@ -385,11 +388,14 @@ sub download_rules($ $)
 	  unless ($quiet);
     }
 
-  # Make sure the downloaded file is at least non-empty.
-    unless (-s "$localfile") {
-        clean_exit("failed to get rules archive: file $localfile ".
-                   "doesn't exist or hasn't non-zero size after download.");
-    }
+  # Make sure the downloaded file actually exists.
+    clean_exit("failed to get rules archive: local target file $localfile doesn't exist after download.")
+      unless (-e "$localfile");
+
+  # Also make sure it's at least non-empty.
+    clean_exit("failed to get rules archive: local target file $localfile is empty after download ".
+               "(perhaps you're out of diskspace or file in url is empty?)")
+      unless (-s "$localfile");
 }
 
 
