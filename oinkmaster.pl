@@ -32,7 +32,8 @@ sub clean_exit($);
 
 
 my $VERSION           = 'Oinkmaster v0.8 by Andreas Östling <andreaso@it.su.se>';
-my $tmp_basedir       = "/tmp";
+my $OUTFILE           = "snortrules.tar.gz";
+my $DIST_SNORT_CONF   = "rules/snort.conf";  # where (inside tmpdir) to look for new variables
 
 my $PRINT_NEW         = 1;
 my $PRINT_OLD         = 2;
@@ -42,8 +43,7 @@ my $min_rules         = 1;   # default number of required rules
 my $min_files         = 1;   # default number of required files
 
 my $config_file       = "/usr/local/etc/oinkmaster.conf";
-my $outfile           = "snortrules.tar.gz";
-my $dist_snort_conf   = "rules/snort.conf";  # where (inside tmpdir) to look for new variables
+my $tmp_basedir       = "/tmp";
 
 my $verbose           = 0;
 my $careful           = 0;
@@ -57,10 +57,11 @@ my $update_vars       = 0;
 # Multiline rules are currently not handled, but at this time,
 # all of the official rules are one rule per line. The msg string
 # will go into $1 and the sid will go into $2 if the regexp matches.
-my $SINGLELINE_RULE_REGEXP = '^\s*#*\s*(?:alert|log|pass)\s.+msg\s*:\s*"(.+?)"\s*;.*sid\s*:\s*(\d+)\s*;.*\)\s*$';
+my $SINGLELINE_RULE_REGEXP = '^\s*#*\s*(?:alert|log|pass)\s.+msg\s*:\s*"(.+?)'.
+                             '"\s*;.*sid\s*:\s*(\d+)\s*;.*\)\s*$'; # ';
 
 # Regexp to match the start (the first line) of a possible multi-line rule.
-my $MULTILINE_RULE_REGEXP = '^\s*#*\s*(?:alert|log|pass)\s.*\\\\\s*\n$';
+my $MULTILINE_RULE_REGEXP = '^\s*#*\s*(?:alert|log|pass)\s.*\\\\\s*\n$'; # ';
 
 
 use vars qw
@@ -103,14 +104,14 @@ sanity_check();
 umask($config{umask}) if exists($config{umask});
 
 # Download the rules archive.
-# This will leave us with the file $tmpdir/$outfile
+# This will leave us with the file $tmpdir/$OUTFILE
 # (/tmp/oinkmaster.$$/snortrules.tar.gz). Will exit if download fails.
-download_rules("$config{url}", "$tmpdir/$outfile");
+download_rules("$config{url}", "$tmpdir/$OUTFILE");
 
 # Verify and unpack archive. This will leave us with a directory
 # called "rules/" in the same directory as the archive, containing the
 # new rules. Will exit if something fails.
-unpack_rules_archive("$tmpdir/$outfile");
+unpack_rules_archive("$tmpdir/$OUTFILE");
 
 # Create list of new files (with full path) that we care about from the
 # downloaded archive. Filenames (with full path) will be stored as %new_files{filenme}.
@@ -140,7 +141,7 @@ my %rh = setup_rules_hash(\%new_files);
 my %changes = get_changes(\%rh, \%new_files);
 
 # Check for variables that exist in dist snort.conf but not in local snort.conf.
-get_new_vars(\%changes, $config{varfile}, "$tmpdir/$dist_snort_conf")
+get_new_vars(\%changes, $config{varfile}, "$tmpdir/$DIST_SNORT_CONF")
   if ($update_vars);
 
 
@@ -221,7 +222,7 @@ Options:
 -U <file>  Variables that exist in the distribution snort.conf but not in <file>
            will be inserted at the top of it. This is probably your snort.conf.
 -v         Verbose mode
--V         Show version and exit
+-V         Show version and exit;
 
 RTFM
     exit;
@@ -251,8 +252,12 @@ sub parse_cmdline($)
         $super_quiet = 1;
     }
 
-    show_usage()                   if (defined($opt_h));
-    die("$VERSION\n")              if (defined($opt_V));
+    show_usage() if (defined($opt_h));
+
+    if (defined($opt_V)) {
+        print "$VERSION\n";
+        exit(0);
+    }
 
     show_usage unless ($cmdline_ok);
 
