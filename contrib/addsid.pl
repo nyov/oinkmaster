@@ -20,7 +20,7 @@ my $classtype = "misc-attack";
 my $min_sid = 1000000;
 
 my $rulesdir = shift || die("$USAGE");
-my $sid      = shift || die("$USAGE");
+my $sid      = shift || die("$USAGE");   # XXX should start with the next available SID by default? but option should remain
 
 die("sid to start with must be at least $min_sid!\n")
   unless ($sid >= $min_sid);
