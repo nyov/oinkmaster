@@ -317,3 +317,4 @@ o Don't depend too much on this script for the rules updating process.
 o To avoid problems when running under Win32/Cygwin, you should only use
   Cygwin-style paths (e.g. "/cygdrive/c/foo" instead of "c:\foo").
 
+o Hint: You can use Oinkmaster for managing your homemade rules as well.
