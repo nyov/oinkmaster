@@ -21,11 +21,6 @@ o Permit scp://<user>@<remotehost>:<file.tar.gz> in url specification.
   oinkmaster.conf (or set it in ~/.ssh/config).
 o You can now specify "-i" for interactive mode. You will be asked to
   approve the changes before Oinkmaster modifies anything.
-o Perl is now started with tainting checks enabled by default.
-  If you're on Windows with ActivePerl or Cygwin (without a cygwin shell) 
-  you'll have to make sure you start oinkmaster by calling 
-  "perl -T oinkmaster.pl ..." to avoid getting the error message 
-  'Too late for "-T" option ...'.
 o Added 'enablesid' option to oinkmaster.conf.
 o Slightly improved rules parsing (order of sid and msg does not matter).
 o oinkmaster.conf will be searched for in /etc/ and /usr/local/etc/ by default.

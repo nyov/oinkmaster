@@ -6,17 +6,7 @@ a quick look at the new documentation and default oinkmaster.conf
 for new options and features.
 
 Here are a few notes about issues between specific versions that might 
-require some attention.
-
-
-
-0.8 -> 0.9
-----------
-Perl is now started with tainting checks enabled by default.
-If you're on Windows with ActivePerl or Cygwin (without a cygwin shell) 
-you'll have to make sure you start oinkmaster by calling "perl -T 
-oinkmaster.pl ..." to avoid getting the error message 'Too late for "-T" 
-option ...'.
+require some attention. 
 
 
 

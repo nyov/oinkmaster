@@ -30,11 +30,10 @@ o When using Cygwin (standalone or from within a Cygwin shell) you should
 o Remember that filenames/directories with spaces specified on the 
   command line needs to be quoted, e.g. -C "c:\some directory\oinkmaster.conf"
 
-o You may want to download EagleX from Engage Security
-  (http://www.engagesecurity.com/products/eaglex/)
-  which among many other things contains Oinkmaster (ready to run as a 
-  standalone Cygwin program without requiring a full Cygwin installation) 
-  and a graphical interface to it. 
+o Depending on your Perl installation, you may or may not be able to call
+  oinkmaster.pl directly. If .pl files are not associated with your Perl
+  on your system, you must run "perl oinkmaster.pl ..." instead of just 
+  "oinkmaster.pl ..."
 
 o Oinkmaster is not as well tested on Windows as on UNIX, so please report 
   any issues you may find.
@@ -68,13 +67,9 @@ ActivePerl
 
 - Done!
 
-Now you should be able to run Oinkmaster. 
-you must start Oinkmaster by calling the Perl interpreter with "-T" and
-oinkmaster.pl and it's options as argument. 
-Calling oinkmaster.pl directly will yield a 'Too late for "-T" option ...'
-error message. Usage exmple:
+Now you should be able to run Oinkmaster. Usage exmple:
 
-c:\perl\bin\perl -T c:\oink\oinkmaster.pl -C c:\oink\oinkmaster.conf -o c:\oink\rules
+c:\perl\bin\perl c:\oink\oinkmaster.pl -C c:\oink\oinkmaster.conf -o c:\oink\rules
 
 Again, your paths may be different.
 
@@ -133,9 +128,7 @@ without first starting a Cygwin shell.
 
 Now you should be able to run Oinkmaster. (You probably want to start a 
 cmd.exe shell first so you see what's going on.)
-You must start Oinkmaster by calling the Perl interpreter with "-T" and
-oinkmaster.pl and it's options as argument. 
 For example, if Cygwin is installed in c:\cygwin and Oinkmaster and the 
 rules directory is in c:\oink\, you can run:
 
-c:\cygwin\bin\perl -T c:\oink\oinkmaster.pl -C c:\oink\oinkmaster.conf -o c:\oink\rules
+c:\cygwin\bin\perl c:\oink\oinkmaster.pl -C c:\oink\oinkmaster.conf -o c:\oink\rules
