@@ -6,6 +6,7 @@ my $usage = "usage: $0 <rulesdir>\n";
 
 my $rulesdir = shift || die("$usage");
 
+my %sidmap;
 
 opendir(RULESDIR, "$rulesdir") or die("could not open $rulesdir: $!\n");
 
@@ -47,15 +48,16 @@ while ($file = readdir(RULESDIR)) {
 	if (defined($single) && $single =~ /msg\s*:\s*"(.+?)"\s*;.*sid\s*:\s*(\d+)\s*;/) {
             my $msg = $1;
             my $sid = $2;
-            print "$sid || $msg";
+            $sidmap{$sid} = "$sid || $msg";
 
           # Print all references. Borrowed from Brian Caswell's regen-sidmap script.
             my $ref = $single;
             while ($ref =~ s/(.*)reference\s*:\s*([^\;]+)(.*)$/$1 $3/) {
-	        print " || $2";
+                $sidmap{$sid} .= " || $2"
             }
 
-            print "\n";
+            $sidmap{$sid} .= "\n";
+
         } elsif (defined($single)) {
             print STDERR "Warning: unable to parse rule: $single";
         }
@@ -64,3 +66,8 @@ while ($file = readdir(RULESDIR)) {
 
 }
 closedir(RULESDIR);
+
+# Print results.
+foreach my $sid (sort { $a <=> $b } keys(%sidmap)) {
+    print "$sidmap{$sid}";
+}
