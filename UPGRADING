@@ -1,6 +1,7 @@
 # $Id$ #
 
-Usually just overwrite the old oinkmaster.pl file with the new one.
+Usually you just overwrite the old oinkmaster.pl file with the 
+new one and then run as usual.
 Here are a few notes about issues in some specific versions:
 
 
@@ -8,7 +9,10 @@ Here are a few notes about issues in some specific versions:
   you should know that the arguments to 'modifysid' are now regarded as 
   regular expressions, which may (or may not) mean that you have to adjust 
   your arguments to reflect this.
-
+  There are also a few new options you may want to specify in your
+  oinkmaster.conf (see the default one for explanations and exaples), 
+  although none of them are required.
+  
 
 - When upgrading to v0.7, you should know that oinkmaster.conf will now
   be searched for in /usr/local/etc/ by default (instead of in the current
