@@ -55,6 +55,7 @@ sub sanity_check();
 sub download_file($ $);
 sub unpack_rules_archive($ $);
 sub process_rules($ $ $ $);
+sub process_rule($ $ $ $ $ $ $);
 sub setup_rules_hash($ $);
 sub get_first_only($ $ $);
 sub print_changes($ $);
@@ -994,11 +995,81 @@ sub process_rules($ $ $ $)
     print STDERR "\n"
       if ($config{verbose});
 
+  # Phase #1 - process all active rules and store in temporary hash.
+  # In case of dups, we use the one with the highest rev.
     foreach my $file (sort(keys(%$newfiles_ref))) {
 
       # Make sure it's a regular file.
         clean_exit("$file is not a regular file.")
           unless (-f "$file" && !-l "$file");
+
+        open(INFILE, "<", "$file")
+          or clean_exit("could not open $file for reading: $!");
+	my @infile = <INFILE>;
+        close(INFILE);
+
+        my ($single, $multi, $nonrule, $msg, $sid);
+
+	RULELOOP:while (get_next_entry(\@infile, \$single, \$multi, \$nonrule, \$msg, \$sid)) {
+
+          # We don't care about non-rules in this phase.
+	    next RULELOOP if (defined($nonrule));
+
+          # Even if it was a single-line rule, we want a copy in $multi.
+	    $multi = $single unless (defined($multi));
+
+            my %rule = (
+                single => $single,
+                multi  => $multi,
+            );
+
+          # modify/disable/enable this rule as requested. Possible verbose 
+          # messages and warnings will be printed.
+            process_rule($modify_sid_ref, $disable_sid_ref, $enable_sid_ref, 
+                         \%rule, $sid, \%stats, 1);
+
+            $single = $rule{single};
+            $multi  = $rule{multi};
+
+          # Only care about active rules in this phase (the rule may have been
+          # disabled by a disablesid or a modifysid statement above, so we can't
+          # do this check earlier).
+	    next RULELOOP if ($multi =~ /^#/);
+
+          # Is it a dup? If so, see if this seems to be more recent (higher rev).
+            if (exists($sids{$sid})) {
+                warn("WARNING: duplicate SID in downloaded archive, SID=$sid\n")
+                  unless($config{super_quiet});
+
+                my ($old_rev) = ($sids{$sid}{single} =~ /\brev\s*:\s*(\d+)\s*;/);
+                my ($new_rev) = ($single             =~ /\brev\s*:\s*(\d+)\s*;/);
+
+              # This is so rules with a rev gets higher prio than 
+              # rules without any rev.
+                $old_rev = -1 unless (defined($old_rev));
+                $new_rev = -1 unless (defined($new_rev));
+
+              # If this rev is higher than the one in the last stored rule with
+              # this sid, replace rule with this one. This is also done if the
+              # revs are equal because we assume the rule appearing last in the
+              # rules file is the more recent rule.
+                if ($new_rev >= $old_rev) {
+                    $sids{$sid}{single} = $single;
+                    $sids{$sid}{multi}  = $multi;
+                }
+        
+          # No dup.
+            } else {
+                $sids{$sid}{single} = $single;
+                $sids{$sid}{multi}  = $multi;
+            }
+        }
+    }
+
+  # Phase #2 - read all rules files again, but when writing active rules
+  # back to the files, use the one store in the sid hash (which is free of dups).
+
+    foreach my $file (sort(keys(%$newfiles_ref))) {
 
         open(INFILE, "<", "$file")
           or clean_exit("could not open $file for reading: $!");
@@ -1012,113 +1083,69 @@ sub process_rules($ $ $ $)
         my ($single, $multi, $nonrule, $msg, $sid);
 
 	RULELOOP:while (get_next_entry(\@infile, \$single, \$multi, \$nonrule, \$msg, \$sid)) {
-	    if (defined($nonrule)) {
-	        print OUTFILE "$nonrule";
-		next RULELOOP;
-	    }
-
-          # We've got a valid rule. If we have already seen this sid, discard this rule.
-            if (exists($sids{$sid})) {
-                warn("\n") unless ($config{quiet});
-                warn("WARNING: duplicate SID in downloaded archive, SID $sid in ".
-                     basename($file) . " has already been seen in " .
-                     basename($sids{$sid}). ", discarding rule \"$msg\"\n")
-                  unless($config{super_quiet});
-
+            if (defined($nonrule)) {
+                print OUTFILE "$nonrule";
                 next RULELOOP;
             }
 
-            $sids{$sid} = $file;
-
           # Even if it was a single-line rule, we want a copy in $multi.
-	    $multi = $single unless (defined($multi));
+            $multi = $single unless (defined($multi));
 
-          # Some rules may be commented out by default.
-          # Enable them if -e is specified.
-	    if ($multi =~ /^#/ && $config{enable_all}) {
-  	        print STDERR "Enabling disabled rule (SID $sid): $msg\n"
-	          if ($config{verbose});
-                $multi =~ s/^#*//;
-                $multi =~ s/\n#*/\n/g;
-                $stats{enabled}++;
-	    }
+            my %rule = (
+                single => $single,
+                multi  => $multi,
+            );
 
-          # Modify rule if requested. For disablesid/enablesid we work
-          # on the multi-line version of the rule (if exists). For
-          # modifysid that's no good since we don't know where in the
-          # rule the trailing backslashes and newlines are going to be
-          # and we don't want them to affect the regexp.
-            my @all_mod = @{$$modify_sid_ref{'*'}}
-              if (exists($$modify_sid_ref{'*'}));
+          # modify/disable/enable this rule. Possible verbose messages and warnings
+          # will not be printed (again) as this was done in the first phase.
+          # We send the stats to a dummy var as this was collected on the
+          # first phase as well.
+            process_rule($modify_sid_ref, $disable_sid_ref, $enable_sid_ref,
+                         \%rule, $sid, \my %unused_stats, 0);
 
-            my @sid_mod = @{$$modify_sid_ref{$sid}}
-              if (exists($$modify_sid_ref{$sid}));
+            $single = $rule{single};
+            $multi  = $rule{multi};
 
-            foreach my $mod_expr (@sid_mod, @all_mod) {
+          # Disabled rules are printed right back to the file, unless
+          # there also is an active rule with the same sid. Als o make
+          # sure we only print the sid once, even though it's disabled.
+            if ($multi =~ /^#/ && !exists($sids{$sid}) && !exists($sids{$sid}{printed})) {
+                print OUTFILE $multi;
+                $sids{$sid}{printed} = 1;
+                next RULELOOP;
+            }
 
-                my ($subst, $repl) = ($mod_expr->[0], $mod_expr->[1]);
-		if ($single =~ /$subst/s) {
-  	            print STDERR "Modifying SID $sid, subst=$subst, ".
-                                 "repl=$repl\nBefore: $single\n"
-		      if ($config{verbose});
-
-                  # Replace rule with its single-line version in case it's
-                  # a multi-line rule. This makes substitutions more logical
-                  # so we don't have to care about where the \n\\ are.
-                    $single =~ s/$subst/$repl/ee;
-                    $multi = $single;
-
-  	  	    print STDERR "After:  $single\n"
-                      if ($config{verbose});
-
-                    $stats{modified}++;
-		} else {
-                    print STDERR "\nWARNING: SID $sid does not match ".
-                                 "modifysid expression \"$subst\", skipping\n"
-                      unless (exists($$modify_sid_ref{'*'}));
-                }
-	    }
-
-          # Disable rule if requested and it's not already disabled.
-            if (exists($$disable_sid_ref{$sid}) && $multi !~ /^\s*#/) {
-                print STDERR "Disabling SID $sid: $msg\n"
-                  if ($config{verbose});
-                $multi = "#$multi";
-                $multi =~ s/\n([^#].+)/\n#$1/g;
-                $stats{disabled}++;
-	    }
-
-          # Enable rule if requested and it's not already enabled.
-            if (exists($$enable_sid_ref{$sid}) && $multi =~ /^\s*#/) {
-                print STDERR "Enabling SID $sid: $msg\n"
-                  if ($config{verbose});
-                $multi =~ s/^#+//;
-                $multi =~ s/\n#+(.+)/\n$1/g;
-                $stats{enabled}++;
-	    }
-
-          # Write rule back to the same rules file.
-            print OUTFILE $multi;
+          # If this sid has not yet been printed and this is the place where
+          # the sid with the highest rev was, print the rule to the file.
+          # (There can be multiple totally different rules with the same sid
+          # and we don't want to put the wrong rule in the wrong place.
+            if (!exists($sids{$sid}{printed}) && $single eq $sids{$sid}{single}) {
+                print OUTFILE $multi;
+                $sids{$sid}{printed} = 1;
+            }
         }
 
         close(OUTFILE);
     }
 
     print STDERR "disabled $stats{disabled}, enabled $stats{enabled}, ".
-                 "modified $stats{modified}, total=" . keys(%sids) . ".\n"
+                 "modified $stats{modified}, total=$stats{total}\n"
       unless ($config{quiet});
 
   # Warn on attempt at processing non-existent sids, unless quiet mode.
     if (!$config{quiet}) {
+
         foreach my $sid (keys(%$modify_sid_ref)) {
             next unless ($sid =~ /^\d+$/);    # don't warn on wildcard match
             warn("WARNING: attempt to modify non-existent SID $sid\n")
               unless (exists($sids{$sid}));
         }
+
         foreach my $sid (keys(%$enable_sid_ref)) {
             warn("WARNING: attempt to enable non-existent SID $sid\n")
               unless (exists($sids{$sid}));
         }
+
         foreach my $sid (keys(%$disable_sid_ref)) {
             warn("WARNING: attempt to disable non-existent SID $sid\n")
               unless (exists($sids{$sid}));
@@ -1126,13 +1153,94 @@ sub process_rules($ $ $ $)
     }
 
   # Return total number of valid rules.
-    return (keys(%sids));
+    return ($stats{total});
+}
+
+
+
+# Process (modify/enable/disable) a rule as requested.
+sub process_rule($ $ $ $ $ $ $)
+{
+    my $modify_sid_ref  = shift;
+    my $disable_sid_ref = shift;
+    my $enable_sid_ref  = shift;
+    my $rule_ref        = shift;
+    my $sid             = shift;
+    my $stats_ref       = shift;
+    my $print_messages  = shift;
+
+  # Just for easier access.
+    my $single = $$rule_ref{single};
+    my $multi  = $$rule_ref{multi};
+
+    $$stats_ref{total}++;
+ 
+  # Some rules may be commented out by default.
+  # Enable them if -e is specified.
+    if ($multi =~ /^#/ && $config{enable_all}) {
+        $multi =~ s/^#*//;
+        $multi =~ s/\n#*/\n/g;
+        $$stats_ref{enabled}++;
+    }
+
+  # Modify rule if requested. For disablesid/enablesid we work
+  # on the multi-line version of the rule (if exists). For
+  # modifysid that's no good since we don't know where in the
+  # rule the trailing backslashes and newlines are going to be
+  # and we don't want them to affect the regexp.
+    my @all_mod = @{$$modify_sid_ref{'*'}}
+      if (exists($$modify_sid_ref{'*'}));
+
+    my @sid_mod = @{$$modify_sid_ref{$sid}}
+      if (exists($$modify_sid_ref{$sid}));
+
+    foreach my $mod_expr (@sid_mod, @all_mod) {
+
+        my ($subst, $repl) = ($mod_expr->[0], $mod_expr->[1]);
+        if ($single =~ /$subst/s) {
+            print STDERR "Modifying SID $sid, subst=$subst, ".
+                         "repl=$repl\nBefore: $single\n"
+	      if ($print_messages && $config{verbose});
+
+          # Replace rule with its single-line version in case it's
+          # a multi-line rule. This makes substitutions more logical
+          # so we don't have to care about where the \n\\ are.
+            $single =~ s/$subst/$repl/ee;
+            $multi = $single;
+
+  	    print STDERR "After:  $single\n"
+              if ($print_messages && $config{verbose});
+
+            $$stats_ref{modified}++;
+        } else {
+            print STDERR "WARNING: SID $sid does not match ".
+                         "modifysid expression \"$subst\", skipping\n"
+              if ($print_messages && !exists($$modify_sid_ref{'*'}));
+        }
+    }
+
+  # Disable rule if requested and it's not already disabled.
+    if (exists($$disable_sid_ref{$sid}) && $multi !~ /^\s*#/) {
+        $multi = "#$multi";
+        $multi =~ s/\n([^#].+)/\n#$1/g;
+        $$stats_ref{disabled}++;
+    }
+
+  # Enable rule if requested and it's not already enabled.
+    if (exists($$enable_sid_ref{$sid}) && $multi =~ /^\s*#/) {
+        $multi =~ s/^#+//;
+        $multi =~ s/\n#+(.+)/\n$1/g;
+        $$stats_ref{enabled}++;
+    }
+
+    $$rule_ref{single} = $single;
+    $$rule_ref{multi}  = $multi;
 }
 
 
 
 # Setup rules hash.
-# Format for rules will be:     rh{old|new}{rules{filename}{sid} = rule
+# Format for rules will be:     rh{old|new}{rules{filename}{sid} = single-line rule
 # Format for non-rules will be: rh{old|new}{other}{filename}     = array of lines
 # List of added files will be stored as rh{added_files}{filename}
 sub setup_rules_hash($ $)
@@ -1177,7 +1285,7 @@ sub setup_rules_hash($ $)
 
 	    while (get_next_entry(\@oldfile, \$single, \$multi, \$nonrule, undef, \$sid)) {
 	        if (defined($single)) {
-		    warn("\nWARNING: duplicate SID in your local rules, SID ".
+		    warn("WARNING: duplicate SID in your local rules, SID ".
                          "$sid exists multiple times, please fix this manually!\n")
 		      if (exists($old_sids{$sid}));
 
