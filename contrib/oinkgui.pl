@@ -53,7 +53,6 @@ use constant CSIDL_DRIVES => 17;
 
 sub test_config();
 sub show_version();
-sub show_help();
 sub update_rules();
 sub clear_messages();
 sub create_cmdline($);
@@ -150,7 +149,6 @@ my %help = (
     update       => 'Execute Oinkmaster to update the rules.',
     test         => 'Test current Oinkmaster configuration. ' .
                     'If there are no fatal errors, you are ready to update the rules.',
-    help         => 'Execute oinkmaster -h.',
     version      => 'Request version information from Oinkmaster.',
 );
 
@@ -455,11 +453,6 @@ $left_frame->Label(
 $balloon->attach(
   create_actionbutton($left_frame, "Show version", \&show_version),
   -statusmsg => $help{version}
-);
-
-$balloon->attach(
-  create_actionbutton($left_frame, "Show help", \&show_help),
-  -statusmsg => $help{help}
 );
 
 $balloon->attach(
@@ -846,27 +839,6 @@ sub show_version()
     $main->Unbusy;
     logmsg("$output", 'OUTPUT');
     logmsg("$version\n\n", 'OUTPUT');
-}
-
-
-
-sub show_help()
-{
-    $config{oinkmaster} =~ s/^\s+//;
-    $config{oinkmaster} =~ s/\s+$//;
-
-    unless ($config{oinkmaster} && -f "$config{oinkmaster}" &&
-     (-x "$config{oinkmaster}" || $^O eq 'MSWin32')) {
-        logmsg("Location of oinkmaster.pl is not set correctly!\n\n", 'ERROR');
-        return;
-    }
-
-    my $cmd = "$config{perl} $config{oinkmaster} -h";
-    logmsg("$cmd:\n", 'EXEC');
-    $main->Busy(-recurse => 1);
-    my $output = `$cmd 2>&1` || "Could not execute $config{oinkmaster}: $!\n";
-    $main->Unbusy;
-    logmsg("$output\n", 'OUTPUT');
 }
 
 
