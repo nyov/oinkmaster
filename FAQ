@@ -317,17 +317,18 @@ Q14: Oinkmaster says the file in URL does not exist (or it exists but
      doesn't work with Snort).
 
 A14: Check the "url = ..." line in oinkmaster.conf (or argument to "-u" 
-     if you specify it on command line). The URL you should use depends on 
-     the version of Snort you run. This means that the default URL does 
+     if you specify it on command line). The URL you should use depends 
+     on the version of Snort you run. This means that the default URL does
      not work for everone! So, you must make sure you really use the one 
-     that is right for you. Visit http://www.snort.org/dl/rules/, read the 
-     instructions there, and pick the right URL. As the official 
-     Snort rules archives now have version information in the filenames 
-     (as of 200402), you must rememer to update the URL info when 
-     upgrading to a new major version of Snort. And keep in mind that the 
-     Snort people can change the download layout again at any time, so if 
-     you experience problems, go to the Snort web site and see if anything 
-     is mentioned there.
+     that is right for you. Visit http://www.snort.org/dl/rules/, read 
+     the instructions there, and pick the right URL. As the official Snort 
+     rules archives now have version information in the filenames, you 
+     must rememer to update the URL info for Oinkmaster when upgrading to 
+     a new major version of Snort. You can also make a tiny wrapper to 
+     create the right URL string on the fly by using the output from 
+     "snort -V". Keep in mind though that the Snort people can change the 
+     download layout again at any time, so if you experience problems, go 
+     to the Snort web site and see if anything is mentioned there.
 
      If you are absolute sure you use the right rules for your version of 
      Snort but still have problems, you may need to read the Snort manual
