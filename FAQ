@@ -767,8 +767,8 @@ A28: First of all, note that the Oinkmaster author has nothing do do
      so I don't know if/how it works with Oinkmaster.
 
      - How to update the Sourcefire VRT Certified Rules:
-     1) Go to http://www.snort.org/ and register.
-        You will receive a password in your mail shortly after.
+     1) Go to http://www.snort.org/ and register. If you accept the license
+        you will receive a password in your mail shortly after.
      2) Go to the Snort site and login, and choose to edit your user 
         profile.
      3) You will find the most current instructions under
@@ -822,5 +822,5 @@ Q30: I get this error when running Oinkmaster:
      Oinkmaster configuration file or use the '-u <url>' argument"
 
 A30: The error message explains it all - you did not specify where
-     Oinkmaster should look for the rules archive. Look in the
+     Oinkmaster should get the rules archive. Look in the
      default oinkmaster.conf for more information.
