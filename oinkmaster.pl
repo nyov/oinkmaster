@@ -3,9 +3,10 @@
 # $Id$ #
 
 use strict;
-use Getopt::Std;
-use File::Copy;
 use Cwd;
+use File::Copy;
+use Getopt::Std;
+use POSIX qw(strftime);
 
 sub show_usage();
 sub parse_cmdline();
