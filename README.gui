@@ -4,10 +4,10 @@ Intro
 ~~~~~
 
 Oinkmaster GUI (oinkgui.pl in the contrib directory) is my very first 
-attempt at creating a graphical user interface. It was written just for 
-fun. The result is not the prettiest interface you've seen, but it 
-actually works. It runs on Unix systems and also on Windows with 
-ActivePerl. It has not been tested under Cygwin.
+attempt at creating a graphical user interface in Perl/Tk. It was 
+written just for fun. The result is not the prettiest interface you've
+seen, but it actually works. It runs on Unix systems and also on
+Windows with ActivePerl. It has not been tested under Cygwin.
 Send feedback to Andreas Östling <andreaso@it.su.se>.
 
 
