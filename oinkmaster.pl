@@ -636,7 +636,8 @@ sub unpack_rules_archive($)
     chdir($old_dir)
       or clean_exit("could not change directory back to $old_dir: $!");
 
-    print STDERR "done.\n" unless ($quiet);
+    print STDERR "done.\n" 
+      unless ($quiet);
 }
 
 
@@ -825,7 +826,8 @@ sub setup_rules_hash($)
         }
     }
 
-    print STDERR "done.\n" unless ($quiet);
+    print STDERR "done.\n" 
+      unless ($quiet);
 
     return (%rh);
 }
@@ -1200,7 +1202,8 @@ sub get_changes($ $)
 
     } # foreach new file
 
-    print STDERR "done.\n" unless ($quiet);
+    print STDERR "done.\n" 
+      unless ($quiet);
 
     return (%changes);
 }
@@ -1444,7 +1447,7 @@ sub get_new_vars($ $ $)
 
     @{$$ch_ref{new_vars}} = @new_vars;
 
-    print "done.\n"
+    print STDERR "done.\n"
       unless ($quiet);
 }
 
