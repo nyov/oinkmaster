@@ -13,12 +13,12 @@ sub get_next_available_sid(@);
 
 
 # Set this to the default classtype you want to add, if missing.
-# Set to 0 if you don't want to add a classtype.
+# Set to 0 or "" if you don't want to add a classtype.
 my $CLASSTYPE = "misc-attack";
 
 # If ADD_REV is set to 1, "rev: 1;" will be added to rule if it has no rev.
 # Set to 0 if you don't want to add it.
-my $ADD_REV = 1;
+my $ADD_REV = 0;
 
 # Minimum SID to add. Normally, the next available SID will be used,
 # unless it's below this value. Only SIDs >= 1000000 are reserved for
@@ -70,7 +70,7 @@ my $next_sid = get_next_available_sid(@rulesdirs);
 # Avoid seeing possible warnings about broken rules twice.
 $verbose = 0;
 
-# Add sid to active rules that don't have any.
+# Add sid/rev/classtype to active rules that don't have any.
 foreach my $dir (@rulesdirs) {
     opendir(RULESDIR, "$dir") or die("could not open \"$dir\": $!\n");
 
@@ -101,21 +101,31 @@ foreach my $dir (@rulesdirs) {
 	        next;
             }
 
+            my $added;
+
           # Add SID.
             if ($single !~ /sid\s*:\s*\d+\s*;/) {
-                print "Adding SID $next_sid to rule \"$msg\"\n";
+                $added .= "SID $next_sid,";
                 $multi =~ s/\)\s*\n/sid:$next_sid;)\n/;
                 $next_sid++;
             }
 
           # Add revision.
             if ($ADD_REV && $single !~ /rev\s*:\s*\d+\s*;/) {
+                $added .= "rev,";
                 $multi =~ s/\)\s*\n/rev:1;)\n/;
             }
 
           # Add classtype.
             if ($CLASSTYPE && $single !~ /classtype\s*:\s*.+\s*;/) {
+                $added .= "classtype $CLASSTYPE,";
                 $multi =~ s/\)\s*\n/classtype:$CLASSTYPE;)\n/;
+            }
+
+            if (defined($added)) {
+                $added =~ s/,$//;
+                print "Adding $added to rule \"$msg\"\n"
+                  if (defined($added));
             }
 
             print NEWFILE "$multi";
@@ -156,7 +166,7 @@ sub get_next_available_sid(@)
                     if ($single =~ /^\s*alert/) {
                         print STDERR "WARNING: duplicate SID: $sid\n"
     	                  if (exists($active_sids{$sid}));
-                        $active_sids{$sid}++ 
+                        $active_sids{$sid}++
                     }
                 }
             }
