@@ -15,7 +15,7 @@ sub sanity_check();
 sub download_rules($ $);
 sub unpack_rules_archive($);
 sub disable_and_modify_rules($ $ @);
-sub setup_rule_hash($ $ @);
+sub setup_rules_hash($ $ @);
 sub find_line($ @);
 sub do_backup;
 sub fix_fileinfo;
@@ -115,10 +115,9 @@ clean_exit("Error: found no files in archive matching \"$config{update_files}\".
 disable_and_modify_rules(\%{$config{sid_disable_list}},
                          \%{$config{sid_modify_list}}, keys(%new_files));
 
-### Setup %new_rules, %old_rules, %new_other and %old_other.
-### As a bonus, we get list of added files in %added_files.
 # Setup rules hash.
-setup_rule_hash(\%rh, $output_dir, keys(%new_files));
+setup_rules_hash(\%rh, $output_dir, keys(%new_files));
+
 
 # Time to compare the new rules to the old ones.
 # For each rule in the new file, check if the rule also exists
@@ -172,10 +171,11 @@ FILELOOP:foreach my $file (keys(%new_files)) {                  # for each new f
     } # foreach sid
 
   # Check for removed rules, i.e. sids that exist in the old file but not in the new one.
-    foreach my $sid (keys(%{$old_rules{$file}})) {
-        unless (exists($new_rules{$file}{$sid})) {
+#    foreach my $sid (keys(%{$old_rules{$file}})) {
+    foreach my $sid (keys(%{$rh{old}{rules}{$file}})) {     # for each sid in the new file
+        unless (exists($rh{new}{rules}{$file}{$sid})) {
             $rules_changed = 1;
-            my $old_rule = $old_rules{$file}{$sid};
+            my $old_rule = $rh{old}{rules}{$file}{$sid};
 	    fix_fileinfo("removed_del", $file);
             $changes{removed_del} .= "       $old_rule";
         }
@@ -678,7 +678,7 @@ sub disable_and_modify_rules($ $ @)
 # Format for rules will be:     rh{old|new}{rules{filename}{sid} = rule
 # Format for non-rules will be: rh{old|new}{other}{filename}     = array of lines
 # List of added files will be stored as rh{added_files}{filename}
-sub setup_rule_hash($ $ @)
+sub setup_rules_hash($ $ @)
 {
     my $rh_ref    = shift;
     my $old_dir   = shift;
@@ -691,10 +691,14 @@ sub setup_rule_hash($ $ @)
         open(NEWFILE, "<$file")
           or clean_exit("Error: could not open $file for reading: $!");
 
+      # From now on, we don't care about the path, so remove it.
+	$file =~ s/.*\///;
+
 	while (<NEWFILE>) {
 	    if (/$SNORT_RULE_REGEXP/) {
 	        my $sid = $2;
-		warn("WARNING: duplicate SID in downloaded rules archive in file $file: SID $sid\n")
+		warn("WARNING: duplicate SID in downloaded rules archive in file ".
+                     "$file: SID $sid\n")
 		  if (exists($$rh_ref{new}{rules}{"$file"}{"$sid"}) && !$quiet);
 		$$rh_ref{new}{rules}{"$file"}{"$sid"} = $_;
 	    } else {
@@ -704,10 +708,7 @@ sub setup_rule_hash($ $ @)
 
 	close(NEWFILE);
 
-     # From now on, we only are about the actual name of the file, not the entire path.
-       $file =~ s/.*\///;
-
-     # Also read in old file if it exists.
+	# Also read in old file if it exists.
         if (-f "$output_dir/$file") {
             open(OLDFILE, "<$output_dir/$file")
               or clean_exit("Error: could not open $output_dir/$file for reading: $!");
@@ -718,7 +719,8 @@ sub setup_rule_hash($ $ @)
 		    s/^\s*//;     # remove leading whitespaces
 		    s/\s*\n$/\n/; # remove trailing whitespaces
 		    s/^#+\s*/#/;  # make sure comment syntax is how we like it
-		    warn("WARNING: duplicate SID in your local rules in file $file: SID $sid\n")
+		    warn("WARNING: duplicate SID in your local rules in file ".
+                         "$file: SID $sid\n")
 	  	      if (exists($$rh_ref{old}{rules}{"$file"}{"$sid"}) && !$quiet);
 	  	    $$rh_ref{old}{rules}{"$file"}{"$sid"} = $_;
                 } else {
@@ -828,6 +830,8 @@ sub do_backup
 
 
 # Remove temporary directory and exit.
+# If a non-empty string is given as argument, it will be regarded
+# as an error message.
 sub clean_exit($)
 {
     system("rm","-r","-f","$TMPDIR")
