@@ -33,17 +33,14 @@ my $snort_rule_regexp = '^\s*#*\s*(?:alert|log|pass) .+msg\s*:\s*"(.+?)"\s*;.+si
 
 use vars qw
    (
-      $opt_h $opt_v $opt_o $opt_q $opt_c $opt_b $opt_r
+      $opt_h $opt_v $opt_o $opt_q $opt_c $opt_b $opt_r $opt_u
+      $opt_C
    );
 
 my (
       $output_dir, $sid, $old_rule, $new_rule, $file, $backup_dir,
-      $start_date, $added_files, $removed_files
+      $start_date, $added_files, $removed_files, $url
    );
-
-#my (
-#      @added_files
-#   );
 
 my (
       %sid_disable_list, %file_ignore_list, %config, %changes, %added_files,
@@ -60,8 +57,8 @@ select(STDOUT); $| = 1;
 
 $start_date = scalar(localtime);
 
-# die("Don't run as root!\nExiting") if (!$>);
 parse_cmdline;
+# die("Don't run as root!\nExiting") if (!$>);
 read_config;
 sanity_check;
 
@@ -74,13 +71,13 @@ mkdir("$tmpdir", 0700) or die("could not create temporary directory $tmpdir: $!\
 # Pull down the rules archive.
 # Die if wget doesn't exit with status level 0.
 if ($quiet) {
-    if (system("wget","-q","-nv","-O","$tmpdir/$outfile","$config{url}")) {
+    if (system("wget","-q","-nv","-O","$tmpdir/$outfile","$url")) {
         die("Unable to download rules.\n".
             "Consider running in non-quiet mode if the problem persists.\nExiting");
     }
 } else {
-    print STDERR "Downloading rules archive from $config{url}...\n";
-    if (system("wget","-nv","-O","$tmpdir/$outfile","$config{url}")) {
+    print STDERR "Downloading rules archive from $url...\n";
+    if (system("wget","-nv","-O","$tmpdir/$outfile","$url")) {
         die("Unable to download rules.\nExiting")
     }
 }
@@ -166,9 +163,7 @@ foreach $file (keys(%new_files)) {                      # for each new file
         }
     }
 
-  # Now check for other changes (lines that aren't snort rules).
-
-  # First check for added lines.
+  # First check for added non-rule lines.
     foreach $_ (@{$new_other{$file}}) {
         unless (find_line($_, @{$old_other{$file}})) {  # Does this line also exist in the old rules file?
             fix_fileinfo("other_added", $file);         # Nope, it's an added line.
@@ -177,7 +172,7 @@ foreach $file (keys(%new_files)) {                      # for each new file
         }
     }
 
-  # Check for removed lines.
+  # Check for removed non-rule lines.
     foreach $_ (@{$old_other{$file}}) {
         unless (find_line($_, @{$new_other{$file}})) {  # Does this line also exist in the new rules file?
             fix_fileinfo("other_removed", $file);       # Nope, it's a removed line.
@@ -185,14 +180,16 @@ foreach $file (keys(%new_files)) {                      # for each new file
             $other_changed = 1;
         }
     }
+
 } # foreach new file
 
 # Creaste list of possibly removed files if -r is specified.
 if ($check_removed) {
     opendir(OLDRULES, "$output_dir") or die("could not open directory $output_dir: $!\nExiting");
+
     while ($_ = readdir(OLDRULES)) {
         $removed_files .= "    -> $_\n"
-        if (/$config{update_files}/ && !exists($file_ignore_list{$_}) && !exists($new_files{$_}));
+          if (/$config{update_files}/ && !exists($file_ignore_list{$_}) && !exists($new_files{$_}));
     }
     closedir(OLDRULES);
 }
@@ -221,10 +218,12 @@ if ($rules_changed || $other_changed) {
       if (defined($backup_dir) && !$quiet);
 }
 
-# Move files listed in %added_files into our output directory.
-foreach $_ (keys(%added_files)) {
-    move("$tmpdir/rules/$_", "$output_dir/$_")
-      or die("\nWarning: could not move $tmpdir/rules/$_ to $output_dir/$_: $!\nExiting")
+# Move files listed in %added_files into our output directory unless careful mode.
+unless ($careful) {
+    foreach $_ (keys(%added_files)) {
+        move("$tmpdir/rules/$_", "$output_dir/$_")
+          or die("\nWarning: could not move $tmpdir/rules/$_ to $output_dir/$_: $!\nExiting")
+    }
 }
 
 # Remove temporary directory.
@@ -265,7 +264,7 @@ if (($rules_changed || $other_changed || keys(%added_files) > 0 || defined($remo
     }
 
   # Print non-rule changes.
-    print "\n[*] Non-rule lines added/removed/modified: [*]\n";
+    print "\n[*] Non-rule lines added/removed: [*]\n";
     if ($other_changed) {
         print "\n  [+++]       Added line(s):       [+++]\n $changes{other_added}"
           if (exists($changes{other_added}));
@@ -278,7 +277,7 @@ if (($rules_changed || $other_changed || keys(%added_files) > 0 || defined($remo
 
   # Print list of added files.
     if (keys(%added_files) > 0) {
-        print "\n[*] Added files (consider updating your Snort configuration file to include them): [*]\n" .
+        print "\n[*] Added files (consider updating your snort.conf to include them): [*]\n" .
               "$added_files";
     } else {
          print "\n[*] Added files: [*]\n" .
@@ -296,7 +295,6 @@ if (($rules_changed || $other_changed || keys(%added_files) > 0 || defined($remo
     }
 
     print "\n";
-
 }
 # END OF MAIN #
 
@@ -309,7 +307,10 @@ sub show_usage
 		 "<dir> is where to put the new rules files. This should be the\n".
                  "directory where you store your snort.org rules\n".
                  "\nOptions:\n".
+		 "-C <cfg>  Use this config file instead of the default $config_file\n".
 		 "-b <dir>  Backup old rules into <dir> if anything had changed\n".
+		 "-u <url>  Download from this URL (http:// or ftp:// ...tar.gz)\n".
+                 "          Overrides URL= value in oinkmaster.conf\n".
 		 "-c        Careful mode. Don't update anything, just check for changes\n".
                  "-r        Check for rules files that exist in the output directory\n".
                  "          but not in the downloaded rules archive (i.e. files that may\n".
@@ -324,14 +325,16 @@ sub show_usage
 
 sub parse_cmdline
 {
-    my $cmdline_ok = getopts('b:cho:qrv');
+    my $cmdline_ok = getopts('b:cC:ho:qru:v');
 
-    $backup_dir    = 1 if (defined($opt_b));
-    $quiet         = 1 if (defined($opt_q));
-    $verbose       = 1 if (defined($opt_v));
-    $careful       = 1 if (defined($opt_c));
-    $check_removed = 1 if (defined($opt_r));
-    show_usage         if (defined($opt_h));
+    $backup_dir    = $opt_b if (defined($opt_b));
+    $config_file   = $opt_C if (defined($opt_C));
+    $url           = $opt_u if (defined($opt_u));
+    $quiet         = 1      if (defined($opt_q));
+    $verbose       = 1      if (defined($opt_v));
+    $careful       = 1      if (defined($opt_c));
+    $check_removed = 1      if (defined($opt_r));
+    show_usage              if (defined($opt_h));
 
     show_usage unless ($cmdline_ok);
 
@@ -366,13 +369,13 @@ sub read_config
         } elsif (/^\s*file\s*(\S+)/i) {                       # file X
             $verbose && print STDERR "Adding file to ignore list: $1.\n";
             $file_ignore_list{$1}++;
-	} elsif (/^URL\s*=\s*((?:http|ftp):\/\/\S+.*\.tar\.gz$)/i) {  # URL
-	    $config{url} = $1;
-	} elsif (/^PATH\s*=\s*(.*)/i) {
+	} elsif (/^URL\s*=\s*(.*)/i) {                        # URL to use
+	    $url = $1 unless (defined($url));                 # may already be defined by -u <url>
+	} elsif (/^PATH\s*=\s*(.*)/i) {                       # $PATH to be used
 	    $config{path} = $1;
-	} elsif (/^update_files\s*=\s*(.*)/i) {
+	} elsif (/^update_files\s*=\s*(.*)/i) {               # regexp of files to be updated
 	    $config{update_files} = $1;
-	} elsif (/^skip_diff\s*=\s*(.*)/i) {
+	} elsif (/^skip_diff\s*=\s*(.*)/i) {                  # regexp of files to skip comparison for
 	    $config{skip_diff} = $1;
         } else {                                              # invalid line
             print STDERR "Warning: line $line in $config_file is invalid, skipping line.\n";
@@ -386,7 +389,7 @@ sub read_config
 
 sub sanity_check
 {
-   my @req_config   = qw (url path update_files);
+   my @req_config   = qw (path update_files);
    my @req_binaries = qw (which wget gzip tar);
 
   # Make sure all required variables was defined in the config file.
@@ -401,9 +404,17 @@ sub sanity_check
           if (system("which \"$_\" >/dev/null 2>&1"));
     }
 
+  # Make sure $url is defined (either by -u <url> or url=... in the conf.
+    die("Incorrect URL, or URL not specified in neither $config_file nor command line.\nExiting")
+      unless (defined($url) && $url =~ /^(?:http|ftp):\/\/\S+.*\.tar\.gz$/);
+
   # Make sure the output directory exists and is writable.
     die("The output directory \"$output_dir\" doesn't exist or isn't writable by you.\nExiting")
       if (! -d "$output_dir" || ! -w "$output_dir");
+
+  # Make sure the backup directory exists and is writable if running with -b.
+    die("The backup directory \"$backup_dir\" doesn't exist or isn't writable by you.\nExiting")
+      if (defined($backup_dir) && (! -d "$backup_dir" || ! -w "$backup_dir"));
 }
 
 
@@ -600,9 +611,51 @@ sub fix_fileinfo
 }
 
 
-
+# Backup files in $output_dir matching $config{update_files} into $backup_dir.
 sub do_backup
 {
+    my ($date, $tmpbackupdir, $old_dir);
+
+    $date = strftime("%Y%m%d-%H%M", localtime);
+    $tmpbackupdir = "$tmpdir/rules-backup-$date";
+
+    print STDERR "Creating backup of old rules..." unless ($quiet);
+
+    mkdir("$tmpbackupdir", 0700)
+      or die("Could not create directory $tmpbackupdir: $!\nExiting");
+
+    opendir(OLDRULES, "$output_dir") or die("could not open directory $output_dir: $!\nExiting");
+    while ($_ = readdir(OLDRULES)) {
+        copy("$output_dir/$_", "$tmpbackupdir/")
+          or print STDERR "Warning: error copying $output_dir/$_ to $tmpbackupdir: $!"
+            if (/$config{update_files}/ && !exists($file_ignore_list{$_}));
+    }
+    closedir(OLDRULES);
+
+  # Change directory to $tmpdir (so we'll be right below the directory where
+  # we have our rules to be backed up).
+    $old_dir = getcwd or die("Could not get current directory: $!\nExiting");
+    chdir("$tmpdir")  or die("Could not change directory to $tmpdir: $!\nExiting");
+
+  # Execute tar command.
+  # This will archive "rules-backup-$date/" into the file rules-backup-$date.tar, placed in $tmpdir.
+    print STDERR "Warning: tar command did not exit with status 0 when archiving backup files.\n"
+      if (system("tar","cf","rules-backup-$date.tar","rules-backup-$date"));
+
+  # Compress it.
+    print STDERR "Warning: gzip command did not exit with status 0 when compressing backup file.\n"
+      if (system("gzip","rules-backup-$date.tar"));
+
+  # Change back to old directory (so it will work with -b <directory> as either
+  # an absolute or a relative path.
+    chdir("$old_dir") or die("could not change directory back to $old_dir: $!\nExiting");
+
+  # Move the archive to the backup directory.
+    move("$tmpdir/rules-backup-$date.tar.gz", "$backup_dir/")
+      or print STDERR "Warning: unable to move $tmpdir/rules-backup-$date.tar.gz to $backup_dir/: $!\n";
+
+    print STDERR " saved as $backup_dir/rules-backup-$date.tar.gz.\n"
+      unless ($quiet);
 
 }
 
