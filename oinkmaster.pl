@@ -465,7 +465,7 @@ sub read_config($ $)
 
               # Evaluate each "%ARGx%" in the template to the corresponding value.
                 if (defined($args)) {
-                    my @args = split(/"\s+\|\s+"/, $args);
+                    my @args = split(/"\s+"/, $args);
                     foreach my $i (1 .. @args) {
                         $args[$i - 1] =~ s/^"//;
                         $args[$i - 1] =~ s/"$//;
@@ -2000,14 +2000,21 @@ sub minimize_diff($ $)
     my $old_rule = shift;
     my $new_rule = shift;
 
-  # Additional chars to print left and right to the diffing
-  # part, to get some context.
+  # Additional chars to print next to the diffing part.
     my $additional_chars = 20;
 
   # Remove the rev keyword from the rules, as it often
   # makes the whole diff minimizing useless.
     $old_rule =~ s/\s*\brev\s*:\s*\d+\s*;\s*//;
     $new_rule =~ s/\s*\brev\s*:\s*\d+\s*;\s*//;
+
+  # Also temporarily remove possible leading # so it works nicely
+  # with modified rules that are also being either enabled or disabled.
+    my $old_is_disabled = 0;
+    my $new_is_disabled = 0;
+
+    $old_is_disabled = 1 if ($old_rule =~ s/^#//);
+    $new_is_disabled = 1 if ($new_rule =~ s/^#//);
 
   # Go forward char by char until they aren't equeal.
     my @old = split(//, $old_rule);
@@ -2027,7 +2034,7 @@ sub minimize_diff($ $)
         $j++;
     }
 
-  # Print additional x chars on either side, if there is room for it.
+  # Print some additional chars on either side, if there is room for it.
     $i -= $additional_chars;
     $i = 0 if ($i < 0);
 
@@ -2060,6 +2067,10 @@ sub minimize_diff($ $)
     chomp($old, $new);
     $old .= "\n";
     $new .= "\n";
+
+  # Restore possible leading # now.
+    $old = "#$old" if ($old_is_disabled);
+    $new = "#$new" if ($new_is_disabled);
 
     return ($old, $new);
 }
