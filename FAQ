@@ -18,6 +18,7 @@ Q8:  I want to copy the rules archive from a remote host to the sensor via scp
      password or passphrase, but I also don't want to give the sensors
      full access to that host. Can this be done?
 Q9:  How do I setup proxy configuration?
+Q10: Can Oinkmaster be used to update rules from www.whitehats.com?
 
 
 
@@ -238,3 +239,17 @@ A9:  If you download the snort rules archive from a web site (e.g.
      For libwww-perl, set the http_proxy environment variable as 
      described above (i.e. "http://your_proxy_host:3128:/" or 
      "http://user:password@your_proxy_host:3128/").
+
+
+
+Q10: Can Oinkmaster be used to update rules from www.whitehats.com?
+
+A10: No, the Snort rules on www.whitehats.com has currently not been 
+     maintained for a long long time and should not be used, although the 
+     arachNIDS database is still a good source of information for older 
+     rules. Use the rules on www.snort.org instead.
+
+     (And for Oinkmaster to work, the rules package must be a gzipped 
+     tar file that contains a directory called "rules", which holds
+     all the rules files. It then looks for the string sid:<sid> in each 
+     rule to uniquely identify them.)
