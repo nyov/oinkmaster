@@ -1,3 +1,9 @@
 # $Id$ #
 
-Just overwrite the old oinkmaster.pl file with the new one.
+Usually just overwrite the old oinkmaster.pl file with the new one.
+
+- When upgrading to v0.4 you should know that the file oinkmaster.conf
+  is now used for configuration. It's probably easiest to start with the
+  default one and append your old customization to it.
+  Also, a few command line switches were removed since they're not
+  needed anymore. Please also read the new documentation.

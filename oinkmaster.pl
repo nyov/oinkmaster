@@ -322,22 +322,22 @@ sub show_usage
 {
     print STDERR "$version\n\n".
                  "Usage: $0 -o <dir> [options]\n\n".
-		 "<dir> is where to put the new rules files. This should be the\n".
-                 "directory where you store your snort.org rules.\n".
-                 "Note that your current files will be overwritten\n".
-                 "by the new ones if they had been modified.\n".
+		 "<dir> is where to put the new rules files.\n".
+	         "This should be the directory where you store your snort.org rules.\n".
+                 "Note that your current files will be overwritten by the new ones\n".
+                 "if they had been modified.\n".
                  "\nOptions:\n".
-		 "-C <cfg>  Use this config file instead of the default $config_file\n".
-		 "-b <dir>  Backup old rules into <dir> if anything had changed\n".
-		 "-u <url>  Download from this URL (http:// or ftp:// ...tar.gz)\n".
-                 "          Overrides URL= value in oinkmaster.conf\n".
-		 "-c        Careful mode. Don't update anything, just check for changes\n".
-                 "-r        Check for rules files that exist in the output directory\n".
-                 "          but not in the downloaded rules archive (i.e. files that may\n".
-                 "          have been removed from the archive).\n".
-                 "-q        Quiet mode. No output unless changes were found\n".
-		 "-v        Verbose mode\n".
-                 "-h        Show usage help\n\n";
+		 "-C <cfg>   Use this config file instead of the default $config_file\n".
+		 "-b <dir>   Backup old rules into <dir> if anything had changed\n".
+		 "-u <url>   Download from this URL (http:// or ftp:// ...tar.gz)\n".
+                 "           Overrides URL= value in oinkmaster.conf\n".
+		 "-c         Careful mode. Don't update anything, just check for changes\n".
+                 "-r         Check for rules files that exist in the output directory\n".
+                 "           but not in the downloaded rules archive (i.e. files that may\n".
+                 "           have been removed from the archive).\n".
+                 "-q         Quiet mode. No output unless changes were found\n".
+		 "-v         Verbose mode\n".
+                 "-h         Show usage help\n\n";
     exit(0);
 }
 
@@ -529,8 +529,12 @@ sub disable_rules
 	        print OUTFILE $line;
 		next RULELOOP;
 	    }
-
 	    ($msg, $sid) = ($1, $2);
+
+          # Some rules may be commented out by default, but we want our oinkmaster.conf
+          # to decide what to disable, so uncomment all rules by default.
+            $line =~ s/^\s*#*\s*//;
+
             if (exists($sid_disable_list{$sid})) {      # should this sid be disabled?
                 if ($verbose) {
                     $_ = $file;
@@ -538,12 +542,9 @@ sub disable_rules
                     $_ = sprintf("Disabling sid %-5s in file %-20s (%s)\n", $sid, $_, $msg);
                     print STDERR "$_";
                 }
-                $line = "#$line" unless ($line =~ /^\s*#/);
+                $line = "#$line";
                 $num_disabled++;
-            } else {                     # Sid was not listed in the config file. Uncomment it to be
-                $line =~ s/^\s*#*\s*//;  # sure, since some rules may be commented by default.
-            }
-
+	    }
             print OUTFILE $line;       # Write line back to the rules file.
         }
         close(OUTFILE);
