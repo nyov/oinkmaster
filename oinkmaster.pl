@@ -1115,7 +1115,7 @@ sub get_next_entry($ $ $ $)
             }
 
             $$multi_ref  .= $line;
-            $line =~ s/^\s*#*//;                  # In single-line version, remove leading #'s first
+            $line =~ s/^\s*#*\s*//;               # In single-line version, remove leading #'s first
             $$single_ref .= $line;
         }
 
