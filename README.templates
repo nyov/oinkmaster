@@ -58,6 +58,11 @@ template, there is no need to write a new template for each value for
 the number of seconds. Examples of this is found in 
 template-examples.conf.
 
+If you use variables in the substitution expression, it is strongly
+recommended to always specify them like ${varname} instead of
+$varname (${1} instead of $1 for example) to avoid parsing confusion
+in some situations.
+
 
 
 Usage hints
