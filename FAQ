@@ -78,6 +78,13 @@ Q27: How to I make Snort reload the new rules without stopping the current
 Q28: Sourcefire changed the license of the rules in March 2005, how do I 
      handle this in Oinkmaster?
 
+Q29: I update from multiple URLs at the same time and get the error 
+     "a file called 'sid-msg.map' exists in multiple rules archives".
+
+Q30: I get this error when running Oinkmaster:
+     "URL not specified. Specify at least one 'url=<url>' in the
+     Oinkmaster configuration file or use the '-u <url>' argument"
+
 
 --------------
 
@@ -386,12 +393,8 @@ A12: No. (Not unless there is a bug in Oinkmaster anyway.) Oinkmaster was
 Q13: Under what license are the official Snort rules released, and
      can I modify them without violating it?
 
-A13: The Snort people have answered this a few times on the Snort
-     lists, but here is a small summary. The official Snort
-     signatures are part of Snort and are therefore also released
-     under GPL. You can modify them locally as much as you want,
-     but if distributing them, they need to follow GPL and be 
-     GPL'ed as well.
+A13: In March 2005 Sourcefire changed the license.
+     See http://www.snort.org/rules/ for more information.
 
 
 
@@ -617,26 +620,26 @@ A23: The best way is to simply run Oinkmaster once for each URL and with
      different output directories. This way you don't have to worry about 
      filename collisions etc. 
 
-     As of Oinkmaster 1.2, you can specify multiple URLs at the same time 
-     though, either by using several url=<url> in the configuration file
-     or by specifying several -u <url> on the command line. Beware that 
-     even when using multiple URLs, all the downloaded rules files will be 
-     put in the same output directory. So if a filename exists in multiple 
-     rules archives, there is going to be trouble (Oinkmaster will detect 
-     this and abort before touching anything). Any 'skipfile' or other 
-     directive you may have in your Oinkmaster configuration that takes a 
-     filename as argument will apply on any matching file regardless of 
-     which rules archive it was in. If you specify multiple URLs and one 
-     of them happen to be broken somehow, Oinkmaster will exit and not 
-     process the other ones. This may be good or bad, depending on the 
-     situation.
+     As of Oinkmaster 1.2 though, you can specify multiple URLs at the 
+     same time, either by using several url=<url> in the configuration 
+     file or by specifying several -u <url> on the command line. Beware 
+     that even when using multiple URLs, all the downloaded rules files 
+     will be put in the same output directory. So if a filename exists 
+     in multiple rules archives, there is going to be trouble 
+     (Oinkmaster will detect this and abort before touching anything). 
+     Any 'skipfile' or other directive you may have in your Oinkmaster 
+     configuration that takes a filename as argument will apply on any 
+     matching file regardless of which rules archive it was in. If you 
+     specify multiple URLs and one of them happen to be broken somehow, 
+     Oinkmaster will exit and not process the other ones. This may be 
+     good or bad, depending on the situation.
 
-     Note that if you run Barnyard (or any other program that use unified 
-     logs) when using rules from multiple sources (and/or local rules), 
-     you must make sure that your SID message map file (sid-msg.map) is 
-     up-to-date and contains entries from all those sources, including 
-     your local rules if any. This procedure is described elsewhere in 
-     this FAQ.
+     Note that if you run Barnyard (or any other program that use 
+     unified logs) when using rules from multiple sources (and/or local 
+     rules), you must make sure that your SID message map file 
+     (sid-msg.map) is up-to-date and contains entries from all those 
+     sources, including your local rules if any. This procedure is 
+     described elsewhere in this FAQ.
 
 
 
@@ -747,19 +750,21 @@ A27: This is not really an Oinkmaster question so you may want to check
 
 
 
-Q28: Sourcefire changed the license of the rules in March 2005, how do 
-     I handle this in Oinkmaster?
+Q28: How do I update the official snort rules with Oinkmaster after 
+     Sourcefire changed the license of the rules in March 2005?
 
 A28: First of all, note that the Oinkmaster author has nothing do do 
      with the new rules license. If you have any questions or comments 
      regarding this, please contact Sourcefire, not me.
-     More information can be found at http://www.snort.org/rules/.
 
-     There are currently two different types of public rules tarballs 
-     on http://www.snort.org/. The Sourcefire VRT Certified Rules, 
-     which you must register to get access to (it's free), and the 
-     Community Rules, released under GPL. The good news is that you 
-     can update both of them using Oinkmaster. 
+     There are currently two different types of free rules tarballs on 
+     the official Snort site. The 5-day delayed Sourcefire VRT 
+     Certified Rules which you must register to get access to, and the 
+     Community Rules released under GPL. See http://www.snort.org/rules/ 
+     for details. The good news is that you can update both of them 
+     using Oinkmaster. You can also pay to get the Sourcefire VRT 
+     Certified Rules without the 5-day delay, but I can't afford that 
+     so I don't know if/how it works with Oinkmaster.
 
      - How to update the Sourcefire VRT Certified Rules:
      1) Go to http://www.snort.org/ and register.
@@ -779,18 +784,43 @@ A28: First of all, note that the Oinkmaster author has nothing do do
         If you use Snort 2.3, the url would look like this (without wrap):
         http://www.snort.org/pub-bin/oinkmaster.cgi/5a081649c06a277e1022e1284b
         dc8fabda70e2a4/snortrules-snapshot-2.3.tar.gz
-        You can add this url as "url = ..." to your oinkmaster.conf, or 
-        specify it with -u ... on the command line.
+        You can then add this url as "url = ..." to your 
+        oinkmaster.conf, or specify it with -u ... on the command line.
 
      - How to update the Community Rules:
        No registration is required, so just point to the right url
        (currently http://www.snort.org/pub-bin/downloads.cgi/
        Download/comm_rules/Community-Rules.tar.gz).
 
-     Note that when updating from multiple sources, e.g. both the 
-     Sourcefire VRT Certified Rules and the Community Rules, and you 
-     use a program such as Barnyard that requires a sid-msg.map file, 
-     you must handle this somehow. More information about this can be 
-     found elsewhere in this FAQ. As of Oinkmaster v1.2, you can 
-     specify multiple URLs to grab multiple rules archives at the same 
-     time.
+     As of Oinkmaster v1.2, you can specify multiple URLs to grab 
+     multiple rules archives at the same time. Note that when updating 
+     from multiple sources, e.g. both the Sourcefire VRT Certified 
+     Rules and the Community Rules, and you use a program such as 
+     Barnyard that requires a sid-msg.map file, you must handle this 
+     somehow. More information about this can be found elsewhere in 
+     this FAQ. 
+
+
+
+Q29: I update from multiple URLs at the same time and get the error 
+     "a file called "sid-msg.map" exists in multiple rules archives".
+
+A29: When updating from multiple URLs at the same time, they can not 
+     contain files with identical filenames as the result will go into
+     a single output directory. Most rules archives include a 
+     sid-msg.map file that is used by Barnyard and similar programs to 
+     map a SID number into a rule msg string. When updating from 
+     multiple URLs at the same time you must add "skipfile sid-msg.map"
+     to your oinkmaster.conf to ignore that file in all archives.
+     If you need a sid-msg.map file, you must generate it yourself.
+     How this is done is described elsewhere in this FAQ.
+
+
+
+Q30: I get this error when running Oinkmaster:
+     "URL not specified. Specify at least one 'url=<url>' in the
+     Oinkmaster configuration file or use the '-u <url>' argument"
+
+A30: The error message explains it all - you did not specify where
+     Oinkmaster should look for the rules archive. Look in the
+     default oinkmaster.conf for more information.
