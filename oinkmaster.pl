@@ -54,7 +54,7 @@ sub read_config($ $);
 sub sanity_check();
 sub download_file($ $);
 sub unpack_rules_archive($ $ $);
-sub join_tmp_rules_dirs($ @);
+sub join_tmp_rules_dirs($ $ @);
 sub process_rules($ $ $ $ $ $);
 sub process_rule($ $ $ $ $ $ $ $);
 sub setup_rules_hash($ $);
@@ -64,7 +64,6 @@ sub print_changetype($ $ $ $);
 sub print_summary_change($ $);
 sub make_backup($ $);
 sub get_changes($ $ $);
-sub get_new_filenames($ $);
 sub update_rules($ @);
 sub is_in_path($);
 sub get_next_entry($ $ $ $ $ $);
@@ -225,16 +224,11 @@ foreach my $url (@{$config{url}}) {
     unpack_rules_archive("$url", "$url_tmpdir/$OUTFILE", $RULES_DIR);
 }
 
-
 # Copy all rules files from the tmp dirs into $RULES_DIR in the tmp directory.
 # File matching 'skipfile' a directive will not be copied.
-# Will exit in case of duplicate filenames.
-join_tmp_rules_dirs("$tmpdir/$RULES_DIR", @url_tmpdirs);
-
-
-# Create list of new files that we care about from the downloaded
 # Filenames (with full path) will be stored as %new_files{filename}.
-my $num_files = get_new_filenames(\my %new_files, "$tmpdir/$RULES_DIR");
+# Will exit in case of duplicate filenames.
+my $num_files = join_tmp_rules_dirs("$tmpdir/$RULES_DIR", \my %new_files, @url_tmpdirs);
 
 # Make sure we have at least the minimum number of files.
 clean_exit("not enough rules files in downloaded rules archive(s).\n".
@@ -905,10 +899,11 @@ sub download_file($ $)
 # into a single directory inside the tmp dir, except for files
 # matching a 'skipfile' directive'.
 # Will exit in case of colliding filenames.
-sub join_tmp_rules_dirs($ @)
+sub join_tmp_rules_dirs($ $ @)
 {
-    my $rules_dir   = shift;
-    my @url_tmpdirs = @_;
+    my $rules_dir     = shift;
+    my $new_files_ref = shift;
+    my @url_tmpdirs   = @_;
 
     my %rules_files;
 
@@ -926,6 +921,7 @@ sub join_tmp_rules_dirs($ @)
               if (exists($rules_files{$_}));
 
             $rules_files{$_} = 1;
+            $$new_files_ref{"$rules_dir/$_"} = 1;
 
             my $src_file = untaint_path("$url_tmpdir/$_");
             copy("$src_file", "$rules_dir")
@@ -935,6 +931,7 @@ sub join_tmp_rules_dirs($ @)
         closedir(URL_TMPDIR);
     }
 
+    return (keys(%$new_files_ref));
 }
 
 
@@ -1949,30 +1946,6 @@ sub get_changes($ $ $)
     print STDERR "done.\n" unless ($config{quiet});
 
     return (%changes);
-}
-
-
-
-# Create list of new files (with full path) that we care about.
-# I.e. files that match the 'update_files' regexp and isn't listed
-# in the ignore list.
-sub get_new_filenames($ $)
-{
-    my $new_files_ref = shift;
-    my $new_rules_dir = shift;
-
-    opendir(NEWRULES, "$new_rules_dir")
-      or clean_exit("could not open directory $new_rules_dir: $!");
-
-    while ($_ = readdir(NEWRULES)) {
-        next if (/^\.\.?$/);
-        $new_files{"$new_rules_dir/$_"}++
-          if (/$config{update_files}/ && !exists($config{file_ignore_list}{$_}));
-    }
-    closedir(NEWRULES);
-
-  # Return number of new interesting filenames.
-    return (keys(%$new_files_ref));
 }
 
 
