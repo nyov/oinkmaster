@@ -13,6 +13,7 @@ sub sanity_check;
 sub unpack_rules_archive;
 sub disable_rules;
 sub setup_rule_hashes;
+sub find_line;
 
 my $version     = 'Oinkmaster v0.4 by Andreas Östling <andreaso@it.su.se>';
 my $config_file = "./oinkmaster.conf";
@@ -31,15 +32,16 @@ use vars qw
    );
 
 my (
-      $output_dir
+      $output_dir, $sid, $old_rule, $new_rule, $file
    );
 
 #my (
-#
+#      @added_files
 #   );
 
 my (
-      %sid_disable_list, %file_ignore_list, %config, %old_files, %new_files
+      %sid_disable_list, %file_ignore_list, %config, %changes, %added_files,
+      %new_files, %new_rules, %new_other, %old_rules, %old_other
    );
 
 
@@ -86,14 +88,6 @@ while ($_ = readdir(NEWRULES)) {
 }
 closedir(NEWRULES);
 
-# Create list of (old) files that are in our output directory.
-opendir(OLDRULES, "$output_dir") or die("could not open directory $output_dir: $!\nExiting");
-while ($_ = readdir(OLDRULES)) {
-    $old_files{$_}++
-      if (/$config{update_files}/ && !exists($file_ignore_list{$_}));
-}
-closedir(OLDRULES);
-
 # Make sure there is at least one file to be updated.
 $_ = keys(%new_files);
 if ($_  < 1) {
@@ -107,7 +101,82 @@ if ($_  < 1) {
 # All files will still be left in the temporary directory.
 disable_rules;
 
+# Setup %new_rules, %old_rules, %new_other and %old_other.
+# As a bonus, we get list of added files in %added_files.
 setup_rule_hashes;
+
+# Time to compare the new rules files to the old ones.
+# For each rule in the new rule set, check if the rule also exists
+# in the old rule set.  If it does then check if it has been modified, 
+# but if it doesn't, it must have been added.
+
+print STDERR "Comparing your old files to the new ones, hang on...\n"
+  unless ($quiet);
+
+foreach $file (keys(%new_files)) {                         # for each new file
+    next if ($file =~ /$config{skip_diff}/);               # skip comparing for files listed in skip_diff
+    foreach $sid (keys(%{$new_rules{$file}})) {            # for each sid in the new file
+        $new_rule = $new_rules{$file}{$sid};               # save the rule in $new_rule for easier access
+            if (exists($old_rules{$file}{$sid})) {         # does this sid also exist in the old rules file?
+                $old_rule = $old_rules{$file}{$sid};       # yes, put old rule in $old_rule
+
+		unless ($new_rule eq $old_rule) {                             # are they identical?
+                    if ("#$old_rule" eq $new_rule) {                          # rule disabled?
+                        $changes{removed_dis}       .= "       $new_rule";
+                    } elsif ($old_rule eq "#$new_rule") {                     # rule enabled?
+                        $changes{added_ena}         .= "       $new_rule";
+                    } elsif ($old_rule =~ /^\s*#/ && $new_rule !~ /^\s*#/) {  # rule enabled and  modified?
+                        $changes{added_ena_mod}     .= "       Old: $old_rule       New: $new_rule";
+                    } elsif ($old_rule !~ /^\s*#/ && $new_rule =~ /^\s*#/) {  # rule disabled and modified?
+                        $changes{removed_dis_mod}   .= "       Old: $old_rule       New: $new_rule";
+                    } elsif ($old_rule =~ /^\s*#/ && $new_rule =~ /^\s*#/) {  # inactive rule modified?
+                        $changes{modified_inactive} .= "       Old: $old_rule       New: $new_rule";
+                    } else {                                                  # active rule modified?
+                        $changes{modified_active}   .= "       Old: $old_rule       New: $new_rule";
+	  	    }
+		}
+
+	    } else {
+	        $changes{added_new} .= "   $new_rule";
+	    }
+    } # foreach sid
+
+  # Check for removed rules, i.e. sids that exist in the new rules file but not in the old one.
+    foreach $sid (keys(%{$old_rules{$file}})) {
+        unless (exists($new_rules{$file}{$sid})) {
+            $old_rule = $old_rules{$file}{$sid};
+            $changes{removed_del} .= "       $old_rule";
+        }
+    }
+
+  # Now check for other changes (lines that aren't snort rules).
+
+  # First check for added lines.
+    foreach $_ (@{$new_other{$file}}) {
+        unless (find_line($_, @{$old_other{$file}})) {  # Does this line also exist in the old rules file?
+#            fix_fileinfo("other_added", $file);         # Nope, it's an added line.
+            $changes{other_added} .= "       $_";
+#            $other_changed = 1;
+        }
+    }
+
+  # Check for removed lines.
+    foreach $_ (@{$old_other{$file}}) {
+        unless (find_line($_, @{$new_other{$file}})) {  # Does this line also exist in the new rules file?
+ #           fix_fileinfo("other_removed", $file);       # Nope, it's a removed line.
+            $changes{other_removed} .= "       $_";
+#            $other_changed = 1;
+        }
+    }
+
+} # foreach new file
+
+
+print "\n\nResults:\n";
+
+print "removed rules:\n$changes{removed_del}\n";
+print "other_added:\n$changes{other_added}\n";
+print "other_removed:\n$changes{other_removed}\n";
 
 
 # END OF MAIN #
@@ -177,8 +246,10 @@ sub read_config
 	    $config{url} = $1;
 	} elsif (/^PATH\s*=\s*(.*)/i) {
 	    $config{path} = $1;
-	} elsif (/update_files\s*=\s*(.*)/i) {
+	} elsif (/^update_files\s*=\s*(.*)/i) {
 	    $config{update_files} = $1;
+	} elsif (/^skip_diff\s*=\s*(.*)/i) {
+	    $config{skip_diff} = $1;
         } else {                                              # invalid line
             print STDERR "Warning: line $line in $config_file is invalid, skipping line.\n";
         }
@@ -297,7 +368,7 @@ sub disable_rules
       # Write back to the same file.
 	open(OUTFILE, ">$tmpdir/rules/$_") or die("could not open $tmpdir/rules/$_: $!\nExiting");
 	RULELOOP:foreach $line (@_) {
-            unless ($line =~ /$snort_rule_regexp/) {    # Only care about snort rules.
+            unless ($line =~ /$snort_rule_regexp/) {    # only care about snort rules
 	        print OUTFILE $line;
 		next RULELOOP;
 	    }
@@ -306,7 +377,7 @@ sub disable_rules
             if (exists($sid_disable_list{$sid})) {      # should this sid be disabled?
                 if ($verbose) {
                     $_ = $file;
-                    $_ =~ s/.+\///;                     # remove path, just keep the filename.
+                    $_ =~ s/.+\///;                     # remove path, just keep the filename
                     $_ = sprintf("Disabling sid %-5s in file %-20s (%s)\n", $sid, $_, $msg);
                     print STDERR "$_";
                 }
@@ -324,7 +395,11 @@ sub disable_rules
 }
 
 
-
+# Setup %new_rules, %old_rules, %new_other and %old_other.
+# Format will be %new_rules{filename}{sid} = rule
+# and:
+# %new_other{filename} = @array_with_non-rule_lines
+# As a bonus, we get list of added files in %added_files.
 sub setup_rule_hashes
 {
     my ($file);
@@ -333,16 +408,49 @@ sub setup_rule_hashes
         open(NEWFILE, "$tmpdir/rules/$file") or die("could not open $tmpdir/rules/$file: $!\n");
 	while (<NEWFILE>) {
 	    if (/$snort_rule_regexp/) {
-#print "sätter new_files($file)($2)\n";
-#	        $new_files{"$file"}{"123"} = "foo";
-$new_files{$file}{$2} = $_;
+	        $new_rules{"$file"}{"$2"} = $_;
 	    } else {
-#	        $new_files{
+	        push(@{$new_other{"$file"}}, $_);  # use array so the lines stay sorted
 	    }
 	}
 	close(NEWFILE);
+
+     # Also read in old file if it exists.
+        if (-f "$output_dir/$file") {
+            open(OLDFILE, "$output_dir/$file") or die("could not open $output_dir/$file: $!\nExiting");
+	    while (<OLDFILE>) {
+                if (/$snort_rule_regexp/) {
+                    $old_rules{$file}{$2} = $_;
+                } else {
+                    push(@{$old_other{$file}}, $_);
+                }
+            }
+            close(OLDFILE);
+        } else {
+	    $added_files{"$file"}++;
+        }
     }
 
+}
+
+
+
+# Try to find a given string in a given array. Return 1 if found, otherwise 0.
+# Some things will always be considered as found (lines that we don't care if
+# they were added/removed). It's extremely slow, but who cares.
+sub find_line
+{
+    my $line = shift;   # line to look for
+    my @arr  = @_;      # array to look in
+
+    return 1 unless ($line =~ /\S/);                       # skip blank lines (always consider them as found)
+    return 1 if     ($line =~ /\s*#+\s*\$Id$/);  # also skip CVS $Id tag
+
+    foreach $_ (@arr) {
+        return 1 if ($_ eq $line);                         # string found
+    }
+
+    return 0;                                              # string not found
 }
 
 #### EOF ####
