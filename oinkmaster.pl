@@ -977,10 +977,10 @@ sub make_backup($ $)
 
   # Execute tar command. This will archive "rules-backup-$date/"
   # into the file rules-backup-$date.tar, placed in $tmpdir.
-    warn("WARNING: tar command did not exit with status 0 when archiving backup files.\n")
+    clean_exit("tar command did not exit with status 0 when archiving backup files.\n")
       if (system("tar","cf","rules-backup-$date.tar","rules-backup-$date"));
 
-    warn("WARNING: gzip command did not exit with status 0 when compressing backup file.\n")
+    clean_exit("gzip command did not exit with status 0 when compressing backup file.\n")
       if (system("gzip","rules-backup-$date.tar"));
 
   # Change back to old directory (so it will work with -b <directory> as either
@@ -989,8 +989,8 @@ sub make_backup($ $)
       or clean_exit("could not change directory back to $old_dir: $!");
 
     copy("$tmpdir/rules-backup-$date.tar.gz", "$dest_dir/")
-      or warn("WARNING: unable to copy $tmpdir/rules-backup-$date.tar.gz ".
-              "to $dest_dir/: $!\n");
+      or clean_exit("unable to copy $tmpdir/rules-backup-$date.tar.gz ".
+                    "to $dest_dir/: $!\n");
 
     print STDERR " saved as $dest_dir/rules-backup-$date.tar.gz.\n"
       unless ($quiet);
