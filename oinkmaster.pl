@@ -50,8 +50,6 @@ my $PRINT_BOTH        = 3;
 my $min_rules         = 1;
 my $min_files         = 1;
 
-my $config_file       = '/usr/local/etc/oinkmaster.conf';
-
 my $verbose           = 0;
 my $careful           = 0;
 my $quiet             = 0;
@@ -77,16 +75,18 @@ my $OK_PATH_CHARS = 'a-zA-Z\d\ _\.\-+:\\\/~@,=';
 # Set default temporary base directory.
 my $tmp_basedir = $ENV{TMP} || $ENV{TMPDIR} || $ENV{TEMPDIR} || '/tmp';
 
+# Default locations for configuration file.
+my @config_file = qw(
+    /etc/oinkmaster.conf
+    /usr/local/etc/oinkmaster.conf
+);
 
-use vars qw
-   (
-      $opt_b $opt_c $opt_C $opt_e $opt_h $opt_i $opt_o
-      $opt_q $opt_Q $opt_r $opt_T $opt_u $opt_U $opt_v $opt_V
-   );
+use vars qw(
+    $opt_b $opt_c $opt_C $opt_e $opt_h $opt_i $opt_o
+    $opt_q $opt_Q $opt_r $opt_T $opt_u $opt_U $opt_v $opt_V
+);
 
-my (
-      %config, %includes, $tmpdir
-   );
+my (%config, %includes, $tmpdir, $config_file);
 
 
 
@@ -100,9 +100,21 @@ $| = 1;
 
 my $start_date = scalar(localtime);
 
+# Look for config file in default locations.
+foreach my $config (@config_file) {
+    $config_file = $config if (-e "$config");
+}
+
 # Parse command line arguments and add at least %config{output_dir}.
 # Will exit if something is wrong.
 parse_cmdline(\%config);
+
+# $config_file must have been defined by now.
+unless (defined($config_file)) {
+    clean_exit("configuration file not found in default locations\n".
+               "(@config_file)\n".
+               "Put it there or use the \"-C\" argument.");
+}
 
 # Read in $config_file. Will exit if something is wrong.
 read_config($config_file, \%config);
@@ -235,7 +247,8 @@ This should be the directory where you store the snort rules.
 Options:
 -b <dir>   Backup your old rules into <dir> before overwriting them
 -c         Careful mode - only check for changes and do not update anything
--C <cfg>   Use this configuration file instead of $config_file
+-C <cfg>   Use this configuration file instead of the default
+           (@config_file)
 -e         Re-enable all rules that are disabled by default in the rules
            distribution (they are disabled for a reason, so use with care)
 -h         Show this usage information
@@ -319,10 +332,11 @@ sub read_config($ $)
     my $cfg_ref     = shift;
     my $linenum     = 0;
 
-    unless (-e "$config_file") {
-        clean_exit("configuration file \"$config_file\" does not exist.\n".
-                   "Put it there or use the -C argument.");
-    }
+    clean_exit("configuration file \"$config_file\" does not exist.\n")
+      unless (-e "$config_file");
+
+    print STDERR "Loading $config_file.\n"
+      unless ($quiet);
 
   # Basic check to avoid cross-include of files (infinite recursion).
     clean_exit("attempt to load \"$config_file\" twice.")
