@@ -1,0 +1,8 @@
+
+makesidex.pl by Jerry Applebaum <JApplebaum@APTEGRITY.com>:
+
+  It basicall reads all of your snort rules, strips out the sid's from everything
+  you've commented out, and writes them out in a format that can be
+  appended to the oinkmaster.conf. Helpful for new Oinkmaster users.
+
+
