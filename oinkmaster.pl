@@ -1264,14 +1264,14 @@ sub process_rule($ $ $ $ $ $ $)
     foreach my $mod_expr (@sid_mod, @all_mod) {
 
         my ($subst, $repl) = ($mod_expr->[0], $mod_expr->[1]);
-        if ($single =~ /$subst/s) {
+        if ($single =~ /$subst/si) {
             print STDERR "Modifying SID $sid, subst=$subst, ".
                          "repl=$repl\nBefore: $single\n"
 	      if ($print_messages && $config{verbose});
 
           # Do the substitution on the single-line version and put it
           # back in $multi.
-            $single =~ s/$subst/$repl/ee;
+            $single =~ s/$subst/$repl/eei;
             $multi = $single;
 
   	    print STDERR "After:  $single\n"
