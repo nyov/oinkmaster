@@ -22,7 +22,7 @@ foreach my $file (@files) {
 	while (my $line = <RULE>) {
 		chomp $line;
 		# look for anything that's commented out....grab sid
-		if ($line =~ /^\s*#.*?sid\s*\:\s*(\d+)/) {
+		if ($line =~ /^\s*#.*\bsid\s*\:\s*(\d+)/) {
 			# this is just for sorting....
 			my $key = sprintf("%06g", $1);
 			$sid{$key} = $1;
