@@ -56,6 +56,7 @@ o The FAQ has been updated, especially the sections about local
   customization of rules.
 o Fixed bug so -e works correctly in conjunction with modifysid.
   Thanks to Alex Butcher.
+o Fixed bug that prevented ability to load multiple configs under Win32.
 o Fixed a bunch of documentation typos (thanks to JP Vossen!).
 
 
