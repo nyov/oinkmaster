@@ -26,6 +26,7 @@
     disablesid 288             # POP3 EXPLOIT x86 linux overflow
 
   addmsg.pl will not touch disablesid lines that already has a comment in them.
+  It's not able to handle disablesid lists (i.e "disablesid 1,2,3,4,5,..." lines).
 
   Usage: ./addmsg.pl <oinkmaster config file> <rules directory>
 
