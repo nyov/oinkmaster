@@ -328,25 +328,25 @@ Usage: $progname -o <outdir> [options]
 This should be the directory where you store your Snort rules.
 
 Options:
--b <dir>   Backup your old rules into <dir> before overwriting them
--c         Careful mode - only check for changes and do not update anything
--C <cfg>   Use this configuration file instead of the default
-           May be specified multiple times to load multiple files
--e         Enable all rules that are disabled by default
--h         Show this usage information
--i         Interactive mode - you will be asked to approve the changes (if any)
--m         Minimize diff when printing result by removing common parts in rules
--q         Quiet mode - no output unless changes were found
--Q         super-quiet mode - like -q but even more quiet
--r         Check for rules files that exist in the output directory
-           but not in the downloaded rules archive
--s         Leave out details in rules results, just print SID, msg and filename
--T         Test configuration and then exit
--u <url>   Download from this URL instead of the one in the configuration file
-           (must be http://, https://, ftp://, file:// or scp:// ... .tar.gz)
--U <file>  Merge new variables from downloaded snort.conf into <file>
--v         Verbose mode
--V         Show version and exit
+-b <dir>  Backup your old rules into <dir> before overwriting them
+-c        Careful mode (dry run) - check for changes but do not update anything
+-C <cfg>  Use this configuration file instead of the default
+          May be specified multiple times to load multiple files
+-e        Enable all rules that are disabled by default
+-h        Show this usage information
+-i        Interactive mode - you will be asked to approve the changes (if any)
+-m        Minimize diff when printing result by removing common parts in rules
+-q        Quiet mode - no output unless changes were found
+-Q        super-quiet mode - like -q but even more quiet
+-r        Check for rules files that exist in the output directory
+          but not in the downloaded rules archive
+-s        Leave out details in rules results, just print SID, msg and filename
+-T        Test configuration and then exit
+-u <url>  Download from this URL instead of the one in the configuration file
+          (must be http://, https://, ftp://, file:// or scp:// ... .tar.gz)
+-U <file> Merge new variables from downloaded snort.conf into <file>
+-v        Verbose mode
+-V        Show version and exit
 
 RTFM
     exit;
