@@ -88,8 +88,8 @@ while (my $file = readdir(RULESDIR)) {
         }
 
         if (defined($classtype)) {
-            if ($single !~ /classtype\s*:\s*".*"\s*;/) {
-                $multi =~ s/\)\s*\n/classtype:"$classtype";)\n/;
+            if ($single !~ /classtype\s*:\s*.+\s*;/) {
+                $multi =~ s/\)\s*\n/classtype:$classtype;)\n/;
             }
         }
 
