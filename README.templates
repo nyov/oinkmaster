@@ -30,7 +30,8 @@ The syntax to define a template is:
 define_template <name> "modifythis" | "withthis"
 
 The "modifythis" is a Perl regular expression that will match the 
-pattern you want to replace with the "withthis" expression, 
+pattern you want to replace with the "withthis" expression.
+It is simply passed to a s/modifythis/withthis/ statement in Perl.
 
 The syntax to use a template is:
 use_template <name> <sid> [ "arg1" "arg2" ... ]
@@ -61,7 +62,7 @@ Usage hints
 -----------
 When adding new stuff to rules using templates (or regular modifysid 
 expressions) it usually doesn't matter where in the rule you put it 
-(unless it affect the way Snort parses and optimizes the rules). The 
+(unless it affects the way Snort parses and optimizes the rules). The 
 important thing is to write the substitution expression so that it
 will continue to work even if the regular rule becomes updated somehow. 
 Imagine this rule:
@@ -78,7 +79,7 @@ longer match. A better approach is to match against something you know
 isn't going to change, like the sid statement or the very end of the 
 rule. Also try not to be strict about whitespaces. For example, 
 remember that a a sid statement can be written as 
-"sid:123;", "sid: 123;", "sid : 123 ;" and so on.
+"sid:123;" or "sid: 123;" or "sid : 123 ;" and so on.
 
 
 

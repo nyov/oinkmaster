@@ -17,7 +17,7 @@ o New option -m to minimize/simplify the resulting output for modified
   are kept to get some context. More information and example output can
   be found in the updated manual page (oinkmaster.1).
 o Support -s and -m in the GUI as well (the "diff mode" buttons)
-o Better handling of duplicate rules (i.e. rules with the same sid) for 
+o Better handling of duplicate rules (i.e. rules with the same SID) for
   files in the downloaded archive:
   - If all the duplicates are disabled, only one of them is passed on to 
     the local rules file
@@ -37,8 +37,8 @@ o When running in super quiet mode (-Q), possible warnings about
   duplicate SIDs in the downloaded rules are suppressed.
 o Print warning when attempting to enable/disable/modify non-existent SID
   when in non-quiet mode instead of only when in verbose mode.
-o Allow location of editor to be set in the GUI and do not search for
-  default editor in a predefined list anymore.
+o Allow location of editor to be set in the GUI and do not search for a
+  default one in a predefined list anymore.
 o Removed 'P' flag from tar as it is incompatible together with 't' in
   gtar, which is now used by default on FreeBSD 5.2-CURRENT and later
   (PR ports/70806). Thanks to SANETO Takanori for reporting.
@@ -47,7 +47,7 @@ o The GUI will now always use the same Perl binary when executing
 o By popular demand: support marking rules as locally modified to prevent
   them from being overwritten. See oinkmaster.conf and the FAQ for 
   documentation about "localsid". Do not use this unless you really have 
-  to as it's very easy to end up with lots of sigs that aren't updated 
+  to as it's very easy to end up with lots of sigs that aren't maintained
   anymore.
 o The default URL in oinkmaster.conf is now
   http://www.snort.org/dl/rules/snortrules-snapshot-2_2.tar.gz as 2.2
