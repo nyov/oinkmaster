@@ -6,7 +6,6 @@ use strict;
 use Cwd;
 use File::Copy;
 use Getopt::Std;
-use POSIX qw(strftime);
 
 sub show_usage();
 sub parse_cmdline($);
@@ -734,7 +733,11 @@ sub make_backup($ $)
     my $src_dir  = shift;    # dir with the rules to be backed up
     my $dest_dir = shift;    # where to put the tarball containing the backed up rules
 
-    my $date       = strftime("%Y%m%d-%H%M", localtime);
+    (undef, my $min, my $hour, my $mday, my $mon, my $year, undef, undef, undef)
+      = localtime(time);
+
+    my $date = sprintf("%d%02d%02d-%02d%02d", $year + 1900, $mon + 1, $mday, $hour, $min);
+
     my $bu_tmp_dir = "$tmpdir/rules-backup-$date";
 
     print STDERR "Creating backup of old rules..."
