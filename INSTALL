@@ -28,7 +28,11 @@ o That's it!
   Now you can start figuring out which rules you want to disable (if any at all).
   If you already have several rules commented out (or removed) from your current
   rules, you need to add those SIDs to oinkmaster.conf manually, or they will be
-  enabled after the first update. You really should check out the README file first.
+  enabled after the first update. Note that Oinkmaster will enable all rules by
+  default, even those that are commented out by default in the rules archive, 
+  unless -p is specified.
+
+  You really should check out the README file first.
   It contains some very important information.
 
   You may also run oinkmaster.pl -h for more usage information and options.
