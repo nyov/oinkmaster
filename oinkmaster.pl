@@ -741,7 +741,7 @@ sub print_changes($ $)
 
   # Print added non-rule lines.
     if (keys(%{$$ch_ref{other}{added}}) > 0) {
-        print "\n  [+++]       Added lines:       [+++]\n";
+        print "\n  [+++]      Added non-rule lines:     [+++]\n";
         foreach my $file (sort({uc($a) cmp uc($b)} keys(%{$$ch_ref{other}{added}}))) {
             print "\n     -> File $file:\n";
             foreach my $other (@{$$ch_ref{other}{added}{$file}}) {
@@ -753,7 +753,8 @@ sub print_changes($ $)
 
   # Print removed non-rule lines.
     if (keys(%{$$ch_ref{other}{removed}}) > 0) {
-        print "\n  [---]      Removed lines:      [---]\n";
+        print "\n  [---]    Removed non-rule lines:     [---]\n";
+
         foreach my $file (sort({uc($a) cmp uc($b)} keys(%{$$ch_ref{other}{removed}}))) {
             print "\n     -> File $file:\n";
             foreach my $other (@{$$ch_ref{other}{removed}{$file}}) {
@@ -880,28 +881,28 @@ sub get_changes($ $)
 
 		    unless ($new_rule eq $old_rule) {           # are they identical?
                         if ("#$old_rule" eq $new_rule) {                          # rule disabled?
- 	                    $changes{rules}{"[---]          Disabled:         [---]"}{$file}{$sid}++;
+ 	                    $changes{rules}{"[---]        Disabled rules:         [---]"}{$file}{$sid}++;
                         } elsif ($old_rule eq "#$new_rule") {                     # rule enabled?
- 	                    $changes{rules}{"[+++]          Enabled:          [+++]"}{$file}{$sid}++;
+ 	                    $changes{rules}{"[+++]        Enabled rules:          [+++]"}{$file}{$sid}++;
                         } elsif ($old_rule =~ /^\s*#/ && $new_rule !~ /^\s*#/) {  # rule enabled and modified?
- 	                    $changes{rules}{"[+++]    Enabled and modified:   [+++]"}{$file}{$sid}++;
+ 	                    $changes{rules}{"[+++]  Enabled and modified rules:   [+++]"}{$file}{$sid}++;
                         } elsif ($old_rule !~ /^\s*#/ && $new_rule =~ /^\s*#/) {  # rule disabled and modified?
- 	                    $changes{rules}{"[---]    Disabled and modified:  [---]"}{$file}{$sid}++;
+ 	                    $changes{rules}{"[---]  Disabled and modified rules:  [---]"}{$file}{$sid}++;
                         } elsif ($old_rule =~ /^\s*#/ && $new_rule =~ /^\s*#/) {  # inactive rule modified?
- 	                    $changes{rules}{"[///]      Modified inactive:    [///]"}{$file}{$sid}++;
+ 	                    $changes{rules}{"[///]    Modified inactive rules:    [///]"}{$file}{$sid}++;
                         } else {                                                  # active rule modified?
- 	                    $changes{rules}{"[///]       Modified active:     [///]"}{$file}{$sid}++;
+ 	                    $changes{rules}{"[///]     Modified active rules:     [///]"}{$file}{$sid}++;
 	  	        }
 		    }
 	        } else {    # sid not found in old file so it must have been added
-  	            $changes{rules}{"[+++]           Added:           [+++]"}{$file}{$sid}++;
+  	            $changes{rules}{"[+++]          Added rules           [+++]"}{$file}{$sid}++;
 	        }
         } # foreach sid
 
       # Check for removed rules, i.e. sids that exist in the old file but not in the new one.
         foreach my $sid (keys(%{$rh{old}{rules}{$file}})) {
             unless (exists($rh{new}{rules}{$file}{$sid})) {
-	        $changes{rules}{"[---]          Removed:          [---]"}{$file}{$sid}++;
+	        $changes{rules}{"[---]         Removed rules:         [---]"}{$file}{$sid}++;
             }
         }
 
