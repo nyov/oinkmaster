@@ -4,6 +4,9 @@
 #
 # makesidex.pl - (make sid exclusions)-  Make snort SID exclusion list for 'oinkmaster.pl'
 # redirect (append!) output to your oinkmaster.conf
+#
+# Written by Jerry Applebaum.
+#
 
 my $confdir = shift || die "Usage: $0 <rules directory>\n";
 
