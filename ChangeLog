@@ -1,7 +1,7 @@
 # $Id$ #
 
-v0.9 - 200xxxxx
-~~~~~~~~~~~~~~~
+Oinkmaster v0.9 - 200xxxxx
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 o It's much faster now.
 o Added ability to use "include <file>" in oinkmaster configuration
   files. <file> will be parsed (just like a regular oinkmaster.conf) as
@@ -47,8 +47,8 @@ o Many other minor improvements.
 
 
 
-v0.8 - 20030902
-~~~~~~~~~~~~~~~
+Oinkmaster v0.8 - 20030902
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 o Experimental multi-line rule support.
 o Make contrib/addsid.pl and contrib/addmsg.pl handle multi-line rules as well.
 o Added create-sidmap.pl to contrib section. It's a script that generates 
@@ -87,8 +87,8 @@ o Avoid using move() from File::Copy since some versions of it lies about
 
 
 
-v0.7 - 20030217
-~~~~~~~~~~~~~~~
+Oinkmaster v0.7 - 20030217
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 o oinkmaster.conf will now be searched for in /usr/local/etc/ by
   default (instead of in the current directory).
   You will have to put it there or use the -C argument.
@@ -128,8 +128,8 @@ o Many internal cleanups and minor bug fixes.
 
 
 
-v0.6 - 20020706
-~~~~~~~~~~~~~~~
+Oinkmaster v0.6 - 20020706
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 o Rules that are disabled by default in the rules distribution
   will now NOT be re-enabled by Oinkmaster by default, finally.
   I.e. "-p" is obsolete. If you want to enable those rules you now
@@ -138,8 +138,8 @@ o A couple of minor documentation updates.
 
 
 
-v0.5 - 20020506
-~~~~~~~~~~~~~~~
+Oinkmaster v0.5 - 20020506
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 o Fixed bug where all filenames would not always be printed.
 o Fixed minor whitespace idiocy.
 o Print which rules that are being preserved or enabled (for rules that
@@ -151,8 +151,8 @@ o Document that using -p is usually a good idea.
 
 
 
-v0.4 - 20020422
-~~~~~~~~~~~~~~~
+Oinkmaster v0.4 - 20020422
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 o More or less rewritten from scratch.
 o The file rules.ignore has been renamed to oinkmaster.conf, which contains
   more than just the sids to disable (have a look at it).
@@ -177,13 +177,13 @@ o Some documentation updates.
 
 
 
-v0.3 - never (was rewritten and became v0.4)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Oinkmaster v0.3 - never (was rewritten and became v0.4)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 
-v0.2 - 20010906
-~~~~~~~~~~~~~~~
+Oinkmaster v0.2 - 20010906
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 o Added optional "-a <attempts>" argument (which is passed to wget's "-t" argument)
   to configure maximum number of download retries before giving up.
 o Warning message will be printed if there is any invalid line in the ignore file.
@@ -195,6 +195,69 @@ o Default URL is now http://www.snort.org/downloads/snortrules.tar.gz
 
 
 
-v0.1 - 20010726
-~~~~~~~~~~~~~~~
+Oinkmaster v0.1 - 20010726
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+o Initial release (based on arachnids_upd v0.4).
+
+
+
+arachnids_upd v0.4 - 20010526
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+o Minor optimizaion fix, which a few people pointed out.
+
+
+
+arachnids_upd v0.3 - 20010508
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+o Much more easy-to-read output of the rule changes
+  (the diff command is no longer used).
+  The changes are split into eight categories:
+
+o Added (new):
+  - New rule (the IDS number did not exist in the old ruleset).
+o Added (enabled):
+  - The rule (with this IDS number) was commented in the old ruleset, but is
+    now activated.
+o Added (enabled) and modified:
+  -  The rule (with this IDS number) was commented in the old ruleset, but
+     is now activated. The actual rule had also been modified.
+o Removed (deleted):
+  - The rule (with this IDS number) does no longer exist in any way.
+o Removed (disabled):
+  - The rule (with this IDS number) still exists but have now been commented.
+o Removed (disabled) and modified:
+  - The rule (with this IDS number) still exists but have now been commented.
+    The actual rule had also been modified.
+o Modified active:
+  - The rule (with this IDS number) have been modified and is an active rule.
+o Modified inactive:
+   -  The rule (with this IDS number) have been modified but is currently an
+      inactive (commented) rule.
+
+o Added INSTALL file with basic installation instructions.
+o Minor enhancements.
+o Minor documentation updates.
+
+
+
+arachnids_upd v0.2 - 20010422
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+o The ruleset file in the URL must now be gzipped.
+  Default URL is now http://www.whitehats.com/ids/vision.rules.gz.
+  An integrity check (gzip -t) will be run on this file after download.
+o You must now use -b <directory> instead of just -b.
+  Backups will be stored in this directory.
+o If there were no changes in the new ruleset, no backup will be done and the
+  current ruleset will remain untouched.
+o Added contribution script from Dejan Muhamedagic (see contrib/).
+  I'm not sure it's quite as useful now in v0.2 though.
+o Added -q option to run in quiet mode. No output unless the rules had changed.
+o Minor documentation updates.
+o Minor bug fixes and other minor enhancements
+  (see arachnids_upd.pl -h for new options).
+
+
+
+arachnids_upd v0.1 - 20010210
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 o Initial release.
