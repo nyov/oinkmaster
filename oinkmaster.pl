@@ -53,7 +53,7 @@ my $preserve_comments = 1;
 my $SINGLELINE_RULE_REGEXP = '^\s*#*\s*(?:alert|log|pass)\s.+msg\s*:\s*"(.+?)"\s*;.*sid\s*:\s*(\d+)\s*;.*\)\s*$';
 
 # Regexp to match the start (the first line) of a possible multi-line rule.
-my $MULTILINE_RULE_REGEXP = '^\s*#*\s*(?:alert|log|pass)\s.*\\\s*\n$';
+my $MULTILINE_RULE_REGEXP = '^\s*#*\s*(?:alert|log|pass)\s.*\\\\\s*\n$';
 
 
 use vars qw
@@ -273,7 +273,8 @@ sub read_config($ $)
       # Skip blank lines.
         next unless (/\S/);
 
-        if (/^disablesids*\s+(\d.*)/i) {                 # disablesid <SID[,SID, ...]>
+      # disablesid <SID[,SID, ...]>
+        if (/^disablesids*\s+(\d.*)/i) {
 	    my $args = $1;
 	    foreach my $sid (split(/\s*,\s*/, $args)) {
   	        if ($sid =~ /^\d+$/) {
@@ -282,9 +283,11 @@ sub read_config($ $)
                     warn("WARNING: line $linenum in $config_file is invalid, ignoring\n");
 	        }
 	    }
-        } elsif (/^modifysid\s+(\d+)\s+(".+"\s*\|\s*".+")/i) {   # modifysid <SID> "substthis" | "withthis"
+      # modifysid <SID> "substthis" | "withthis"
+        } elsif (/^modifysid\s+(\d+)\s+(".+"\s*\|\s*".+")/i) {
             push(@{$$cfg_ref{sid_modify_list}{$1}}, $2);
-        } elsif (/^skipfiles*\s+(.*)/i) {                # skipfile <file[,file, ...]>
+      # skipfile <file[,file, ...]>
+        } elsif (/^skipfiles*\s+(.*)/i) {
 	    my $args = $1;
 	    foreach my $file (split(/\s*,\s*/, $args)) {
 	        if ($file =~ /^\S+$/) {
@@ -501,6 +504,7 @@ sub disable_and_modify_rules($ $ $)
     my $modify_sid_ref  = shift;
     my $newfiles_ref    = shift;
     my $num_disabled    = 0;
+    my $num_rules       = 0;
 
     warn("WARNING: all rules that are disabled by default will be re-enabled\n")
       if (!$preserve_comments && !$quiet);
@@ -531,7 +535,10 @@ sub disable_and_modify_rules($ $ $)
 		next RULELOOP;
 	    }
 
-          # We've got a valid snort rule. Grab msg and sid.
+          # We've got a valid snort rule.
+            $num_rules++;
+
+          # Grab msg and sid.
 	    $single =~ /$SINGLELINE_RULE_REGEXP/oi;
    	    my ($msg, $sid) = ($1, $2);
 
@@ -595,7 +602,7 @@ sub disable_and_modify_rules($ $ $)
 
         close(OUTFILE);
     }
-    print STDERR "$num_disabled rules disabled.\n"
+    print STDERR "$num_disabled out of $num_rules rules disabled.\n"
       unless ($quiet);
 }
 
@@ -640,7 +647,6 @@ sub setup_rules_hash($)
 
 	# Also read in old file if it exists.
         if (-f "$config{output_dir}/$file") {
-
             open(OLDFILE, "<$config{output_dir}/$file")
               or clean_exit("could not open $config{output_dir}/$file for reading: $!");
 	    my @oldfile = <OLDFILE>;
@@ -1119,8 +1125,8 @@ sub get_next_entry($ $ $ $)
             $$single_ref =~ s/\\\s*\n//;    # remove trailing "\" for single-line version
 
           # If there are no more lines, this can not be a valid multi-line rule.
-            if (!($line = shift(@$arr_ref))) {
 
+            if (!($line = shift(@$arr_ref))) {
                 $$multi_ref .= $line;
 
                 @_ = split(/\n/, $$multi_ref);
@@ -1140,25 +1146,26 @@ sub get_next_entry($ $ $ $)
                 return (1);   # return non-rule
             }
 
-            $$multi_ref  .= $line;
-            $line =~ s/^\s*#*\s*//;               # In single-line version, remove leading #'s first
+          # Multi-line continuation.
+            $$multi_ref .= $line;
+            $line =~ s/^\s*#*\s*//;          # In single-line version, remove leading #'s first
             $$single_ref .= $line;
-        }
+        } # while line ends with "\"
+
 
       # Single-line version should now be a valid rule.
       # If not, it wasn't a valid multi-line rule after all.
         if ($$single_ref =~ /$SINGLELINE_RULE_REGEXP/oi) {
 
-            $$single_ref =~ s/^\s*//;             # remove leading whitespaces
-	    $$single_ref =~ s/^#+\s*/#/;          # remove whitespaces next to the leading #
-	    $$single_ref =~ s/\s*\n$/\n/;         # remove trailing whitespaces
+            $$single_ref =~ s/^\s*//;        # remove leading whitespaces
+	    $$single_ref =~ s/^#+\s*/#/;     # remove whitespaces next to the leading #
+	    $$single_ref =~ s/\s*\n$/\n/;    # remove trailing whitespaces
 
             $$multi_ref  =~ s/^\s*//;
             $$multi_ref  =~ s/\s*\n$/\n/;
             $$multi_ref  =~ s/^#+\s*/#/;
 
             return (1);   # return multi
-
         } else {
             @_ = split(/\n/, $$multi_ref);
 
@@ -1167,7 +1174,7 @@ sub get_next_entry($ $ $ $)
 
           # First line of broken multi-line rule will be returned as a non-rule line.
             $$nonrule_ref = shift(@_) . "\n";
- 	    $$nonrule_ref =~ s/\s*\n$/\n/;            # remove trailing whitespaces
+ 	    $$nonrule_ref =~ s/\s*\n$/\n/;   # remove trailing whitespaces
 
           # The rest is put back to the array again.
             foreach $_ (reverse((@_))) {
@@ -1179,13 +1186,13 @@ sub get_next_entry($ $ $ $)
 
     } elsif ($line =~ /$SINGLELINE_RULE_REGEXP/oi) {  # single-line rule?
         $$single_ref = $line;
-        $$single_ref =~ s/^\s*//;                # remove leading whitespaces
-	$$single_ref =~ s/^#+\s*/#/;             # remove whitespaces next to the leading #
-	$$single_ref =~ s/\s*\n$/\n/;            # remove trailing whitespaces
+        $$single_ref =~ s/^\s*//;            # remove leading whitespaces
+	$$single_ref =~ s/^#+\s*/#/;         # remove whitespaces next to the leading #
+	$$single_ref =~ s/\s*\n$/\n/;        # remove trailing whitespaces
         return (1);   # return single
-    } else {                                     # non-rule line?
+    } else {                                 # non-rule line?
         $$nonrule_ref = $line;
-	$$nonrule_ref =~ s/\s*\n$/\n/;           # remove trailing whitespaces
+	$$nonrule_ref =~ s/\s*\n$/\n/;       # remove trailing whitespaces
         return (1);   # return non-rule
     }
 }
