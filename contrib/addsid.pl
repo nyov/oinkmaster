@@ -80,7 +80,7 @@ while (my $file = readdir(RULESDIR)) {
         $multi = $single unless (defined($multi));
 
       # Don't care about inactive rules.
-        if ($single =~ /\s*#/) {
+        if ($single =~ /^\s*#/) {
 	    print NEWFILE "$multi";
 	    next;
         }
