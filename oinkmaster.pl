@@ -381,7 +381,8 @@ sub download_rules($ $)
         copy("$url", "$localfile")
           or clean_exit("unable to copy $url to $localfile: $!");
 
-        print STDERR "done.\n" unless ($quiet);
+        print STDERR "done.\n"
+	  unless ($quiet);
     }
 
   # Make sure the downloaded file is at least non-empty.
@@ -393,7 +394,7 @@ sub download_rules($ $)
 
 
 
-# Make a few basic sanity checks on the rules archive and then 
+# Make a few basic sanity checks on the rules archive and then
 # uncompress/untar it if everything looked ok.
 sub unpack_rules_archive($)
 {
@@ -748,7 +749,7 @@ sub print_changes($ $)
 
 
   # Print non-rule changes.
-    print "\n[*] Non-rule changes: [*]\n";
+    print "\n[*] Non-rule modifications: [*]\n";
 
   # Print added non-rule lines.
     if (keys(%{$$ch_ref{other}{added}}) > 0) {
