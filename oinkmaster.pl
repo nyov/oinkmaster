@@ -242,6 +242,11 @@ sub read_config($ $)
     my $cfgref      = shift;
     my $linenum     = 0;
 
+    unless (-e "$config_file") {
+        clean_exit("Configuration file \"$config_file\" does not exist.\n".
+                   "Put it there or use the -C argument.");
+    }
+
     open(CONF, "<$config_file")
       or clean_exit("Could not open config file \"$config_file\": $!");
 
@@ -684,7 +689,7 @@ sub make_backup($ $)
     warn("WARNING: gzip command did not exit with status 0 when compressing backup file.\n")
       if (system("gzip","rules-backup-$date.tar"));
 
-  # Change back to old directory. (so it will work with -b <directory> as either
+  # Change back to old directory (so it will work with -b <directory> as either
   # an absolute or a relative path.
     chdir("$old_dir") or clean_exit("Error: could not change directory back to $old_dir: $!");
 
