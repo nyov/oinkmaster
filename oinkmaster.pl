@@ -29,6 +29,7 @@ sub make_tempdir($);
 sub get_new_vars($ $ $);
 sub add_new_vars($ $);
 sub write_new_vars($ $);
+sub msdos_to_cygwin_path($);
 sub clean_exit($);
 
 
@@ -388,11 +389,7 @@ sub sanity_check()
     if ($^O eq "cygwin" && $config{path} =~ /^[a-zA-Z]:[\/\\]/) {
         $ENV{PATH} = "";
         foreach my $path (split(/;/, $config{path})) {
-	    if ($path =~ /^([a-zA-Z]):[\/\\](.+)/) {
-                my ($drive, $dir) = ($1, $2);
-		$dir =~ s/\\/\//g;
-		$ENV{PATH} .= "/cygdrive/$drive/$dir:";
-	    }
+	    $ENV{PATH} .= "$path:" if (msdos_to_cygwin_path(\$path));
 	}
         chop($ENV{PATH});
     } else {
@@ -441,6 +438,12 @@ sub sanity_check()
     clean_exit("the backup directory \"$config{backup_dir}\" doesn't exist or ".
                "isn't writable by you.")
       if ($make_backup && (!-d "$config{backup_dir}" || !-w "$config{backup_dir}"));
+
+  # Convert tmp_basedir to cygwin style if running cygwin and msdos style was specified.
+    if ($^O eq "cygwin" && $tmp_basedir =~ /^[a-zA-Z]:[\/\\]/) {
+        msdos_to_cygwin_path(\$tmp_basedir)
+          or clean_exit("could not convert temporary dir to cygwin style");
+    }
 
   # Make sure temporary directory exists.
     clean_exit("the temporary directory $tmp_basedir does not exist or isn't writable by you.")
@@ -1397,6 +1400,23 @@ add_new_vars($ $)
     print NEW_LOCAL_CONF @old_content;
 
     close(NEW_LOCAL_CONF);
+}
+
+
+
+# Convert msdos style path to cygwin style.
+sub msdos_to_cygwin_path($)
+{
+    my $path_ref  = shift;
+
+    if ($$path_ref =~ /^([a-zA-Z]):[\/\\](.*)/) {
+        my ($drive, $dir) = ($1, $2);
+	$dir =~ s/\\/\//g;
+	$$path_ref = "/cygdrive/$drive/$dir";
+        return (1);
+    }
+
+    return (0);
 }
 
 
