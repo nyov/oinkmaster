@@ -24,8 +24,7 @@ INSTALL and README (and README.win32 of you're on Windows) for more
 information. 
 
 The GUI is written in Perl and requires the Perl Tk module.
-You must also make sure the Perl binary is in your PATH.
-
+You must also make sure the Perl binary is in your PATH (it normaly is).
 If you're on Unix and don't have the module already, install it from
 your ports/package system or get the latest version from
 http://www.cpan.org/authors/id/NI-S/. At the time of writing, 
@@ -39,9 +38,12 @@ be missing, you can install it with the command "ppm install Tk" in a DOS
 shell. If you want a non-ugly interface when browsing for directories, you
 need to install the Win32::FileOp module. This is strongly recommended and
 is as simple as typing "ppm install Win32::FileOp" in a DOS shell.
-Then you just need to copy the GUI perl file to some suitable directory
-and execute it (You don't have to be in a DOS shell to start it, you
-can create an icon for it on your desktop if you like.)
+
+After you've made sure you have the Tk module installed, simply execute
+oinkgui.pl (it's found in oinkmaster's contrib directory, and you may
+want to copy it to some better location first).
+You don't have to be in a DOS shell / Unix shell to start it - you
+can create a shortcut for it on your desktop if you like.
 
 
 
