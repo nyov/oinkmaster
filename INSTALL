@@ -36,8 +36,7 @@ o Decide in which directory you want to put the new rules. Since you
   create a backup of it first. You must run Oinkmaster as a user that has 
   read/write access to your rules directory and all rules files in it. It 
   should however *NOT* be a privileged user such as root! Never run
-  Oinkmaster as root. (The user you run Snort as, if different than the
-  Oinkmaster user, usually only needs read access.)
+  Oinkmaster as root.
 
 
 o Done! 
