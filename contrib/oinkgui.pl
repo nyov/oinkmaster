@@ -124,19 +124,9 @@ $| = 1;
 select STDOUT;
 $| = 1;
 
-# Find out if we're on Win32 and can use Win32::FileOp.
+# Find out if can use Win32::FileOp.
 my $use_fileop = 0;
-
-if ($^O eq 'MSWin32') {
-    foreach (@INC) {
-        if (-e "$_/Win32/FileOp.pm") {
-            $use_fileop = 1;
-            require Win32::FileOp;
-            last;
-        }
-    }
-}
-
+$use_fileop = 1 if (eval "require Win32::FileOp");
 
 # Find out which oinkmaster.pl file to default to.
 foreach my $dir (File::Spec->path()) {
