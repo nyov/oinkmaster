@@ -12,8 +12,7 @@ sub get_highest_sid($);
 my $USAGE = "usage: $0 <rulesdir>\n";
 
 # Regexp to match a snort rule line. SID must not be required in this one.
-# We only care about active rules.
-my $SINGLELINE_RULE_REGEXP = '^\s*(?:alert|drop|log|pass|reject|sdrop) '.
+my $SINGLELINE_RULE_REGEXP = '^\s*#*\s*(?:alert|drop|log|pass|reject|sdrop) '.
                              '.+msg\s*:\s*"(.+?)"\s*;.*\)\s*$'; # ';
 
 # Regexp to match the start (the first line) of a possible multi-line rule.
@@ -79,6 +78,12 @@ while (my $file = readdir(RULESDIR)) {
         my $msg = $1;
 
         $multi = $single unless (defined($multi));
+
+      # Don't care about inactive rules.
+        if ($single =~ /\s*#/) {
+	    print NEWFILE "$multi";
+	    next;
+        }
 
       # Add SID.
         if ($single !~ /sid\s*:\s*\d+\s*;/) {
