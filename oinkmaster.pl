@@ -39,29 +39,34 @@ sub catch_sigint();
 sub clean_exit($);
 
 
-my $VERSION           = 'Oinkmaster v1.0 by Andreas Östling <andreaso@it.su.se>';
-my $OUTFILE           = 'snortrules.tar.gz';
-my $DIST_SNORT_CONF   = 'rules/snort.conf';
+my $VERSION            = 'Oinkmaster v1.0 by Andreas Östling <andreaso@it.su.se>';
+my $OUTFILE            = 'snortrules.tar.gz';
+my $DIST_SNORT_CONF    = 'rules/snort.conf';
 
-my $PRINT_NEW         = 1;
-my $PRINT_OLD         = 2;
-my $PRINT_BOTH        = 3;
+my $PRINT_NEW          = 1;
+my $PRINT_OLD          = 2;
+my $PRINT_BOTH         = 3;
 
-my $min_rules         = 1;
-my $min_files         = 1;
+my (%loaded, $tmpdir);
 
-my $verbose           = 0;
-my $careful           = 0;
-my $quiet             = 0;
-my $super_quiet       = 0;
-my $check_removed     = 0;
-my $make_backup       = 0;
-my $update_vars       = 0;
-my $config_test_mode  = 0;
-my $interactive       = 0;
-my $enable_all        = 0;
-my $use_external_bins = 1;
+my %config = (
+    careful            => 0,
+    check_removed      => 0,
+    config_test_mode   => 0,
+    enable_all         => 0,
+    interactive        => 0,
+    make_backup        => 0,
+    min_files          => 1,
+    min_rules          => 1,
+    quiet              => 0,
+    super_quiet        => 0,
+    update_vars        => 0,
+    use_external_bins  => 1,
+    verbose            => 0,
+);
 
+# Set default temporary base directory.
+$config{tmp_basedir} = $ENV{TMP} || $ENV{TMPDIR} || $ENV{TEMPDIR} || '/tmp';
 
 # Regexp to match the start of a multi-line rule.
 my $MULTILINE_RULE_REGEXP  = '^\s*#*\s*(?:alert|drop|log|pass|reject|sdrop|activate|dynamic)'.
@@ -77,16 +82,11 @@ my $VAR_REGEXP = '^\s*var\s+(\S+)\s+\S+';
 # Allowed characters in misc paths/filenames, including the ones in the tarball.
 my $OK_PATH_CHARS = 'a-zA-Z\d\ _\(\)\[\]\.\-+:\\\/~@,=';
 
-# Set default temporary base directory.
-my $tmp_basedir = $ENV{TMP} || $ENV{TMPDIR} || $ENV{TEMPDIR} || '/tmp';
-
 # Default locations for configuration file.
 my @default_config_files = qw(
     /etc/oinkmaster.conf
     /usr/local/etc/oinkmaster.conf
 );
-
-my (%config, %loaded, $tmpdir);
 
 
 
@@ -103,7 +103,7 @@ $SIG{INT} = \&catch_sigint;
 my $start_date = scalar(localtime);
 
 # Assume the required Perl modules are available if we're on Windows.
-$use_external_bins = 0 if ($^O eq "MSWin32" || $^O =~ /^Windows/);
+$config{use_external_bins} = 0 if ($^O eq "MSWin32" || $^O =~ /^Windows/);
 
 # Parse command line arguments and add at least %config{output_dir}.
 # Will exit if something is wrong. May set global @config_files.
@@ -129,7 +129,7 @@ if ($#{$config{config_files}} == -1) {
 read_config($_, \%config) for @{$config{config_files}};
 
 # If we're told not to use external binaries, load the required modules.
-unless ($use_external_bins) {
+unless ($config{use_external_bins}) {
     eval {
         require Archive::Tar;
         require IO::Zlib;
@@ -146,13 +146,13 @@ unless ($use_external_bins) {
 sanity_check();
 
 # If we're in config test mode and have come this far, we're done.
-if ($config_test_mode) {
+if ($config{config_test_mode}) {
     print "No fatal errors in configuration.\n";
     clean_exit("");
 }
 
-$tmpdir = tempdir("oinkmaster.XXXXXXXXXX", DIR => $tmp_basedir)
-  or clean_exit("could not create temporary directory in $tmp_basedir: $!");
+$tmpdir = tempdir("oinkmaster.XXXXXXXXXX", DIR => $config{tmp_basedir})
+  or clean_exit("could not create temporary directory in $config{tmp_basedir}: $!");
 
 umask($config{umask}) if exists($config{umask});
 
@@ -168,10 +168,10 @@ unpack_rules_archive("$tmpdir/$OUTFILE");
 # Filenames (with full path) will be stored as %new_files{filenme}.
 my $num_files = get_new_filenames(\my %new_files, "$tmpdir/rules");
 
-# Make sure the number of files is at least $min_files.
+# Make sure we have at least the minumum number of files.
 clean_exit("not enough rules files in downloaded archive (is it broken?)\n".
-           "Number of rules files is $num_files but minimum is set to $min_files.")
-  if ($num_files < $min_files);
+           "Number of rules files is $num_files but minimum is set to $config{min_files}.")
+  if ($num_files < $config{min_files});
 
 # Disable/modify/clean downloaded rules.
 my $num_rules = process_rules(\%{$config{sid_modify_list}},
@@ -179,10 +179,10 @@ my $num_rules = process_rules(\%{$config{sid_modify_list}},
                               \%{$config{sid_enable_list}},
                               \%new_files);
 
-# Make sure the number of rules is at least $min_rules.
+# Make sure we have at least the minumum number of rules.
 clean_exit("not enough rules in downloaded archive (is it broken?)\n".
-           "Number of rules is $num_rules but minimum is set to $min_rules.")
-  if ($num_rules < $min_rules);
+           "Number of rules is $num_rules but minimum is set to $config{min_rules}.")
+  if ($num_rules < $config{min_rules});
 
 # Setup rules hash.
 my %rh = setup_rules_hash(\%new_files);
@@ -192,7 +192,7 @@ my %changes = get_changes(\%rh, \%new_files);
 
 # Check for variables that exist in dist snort.conf but not in local snort.conf.
 get_new_vars(\%changes, $config{varfile}, "$tmpdir/$DIST_SNORT_CONF")
-  if ($update_vars);
+  if ($config{update_vars});
 
 
 # Find out if something had changed.
@@ -211,35 +211,35 @@ $something_changed = 1
 # careful mode. Create backup first if running with -b.
 my $printed = 0;
 if ($something_changed) {
-    if ($careful) {
+    if ($config{careful}) {
         print STDERR "Skipping backup since we are running in careful mode.\n"
-          if ($make_backup && (!$quiet));
+          if ($config{make_backup} && (!$config{quiet}));
     } else {
-        if ($interactive) {
+        if ($config{interactive}) {
             print_changes(\%changes, \%rh);
             $printed = 1;
         }
 
-        if (!$interactive || ($interactive && approve_changes)) {
+        if (!$config{interactive} || ($config{interactive} && approve_changes)) {
             make_backup($config{output_dir}, $config{backup_dir})
-              if ($make_backup);
+              if ($config{make_backup});
 
             add_new_vars(\%changes, $config{varfile})
-              if ($update_vars);
+              if ($config{update_vars});
 
             update_rules($config{output_dir}, keys(%{$changes{modified_files}}));
         }
     }
 } else {
     print STDERR "No files modified - no need to backup old files, skipping.\n"
-      if ($make_backup && !$quiet);
+      if ($config{make_backup} && !$config{quiet});
 }
 
 print "\nNote: Oinkmaster is running in careful mode - not updating anything.\n"
-  if ($something_changed && $careful);
+  if ($something_changed && $config{careful});
 
 print_changes(\%changes, \%rh)
-  if (!$printed && ($something_changed || !$quiet));
+  if (!$printed && ($something_changed || !$config{quiet}));
 
 
 # Everything worked. Do a clean exit without any error message.
@@ -302,30 +302,30 @@ sub parse_cmdline($)
 
     my $cmdline_ok = GetOptions(
         "b=s" => \$$cfg_ref{backup_dir},
-        "c"   => \$careful,
+        "c"   => \$$cfg_ref{careful},
         "C=s" => \@{$$cfg_ref{config_files}},
-        "e"   => \$enable_all,
+        "e"   => \$$cfg_ref{enable_all},
         "h"   => \&show_usage,
-        "i"   => \$interactive,
+        "i"   => \$$cfg_ref{interactive},
         "o=s" => \$$cfg_ref{output_dir},
-        "q"   => \$quiet,
-        "Q"   => \$super_quiet,
-        "r"   => \$check_removed,
-        "T"   => \$config_test_mode,
+        "q"   => \$$cfg_ref{quiet},
+        "Q"   => \$$cfg_ref{super_quiet},
+        "r"   => \$$cfg_ref{check_removed},
+        "T"   => \$$cfg_ref{config_test_mode},
         "u=s" => \$$cfg_ref{url},
         "U=s" => \$$cfg_ref{varfile},
-        "v"   => \$verbose,
+        "v"   => \$$cfg_ref{verbose},
         "V"   => sub { print "$VERSION\n"; exit(0) }
     );
 
     show_usage unless ($cmdline_ok);
 
-    $quiet       = 1 if ($super_quiet);
-    $update_vars = 1 if (defined($$cfg_ref{varfile}));
+    $$cfg_ref{quiet}       = 1 if ($$cfg_ref{super_quiet});
+    $$cfg_ref{update_vars} = 1 if ($$cfg_ref{varfile});
 
     if ($$cfg_ref{backup_dir}) {
         $$cfg_ref{backup_dir} = File::Spec->canonpath($$cfg_ref{backup_dir});
-        $make_backup = 1;
+        $$cfg_ref{make_backup} = 1;
     }
 
   # -o <dir> is the only required option in normal usage.
@@ -352,7 +352,7 @@ sub read_config($ $)
       unless (-e "$config_file");
 
     print STDERR "Loading $config_file.\n"
-      unless ($quiet);
+      unless ($config{quiet});
 
     my ($dev, $ino) = (stat($config_file))[0,1]
       or clean_exit("unable to stat $config_file: $!");
@@ -414,7 +414,7 @@ sub read_config($ $)
 	    my $args = $1;
 	    foreach my $file (split(/\s*,\s*/, $args)) {
 	        if ($file =~ /^\S+$/) {
-                    $verbose && print STDERR "Adding file to ignore list: $file.\n";
+                    $config{verbose} && print STDERR "Adding file to ignore list: $file.\n";
                     $$cfg_ref{file_ignore_list}{$file}++;
 		} else {
                     warn("WARNING: line $linenum in $config_file is invalid, ignoring\n");
@@ -435,16 +435,16 @@ sub read_config($ $)
 	    $$cfg_ref{umask} = oct($1);
 
         } elsif (/^min_files\s*=\s*(\d+)/i) {   # min_files
-            $min_files = $1;
+            $$cfg_ref{min_files} = $1;
 
         } elsif (/^min_rules\s*=\s*(\d+)/i) {   # min_rules
-            $min_rules= $1;
+            $$cfg_ref{min_rules} = $1;
 
         } elsif (/^tmpdir\s*=\s*(.+)/i) {       # tmpdir
-            $tmp_basedir = $1;
+            $$cfg_ref{tmp_basedir} = $1;
 
         } elsif (/^use_external_bins\s*=\s*([01])/i) {
-            $use_external_bins = $1;
+            $$cfg_ref{use_external_bins} = $1;
 
         } elsif (/^scp_key\s*=\s*(.+)/i) {      # scp_key
             $$cfg_ref{scp_key} = $1;
@@ -470,7 +470,7 @@ sub sanity_check()
 
   # Can't use both -q and -v.
     clean_exit("quiet mode and verbose mode at the same time doesn't make sense.")
-      if ($quiet && $verbose);
+      if ($config{quiet} && $config{verbose});
 
   # Make sure all required variables are defined in the config file.
     foreach my $param (@req_params) {
@@ -504,19 +504,19 @@ sub sanity_check()
 
   # If a variable file (probably local snort.conf) has been specified,
   # it must exist. It must also be writable unless we're in careful mode.
-    if ($update_vars) {
+    if ($config{update_vars}) {
 	$config{varfile} = untaint_path($config{varfile});
 
         clean_exit("variable file $config{varfile} does not exist.")
           unless (-e "$config{varfile}");
 
         clean_exit("variable file $config{varfile} is not writable by you.")
-          if (!$careful && !-w "$config{varfile}");
+          if (!$config{careful} && !-w "$config{varfile}");
     }
 
   # Make sure all required binaries can be found.
   # Wget is only required if url is http[s] or ftp.
-    if ($use_external_bins) {
+    if ($config{use_external_bins}) {
         foreach my $binary (@req_binaries) {
             clean_exit("$binary not found in PATH ($ENV{PATH}).")
               unless (is_in_path($binary));
@@ -529,7 +529,7 @@ sub sanity_check()
         (($config{'url'}) = $config{'url'} =~ /^((?:https*|ftp|file|scp):\/\/.+\.tar\.gz)$/));
 
   # Wget must be found if url is http[s]:// or ftp://.
-    if ($use_external_bins) {
+    if ($config{use_external_bins}) {
         clean_exit("wget not found in PATH ($ENV{PATH}).")
           if ($config{'url'} =~ /^(https*|ftp):/ && !is_in_path("wget"));
     }
@@ -553,10 +553,10 @@ sub sanity_check()
 
   # Make sure the output directory is writable unless running in careful mode.
     clean_exit("the output directory \"$config{output_dir}\" isn't writable by you.")
-      if (!$careful && !-w "$config{output_dir}");
+      if (!$config{careful} && !-w "$config{output_dir}");
 
   # Make sure the backup directory exists and is writable if running with -b.
-    if ($make_backup) {
+    if ($config{make_backup}) {
         $config{backup_dir} = untaint_path($config{backup_dir});
         clean_exit("the backup directory \"$config{backup_dir}\" doesn't exist or ".
                  "isn't writable by you.")
@@ -564,21 +564,21 @@ sub sanity_check()
     }
 
   # Convert tmp_basedir to cygwin style if running cygwin and msdos style was specified.
-    if ($^O eq "cygwin" && $tmp_basedir =~ /^[a-zA-Z]:[\/\\]/) {
-        msdos_to_cygwin_path(\$tmp_basedir)
+    if ($^O eq "cygwin" && $config{tmp_basedir} =~ /^[a-zA-Z]:[\/\\]/) {
+        msdos_to_cygwin_path(\$config{tmp_basedir})
           or clean_exit("could not convert temporary dir to cygwin style");
     }
 
   # Make sure temporary directory exists.
-    clean_exit("the temporary directory $tmp_basedir does not exist or isn't writable by you.")
-      if (!-d "$tmp_basedir" || !-w "$tmp_basedir");
+    clean_exit("the temporary directory $config{tmp_basedir} does not exist or isn't writable by you.")
+      if (!-d "$config{tmp_basedir}" || !-w "$config{tmp_basedir}");
 
   # Also untaint it.
-    $tmp_basedir = untaint_path($tmp_basedir);
+    $config{tmp_basedir} = untaint_path($config{tmp_basedir});
 
   # Make sure stdin and stdout are ttys if we're running in interactive mode.
     clean_exit("you can not run in interactive mode when STDIN/STDOUT is not a TTY.")
-      if ($interactive && !(-t STDIN && -t STDOUT));
+      if ($config{interactive} && !(-t STDIN && -t STDOUT));
 }
 
 
@@ -592,11 +592,11 @@ sub download_rules($ $)
     my $ret;
 
   # Use wget if URL starts with "http[s]" or "ftp" and we use external binaries.
-    if ($use_external_bins && $url =~ /^(?:https*|ftp)/) {
+    if ($config{use_external_bins} && $url =~ /^(?:https*|ftp)/) {
         print STDERR "Downloading rules archive from $url... "
-          unless ($quiet);
+          unless ($config{quiet});
 
-        if ($verbose) {
+        if ($config{verbose}) {
             print STDERR "\n";
             clean_exit("could not download rules")
               if (system("wget","-v","-O","$localfile","$url"));
@@ -608,13 +608,13 @@ sub download_rules($ $)
                 close(LOG);
                 clean_exit("could not download rules. Output from wget follows:\n\n @log");
             }
-            print STDERR "done.\n" unless ($quiet);
+            print STDERR "done.\n" unless ($config{quiet});
         }
 
   # Use LWP if URL starts with http[s] and use_external_bins=0.
-    } elsif (!$use_external_bins && $url =~ /^(?:https*)/) {
+    } elsif (!$config{use_external_bins} && $url =~ /^(?:https*)/) {
         print STDERR "Downloading rules archive from $url... "
-          unless ($quiet);
+          unless ($config{quiet});
 
         my $ua = LWP::UserAgent->new();
         $ua->env_proxy;
@@ -623,7 +623,7 @@ sub download_rules($ $)
         clean_exit("could not download rules: " . $response->status_line)
           unless $response->is_success;
 
-        print "done.\n" unless ($quiet);
+        print "done.\n" unless ($config{quiet});
 
   # Grab file from local filesystem if file://...
     } elsif ($url =~ /^file/) {
@@ -636,13 +636,13 @@ sub download_rules($ $)
           unless (-s "$url");
 
         print STDERR "Copying rules archive from $url... "
-          unless ($quiet);
+          unless ($config{quiet});
 
         copy("$url", "$localfile")
           or clean_exit("unable to copy $url to $localfile: $!");
 
         print STDERR "done.\n"
-	  unless ($quiet);
+	  unless ($config{quiet});
 
   # Grab file using scp if scp://...
     } elsif ($url =~ /^scp/) {
@@ -651,12 +651,12 @@ sub download_rules($ $)
         my @cmd;
         push(@cmd, "scp");
         push(@cmd, "-i", "$config{scp_key}") if (exists($config{scp_key}));
-        push(@cmd, "-q")                     if ($quiet);
-        push(@cmd, "-v")                     if ($verbose);
+        push(@cmd, "-q")                     if ($config{quiet});
+        push(@cmd, "-v")                     if ($config{verbose});
         push(@cmd, "$url", "$localfile");
 
         print STDERR "Copying rules archive from $url using scp:\n"
-          unless ($quiet);
+          unless ($config{quiet});
 
         clean_exit("scp returned error when trying to copy $url")
           if (system(@cmd));
@@ -692,7 +692,7 @@ sub unpack_rules_archive($)
     my $dir = dirname($archive);
     chdir("$dir") or clean_exit("could not change directory to \"$dir\": $!");
 
-    if ($use_external_bins) {
+    if ($config{use_external_bins}) {
 
       # Run integrity check (gzip -t) on the gzip file.
         clean_exit("integrity check on gzip file failed (file transfer failed or ".
@@ -753,9 +753,9 @@ sub unpack_rules_archive($)
 
  # Looks good. Now we can untar it.
     print STDERR "Archive successfully downloaded, unpacking... "
-      unless ($quiet);
+      unless ($config{quiet});
 
-    if ($use_external_bins) {
+    if ($config{use_external_bins}) {
         clean_exit("failed to untar $archive.")
           if system("tar","xf","$archive");
     } else {
@@ -779,7 +779,7 @@ sub unpack_rules_archive($)
       or clean_exit("could not change directory back to $old_dir: $!");
 
     print STDERR "done.\n"
-      unless ($quiet);
+      unless ($config{quiet});
 }
 
 
@@ -802,13 +802,13 @@ sub process_rules($ $ $ $)
     );
 
     warn("WARNING: all rules that are disabled by default will be re-enabled\n")
-      if ($enable_all && !$quiet);
+      if ($config{enable_all} && !$config{quiet});
 
     print STDERR "Processing downloaded rules... "
-      unless ($quiet);
+      unless ($config{quiet});
 
     print STDERR "\n"
-      if ($verbose);
+      if ($config{verbose});
 
     foreach my $file (sort(keys(%$newfiles_ref))) {
 
@@ -848,9 +848,9 @@ sub process_rules($ $ $ $)
 
           # Some rules may be commented out by default.
           # Enable them if -e is specified.
-	    if ($multi =~ /^#/ && $enable_all) {
+	    if ($multi =~ /^#/ && $config{enable_all}) {
   	        print STDERR "Enabling disabled rule (SID $sid): $msg\n"
-	          if ($verbose);
+	          if ($config{verbose});
                 $multi =~ s/^#*//;
                 $multi =~ s/\n#*/\n/g;
 	    }
@@ -868,12 +868,12 @@ sub process_rules($ $ $ $)
 		if ($multi =~ /$subst/s) {
   	            print STDERR "Modifying SID $sid, subst=$subst, ".
                                  "repl=$repl\nBefore: $multi\n"
-		      if ($verbose);
+		      if ($config{verbose});
 
                     $multi =~ s/$subst/$repl/see;
 
   	  	    print STDERR "After:  $multi\n"
-                      if ($verbose);
+                      if ($config{verbose});
 
                     $stats{modified}++;
 		} else {
@@ -886,7 +886,7 @@ sub process_rules($ $ $ $)
           # Disable rule if requested and it's not already disabled.
             if (exists($$disable_sid_ref{$sid}) && $multi !~ /^\s*#/) {
                 print STDERR "Disabling SID $sid: $msg\n"
-                  if ($verbose);
+                  if ($config{verbose});
                 $multi = "#$multi";
                 $multi =~ s/\n(.+)/\n#$1/g;
                 $stats{disabled}++;
@@ -895,7 +895,7 @@ sub process_rules($ $ $ $)
           # Enable rule if requested and it's not already enabled.
             if (exists($$enable_sid_ref{$sid}) && $multi =~ /^\s*#/) {
                 print STDERR "Enabling SID $sid: $msg\n"
-                  if ($verbose);
+                  if ($config{verbose});
                 $multi =~ s/^#+//;
                 $multi =~ s/\n#+(.+)/\n$1/g;
                 $stats{enabled}++;
@@ -910,10 +910,10 @@ sub process_rules($ $ $ $)
 
     print STDERR "disabled $stats{disabled}, enabled $stats{enabled}, ".
                  "modified $stats{modified}, total=" . keys(%sids) . ".\n"
-      unless ($quiet);
+      unless ($config{quiet});
 
   # Warn on attempt at processing non-existent sids.
-    if ($verbose) {
+    if ($config{verbose}) {
         foreach my $sid (keys(%$modify_sid_ref)) {
             next unless ($sid =~ /^\d+$/);    # don't warn on wildcard match
             warn("WARNING: attempt to modify non-existent SID $sid\n")
@@ -945,11 +945,11 @@ sub setup_rules_hash($)
     my (%rh, %old_sids);
 
     print STDERR "Setting up rules structures... "
-      unless ($quiet);
+      unless ($config{quiet});
 
     foreach my $file (sort(keys(%$new_files_ref))) {
         warn("\nWARNING: downloaded rules file $file is empty\n")
-          if (!-s "$file" && $verbose);
+          if (!-s "$file" && $config{verbose});
 
         open(NEWFILE, "<", "$file")
           or clean_exit("could not open $file for reading: $!");
@@ -995,7 +995,7 @@ sub setup_rules_hash($)
     }
 
     print STDERR "done.\n"
-      unless ($quiet);
+      unless ($config{quiet});
 
     return (%rh);
 }
@@ -1039,7 +1039,7 @@ sub make_backup($ $)
     my $backup_tmp_dir = "$tmpdir/rules-backup-$date";
 
     print STDERR "Creating backup of old rules..."
-      unless ($quiet);
+      unless ($config{quiet});
 
     mkdir("$backup_tmp_dir", 0700)
       or clean_exit("could not create temporary backup directory $backup_tmp_dir: $!");
@@ -1060,7 +1060,7 @@ sub make_backup($ $)
     closedir(OLDRULES);
 
   # Also backup the -U <file> (as "variable-file.conf") if specified.
-    if ($update_vars) {
+    if ($config{update_vars}) {
         copy("$config{varfile}", "$backup_tmp_dir/variable-file.conf")
           or warn("WARNING: could not copy $config{varfile} to $backup_tmp_dir: $!")
     }
@@ -1071,7 +1071,7 @@ sub make_backup($ $)
   # we have our rules to be backed up).
     chdir("$tmpdir") or clean_exit("could not change directory to $tmpdir: $!");
 
-    if ($use_external_bins) {
+    if ($config{use_external_bins}) {
         clean_exit("tar command did not exit with status 0 when archiving backup files.\n")
           if (system("tar","cf","rules-backup-$date.tar","rules-backup-$date"));
 
@@ -1104,7 +1104,7 @@ sub make_backup($ $)
                     "to $dest_dir/: $!\n");
 
     print STDERR " saved as $dest_dir/rules-backup-$date.tar.gz.\n"
-      unless ($quiet);
+      unless ($config{quiet});
 }
 
 
@@ -1119,7 +1119,7 @@ sub print_changes($ $)
           scalar(localtime) . " [***]\n";
 
   # Print new variables.
-    if ($update_vars) {
+    if ($config{update_vars}) {
        if ($#{$changes{new_vars}} > -1) {
             print "\n[*] New variables: [*]\n";
             foreach my $var (@{$changes{new_vars}}) {
@@ -1127,14 +1127,14 @@ sub print_changes($ $)
             }
         } else {
             print "\n[*] New variables: [*]\n    None.\n"
-              unless ($super_quiet);
+              unless ($config{super_quiet});
         }
     }
 
 
   # Print rules modifications.
     print "\n[*] Rules modifications: [*]\n    None.\n"
-      if (!keys(%{$$ch_ref{rules}}) && !$super_quiet);
+      if (!keys(%{$$ch_ref{rules}}) && !$config{super_quiet});
 
   # Print added rules.
     if (exists($$ch_ref{rules}{added})) {
@@ -1195,7 +1195,7 @@ sub print_changes($ $)
 
   # Print non-rule modifications.
     print "\n[*] Non-rule line modifications: [*]\n    None.\n"
-      if (!keys(%{$$ch_ref{other}}) && !$super_quiet);
+      if (!keys(%{$$ch_ref{other}}) && !$config{super_quiet});
 
   # Print added non-rule lines.
     if (exists($$ch_ref{other}{added})) {
@@ -1230,13 +1230,13 @@ sub print_changes($ $)
         }
     } else {
         print "\n[*] Added files: [*]\n    None.\n"
-          unless ($super_quiet);
+          unless ($config{super_quiet});
     }
 
 
 
   # Print list of possibly removed files if requested.
-    if ($check_removed) {
+    if ($config{check_removed}) {
         if (keys(%{$$ch_ref{removed_files}})) {
             print "\n[-] Files possibly removed from the archive ".
                   "(consider removing them from your snort.conf): [-]\n\n";
@@ -1245,7 +1245,7 @@ sub print_changes($ $)
 	    }
         } else {
              print "\n[*] Files possibly removed from the archive: [*]\n    None.\n"
-               unless ($super_quiet);
+               unless ($config{super_quiet});
         }
     }
 
@@ -1288,7 +1288,7 @@ sub get_changes($ $)
     my %changes;
 
     print STDERR "Comparing new files to the old ones... "
-      unless ($quiet);
+      unless ($config{quiet});
 
   # We have the list of added files (without full path) in $rh_ref{added_files}
   # but we'd rather want to have it in $changes{added_files} now.
@@ -1301,7 +1301,7 @@ sub get_changes($ $)
     }
 
   # Add list of possibly removed files into $removed_files if requested.
-    if ($check_removed) {
+    if ($config{check_removed}) {
         opendir(OLDRULES, "$config{output_dir}")
           or clean_exit("could not open directory $config{output_dir}: $!");
 
@@ -1388,7 +1388,7 @@ sub get_changes($ $)
 
     } # foreach new file
 
-    print STDERR "done.\n" unless ($quiet);
+    print STDERR "done.\n" unless ($config{quiet});
 
     return (%changes);
 }
@@ -1426,7 +1426,7 @@ sub update_rules($ @)
     my @modified_files = @_;
 
     print STDERR "Updating rules... "
-      if (!$quiet || $interactive);
+      if (!$config{quiet} || $config{interactive});
 
     foreach my $file_w_path (@modified_files) {
         copy("$file_w_path", "$dst_dir")
@@ -1434,7 +1434,7 @@ sub update_rules($ @)
     }
 
     print STDERR "done.\n"
-      if (!$quiet || $interactive);
+      if (!$config{quiet} || $config{interactive});
 }
 
 
@@ -1447,7 +1447,7 @@ sub is_in_path($)
     foreach my $dir (File::Spec->path()) {
         if (-x "$dir/$file" || -x "$dir/$file.exe") {
             print STDERR "Found $file binary in $dir\n"
-              if ($verbose);
+              if ($config{verbose});
             return (1) 
         }
     }
@@ -1498,7 +1498,7 @@ sub get_next_entry($ $ $ $ $ $)
             if (!($line = shift(@$arr_ref))) {
 
                 warn("\nWARNING: got EOF while parsing multi-line rule: $$multi_ref\n")
-                  if ($verbose);
+                  if ($config{verbose});
 
                 @_ = split(/\n/, $$multi_ref);
 
@@ -1539,7 +1539,7 @@ sub get_next_entry($ $ $ $ $ $)
             return (1);   # return multi
         } else {
             warn("\nWARNING: invalid multi-line rule: $$single_ref\n")
-              if ($verbose && $$multi_ref !~ /^\s*#/);
+              if ($config{verbose} && $$multi_ref !~ /^\s*#/);
 
             @_ = split(/\n/, $$multi_ref);
 
@@ -1569,7 +1569,7 @@ sub get_next_entry($ $ $ $ $ $)
       # Do extra check and warn if it *might* be a rule anyway,
       # but that we just couldn't parse for some reason.
         warn("\nWARNING: line may be a rule but it could not be parsed (missing sid or msg?): $line\n")
-          if ($verbose && $line =~ /^\s*alert .+msg\s*:\s*".+"\s*;/);
+          if ($config{verbose} && $line =~ /^\s*alert .+msg\s*:\s*".+"\s*;/);
 
         $$nonrule_ref = $line;
         $$nonrule_ref =~ s/\s*\n$/\n/;
@@ -1597,7 +1597,7 @@ sub get_new_vars($ $ $)
     }
 
     print STDERR "Looking for new variables... "
-      unless ($quiet);
+      unless ($config{quiet});
 
 
   # Read in variables from old file.
@@ -1627,7 +1627,7 @@ sub get_new_vars($ $ $)
     @{$$ch_ref{new_vars}} = @new_vars;
 
     print STDERR "done.\n"
-      unless ($quiet);
+      unless ($config{quiet});
 }
 
 
