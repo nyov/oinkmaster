@@ -8,14 +8,15 @@ o You can now set "rule_actions = ..." in oinkmaster.conf to tell
   rules instead of non-rule lines. If unset, 
   "alert|drop|log|pass|reject|sdrop|activate|dynamic" will be used 
   (same as before).
-o You can now run without any external binaries if you have the required
+o You can now run without external binaries if you have the required
   Perl modules installed (Archive::Tar, IO::Zlib and LWP::UserAgent).
   You can set use_external_bins to 0 or 1 in oinkmaster.conf to override
   the default. 0 means to use the Perl modules, 1 means to use external
   binaries. It's set to 0 by default on Windows (since the required
   Perl modules are already included in ActivePerl), and 1 on other systems 
-  (i.e. same behaviour as before). This makes it much simpler to install 
-  Oinkmaster on Windows/ActivePerl.
+  (i.e. same behaviour as before). This makes it much easier to install 
+  Oinkmaster on Windows/ActivePerl. See the new default oinkmaster.conf
+  for more information.
 o A fully featured graphical multi-platform front-end to Oinkmaster 
   written in Perl/Tk is included in the contrib directory (oinkgui.pl). 
   See README.gui for more information. Screenshots are available on
