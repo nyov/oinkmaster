@@ -337,7 +337,7 @@ sub show_usage
                  "-r         Check for rules files that exist in the output directory\n".
                  "           but not in the downloaded rules archive (i.e. files that may\n".
                  "           have been removed from the archive).\n".
-		 "-p         Preserve comments in downloaded rules (some rules may be\n".
+		 "-p         Preserve disabled rules in downloaded rules (some rules may be\n".
                  "           disabled by default, and Oinkmaster will usually enable them)\n".
                  "-q         Quiet mode. No output unless changes were found\n".
 		 "-v         Verbose mode\n".
@@ -551,7 +551,7 @@ sub disable_rules
                     $_ = sprintf("Disabling sid %-5s in file %-20s (%s)\n", $sid, $_, $msg);
                     print STDERR "$_";
                 }
-                $line = "#$line";
+                $line = "#$line" unless ($line =~ /^#/);
                 $num_disabled++;
 	    }
             print OUTFILE $line;       # Write line back to the rules file.

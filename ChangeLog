@@ -4,6 +4,7 @@ o More or less rewritten from scratch.
 o Removed several stupid command line options.
 o Update all files matching a regexp (see config file).
 o Skip diffing files matching another regexp (see config file).
+o Added option -p to preserve disabled rules in downloaded archive.
 
 
 
