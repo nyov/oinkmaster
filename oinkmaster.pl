@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl -wT
 
 # $Id$ #
 
@@ -226,7 +226,7 @@ unpack_rules_archive("$tmpdir/$OUTFILE", $RULES_DIR);
 # Filenames (with full path) will be stored as %new_files{filename}.
 my $num_files = get_new_filenames(\my %new_files, "$tmpdir/$RULES_DIR");
 
-# Make sure we have at least the minumum number of files.
+# Make sure we have at least the minimum number of files.
 clean_exit("not enough rules files in downloaded archive (is it broken?)\n".
            "Number of rules files is $num_files but minimum is set to $config{min_files}.")
   if ($num_files < $config{min_files});
@@ -242,7 +242,7 @@ my $num_rules = process_rules(\%{$config{sid_modify_list}},
                               \%rh_tmp,
                               \%new_files);
 
-# Make sure we have at least the minumum number of rules.
+# Make sure we have at least the minimum number of rules.
 clean_exit("not enough rules in downloaded archive (is it broken?)\n".
            "Number of rules is $num_rules but minimum is set to $config{min_rules}.")
   if ($num_rules < $config{min_rules});
@@ -1030,10 +1030,6 @@ sub process_rules($ $ $ $ $ $)
   # In case of dups, we use the one with the highest rev.
     foreach my $file (sort(keys(%$newfiles_ref))) {
 
-      # Make sure it's a regular file.
-        clean_exit("\"$file\" is not a regular file.")
-          unless (-f "$file" && !-l "$file");
-
         open(INFILE, "<", "$file")
           or clean_exit("could not open $file for reading: $!");
 	my @infile = <INFILE>;
@@ -1322,6 +1318,10 @@ sub setup_rules_hash($ $)
     foreach my $file (sort(keys(%$new_files_ref))) {
         warn("\nWARNING: downloaded rules file $file is empty\n")
           if (!-s "$file" && $config{verbose});
+
+      # Make sure it's a regular file.
+        clean_exit("\"$file\" is not a regular file.")
+          unless (-f "$file" && !-l "$file");
 
         open(NEWFILE, "<", "$file")
           or clean_exit("could not open $file for reading: $!");
