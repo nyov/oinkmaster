@@ -24,7 +24,7 @@ templates directly in your regular oinkmaster.conf or put them in a
 separate file, e.g. templates.conf. When using a separate file, make 
 sure both files are loaded, i.e. either start Oinkmaster with 
 "oinkmaster.pl -C templates.conf -C oinkmaster.conf ..." or use the 
-"include" directive, e.g. "include templates.conf" inside oinkmaster.conf.
+"include" directive inside oinkmaster.conf.
 
 The syntax to define a template is:
 define_template <name> "modifythis" | "withthis"
@@ -39,7 +39,8 @@ use_template <name> <sid> [ "arg1" "arg2" ... ]
 You can also use the wildcard ("*") or a comma-separated list of SIDs 
 as <sid>, just as with a regular modifysid expression. Everything after 
 <sid> is optional, unless you require arguments in your template 
-definition (keep reading).
+definition (keep reading). The arguments must be quoted strings,
+separated with space.
 
 The "modifythis" | "withthis" stuff in define_template works just like 
 in a regular modifysid, but it has one more useful feature. The 
@@ -50,7 +51,7 @@ corresponding arguments to use_template. So %ARG1% will be replaced
 with the first argument, %ARG2% with the second one, and so on.
 This is useful when you for example want to add "tag" statements (or 
 thresholding/limiting or whatever) to rules using a modifysid template, 
-but where you want the number of seconds to tag is different for 
+but where you want the number of seconds to tag to be different for 
 different rules. By giving this value as argument when using the 
 template, there is no need to write a new template for each value for 
 the number of seconds. Examples of this is found in 
@@ -76,10 +77,15 @@ and replace it with "flow:established; newstuff;", because if the rule
 is updated and the flow statement is changed to  
 "flow:established,to_server;", our substitution expression would no 
 longer match. A better approach is to match against something you know 
-isn't going to change, like the sid statement or the very end of the 
+isn't going to change, like the SID statement or the very end of the 
 rule. Also try not to be strict about whitespaces. For example, 
-remember that a a sid statement can be written as 
+remember that a SID statement can be written as 
 "sid:123;" or "sid: 123;" or "sid : 123 ;" and so on.
+
+As use_template statements are simply translated into modifysid 
+statements, you can use multiple use_template for the same SID. They 
+will be processed in order of appearance in the config file, just like 
+regular modifysid statements.
 
 
 
