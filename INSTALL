@@ -15,11 +15,11 @@ o Make sure that the ownership/permission on the above files and your
   Oinkmaster user, usually only needs read access.)
 
 o Edit oinkmaster.conf. There are some options you may want to change before
-  running Oinkmaster. Here you will then also tell Oinkmaster which SIDs or 
-  files you want to disable or ignore.
-  If you already have several rules commented out (or removed) in your current
-  rules, you need to add the SIDs of those to oinkmaster.conf so they don't get
-  re-enabled after each update.
+  running Oinkmaster, although the defaults should work for most people.
+  Here you will then also tell Oinkmaster which SIDs or files you want to 
+  disable or ignore. If you already have several rules commented out (or 
+  removed) in your current rules, you need to add the SIDs of those to 
+  oinkmaster.conf so they don't get re-enabled after each update.
 
 o Decide in which directory you want to put the new rules. Since you probably
   already have Snort up and running, you should use the directory where you
