@@ -628,7 +628,7 @@ sub download_rules($ $)
         }
 
   # Use LWP if URL starts with http[s] and use_external_bins=0.
-    } elsif (!$config{use_external_bins} && $url =~ /^(?:https*)/) {
+    } elsif (!$config{use_external_bins} && $url =~ /^(?:https*|ftp)/) {
         print STDERR "Downloading rules archive from $url... "
           unless ($config{quiet});
 
@@ -678,7 +678,6 @@ sub download_rules($ $)
           if (system(@cmd));
 
   # Unknown download method.
-  # For example if FTP is specified when $user_external_bins=0.
     } else {
         clean_exit("unknown or unsupported download method\n");
     }
