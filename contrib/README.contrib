@@ -58,8 +58,8 @@
 -------------------------------------------------------------------------------
 * addmsg.pl by Andreas Östling <andreaso@it.su.se>:
 
-  A script that will parse your oinkmaster.conf for "disablesid" lines and
-  add to them their SID message as a #comment.
+  A script that will parse your oinkmaster.conf for "disablesid" and
+  "enablesid"lines and add to them their SID message as a #comment.
   If your oinkmaster.conf looks like this before addmsg.pl has been run:
 
     disablesid 286
@@ -72,7 +72,7 @@
     disablesid 287             # POP3 EXPLOIT x86 bsd overflow
     disablesid 288             # POP3 EXPLOIT x86 linux overflow
 
-  addmsg.pl will not touch disablesid lines that already has a comment in them.
+  addmsg.pl will not touch lines that already has a comment in them.
   It's not able to handle disablesid lists (i.e "disablesid 1,2,3,4,5,..." 
   lines).
 
