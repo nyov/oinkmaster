@@ -16,8 +16,7 @@ o Make sure that the ownership/permission on the above files and your
 
 o Edit oinkmaster.conf. There are some options you may want to change before
   running Oinkmaster. Here you will then also tell Oinkmaster which SIDs or 
-  files you want to disable or ignore. As you will see, a few things are
-  disabled/ignored by default (which you may not want).
+  files you want to disable or ignore.
   If you already have several rules commented out (or removed) in your current
   rules, you need to add the SIDs of those to oinkmaster.conf so they don't get
   re-enabled after each update.
@@ -30,7 +29,7 @@ o Decide in which directory you want to put the new rules. Since you probably
 
   oinkmaster.pl -o /snort/snort.org-rules/
 
-  You REALLY should check out the entire README before doing anything though.
+  You should really check out the entire README before doing anything though.
   You may also run oinkmaster.pl -h for more usage information and options.
   See wget's manual page (http://www.gnu.org/manual/) if you need to setup
   proxy configuration etc.
