@@ -60,6 +60,7 @@ my $update_vars       = 0;
 my $config_test_mode  = 0;
 my $interactive       = 0;
 my $enable_all        = 0;
+my $use_external_bins = 0;
 
 
 # Regexp to match the start of a multi-line rule.
@@ -101,6 +102,9 @@ $SIG{INT} = \&catch_sigint;
 
 my $start_date = scalar(localtime);
 
+# Assume the required Perl modules are available if we're on Windows.
+$use_external_bins = 0 if ($^O eq "MSWin32" || $^O =~ /^Windows/);
+
 # Parse command line arguments and add at least %config{output_dir}.
 # Will exit if something is wrong. May set global @config_files.
 parse_cmdline(\%config);
@@ -123,6 +127,19 @@ if ($#config_files == -1) {
 }
 
 read_config($_, \%config) for @config_files;
+
+# If we're told not to use external binaries, load the required modules.
+unless ($use_external_bins) {
+    eval {
+        require Archive::Tar;
+        require IO::Zlib;
+        require LWP::UserAgent;
+    };
+
+    clean_exit("failed to load required Perl modules.\n".
+               "Install them or set use_external_bins to 1.\n\n$@")
+      if ($@);
+}
 
 # Do some basic sanity checking and exit if something fails.
 # A new PATH will be set.
@@ -426,6 +443,9 @@ sub read_config($ $)
         } elsif (/^tmpdir\s*=\s*(.+)/i) {       # tmpdir
             $tmp_basedir = $1;
 
+        } elsif (/^use_external_bins\s*=\s*([01])/i) {
+            $use_external_bins = $1;
+
         } elsif (/^scp_key\s*=\s*(.+)/i) {      # scp_key
             $$cfg_ref{scp_key} = $1;
 
@@ -496,9 +516,11 @@ sub sanity_check()
 
   # Make sure all required binaries can be found.
   # Wget is only required if url is http[s] or ftp.
-    foreach my $binary (@req_binaries) {
-        clean_exit("$binary not found in PATH ($ENV{PATH}).")
-          unless (is_in_path($binary));
+    if ($use_external_bins) {
+        foreach my $binary (@req_binaries) {
+            clean_exit("$binary not found in PATH ($ENV{PATH}).")
+              unless (is_in_path($binary));
+        }
     }
 
   # Make sure $url is defined (either by -u <url> or url=... in the conf).
@@ -507,8 +529,10 @@ sub sanity_check()
         (($config{'url'}) = $config{'url'} =~ /^((?:https*|ftp|file|scp):\/\/.+\.tar\.gz)$/));
 
   # Wget must be found if url is http[s]:// or ftp://.
-    clean_exit("wget not found in PATH ($ENV{PATH}).")
-      if ($config{'url'} =~ /^(https*|ftp):/ && !is_in_path("wget"));
+    if ($use_external_bins) {
+        clean_exit("wget not found in PATH ($ENV{PATH}).")
+          if ($config{'url'} =~ /^(https*|ftp):/ && !is_in_path("wget"));
+    }
 
   # scp must be found if scp://...
     clean_exit("scp not found in PATH ($ENV{PATH}).")
@@ -567,8 +591,8 @@ sub download_rules($ $)
     my $log       = "$tmpdir/wget.log";
     my $ret;
 
-  # Use wget if URL starts with "http[s]" or "ftp".
-    if ($url =~ /^(?:https*|ftp)/) {
+  # Use wget if URL starts with "http[s]" or "ftp" and we use external binaries.
+    if ($use_external_bins && $url =~ /^(?:https*|ftp)/) {
         print STDERR "Downloading rules archive from $url... "
           unless ($quiet);
 
@@ -586,6 +610,20 @@ sub download_rules($ $)
             }
             print STDERR "done.\n" unless ($quiet);
         }
+
+  # Use LWP if URL starts with http[s] and use_external_bins=0.
+    } elsif (!$use_external_bins && $url =~ /^(?:https*)/) {
+        print STDERR "Downloading rules archive from $url... "
+          unless ($quiet);
+
+        my $ua = LWP::UserAgent->new();
+        $ua->env_proxy;
+        my $response = $ua->get($url, ':content_file' => $localfile);
+
+        clean_exit("could not download rules: " . $response->status_line)
+          unless $response->is_success;
+
+        print "done.\n" unless ($quiet);
 
   # Grab file from local filesystem if file://...
     } elsif ($url =~ /^file/) {
@@ -622,6 +660,11 @@ sub download_rules($ $)
 
         clean_exit("scp returned error when trying to copy $url")
           if (system(@cmd));
+
+  # Unknown download method.
+  # For example if FTP is specified when $user_external_bins=0.
+    } else {
+        clean_exit("unknown or unsupported download method\n");
     }
 
   # Make sure the downloaded file actually exists.
@@ -642,45 +685,54 @@ sub download_rules($ $)
 sub unpack_rules_archive($)
 {
     my $archive = shift;
+    my ($tar, @tar_content);
 
     my $old_dir = untaint_path(File::Spec->rel2abs(File::Spec->curdir()));
 
     my $dir = dirname($archive);
     chdir("$dir") or clean_exit("could not change directory to \"$dir\": $!");
 
-  # Run integrity check (gzip -t) on the gzip file.
-    clean_exit("integrity check on gzip file failed (file transfer failed or ".
-               "file in URL not in gzip format?).")
-      if (system("gzip","-t","$archive"));
+    if ($use_external_bins) {
 
-  # Decompress it.
-    system("gzip","-d","$archive")
-      and clean_exit("unable to uncompress $archive.");
+      # Run integrity check (gzip -t) on the gzip file.
+        clean_exit("integrity check on gzip file failed (file transfer failed or ".
+                   "file in URL not in gzip format?).")
+          if (system("gzip","-t","$archive"));
 
-  # Suffix has now changed from .tar.gz to .tar.
-    $archive =~ s/\.gz$//;
+      # Decompress it.
+        system("gzip","-d","$archive")
+          and clean_exit("unable to uncompress $archive.");
 
-  # Make sure the .tar file now exists.
-  # (Gzip may not return an error if it was not a gzipped file...)
-    clean_exit("failed to unpack gzip file (file transfer failed or ".
-               "file in URL not in gzip format?).")
-      unless (-e  "$archive");
+      # Suffix has now changed from .tar.gz to .tar.
+        $archive =~ s/\.gz$//;
 
-  # Read output from "tar tfP $archive" into @tar_test, unless we're on Windows.
-    my @tar_test;
+      # Make sure the .tar file now exists.
+      # (Gzip may not return an error if it was not a gzipped file...)
+        clean_exit("failed to unpack gzip file (file transfer failed or ".
+                   "file in URL not in gzip format?).")
+          unless (-e  "$archive");
 
-    unless ($^O eq "MSWin32" || $^O =~ /^Windows/) {
-        if (open(TAR,"-|")) {
-            @tar_test = <TAR>;
-        } else {
-            exec("tar","tfP","$archive");
+      # Read output from "tar tfP $archive" into @tar_content, unless we're on Windows.
+        unless ($^O eq "MSWin32" || $^O =~ /^Windows/) {
+            if (open(TAR,"-|")) {
+                @tar_content = <TAR>;
+            } else {
+                exec("tar","tfP","$archive");
+            }
+            close(TAR);
         }
-        close(TAR);
+
+ # use_external_bins=0
+    } else {
+        $tar = Archive::Tar->new($archive, 1);
+        clean_exit("could not read $archive\n")
+          unless (defined($tar));
+        @tar_content = $tar->list_files();
     }
 
   # For each filename in the archive, do some basic (pretty useless)
   # sanity checks.
-    foreach my $filename (@tar_test) {
+    foreach my $filename (@tar_content) {
        chomp($filename);
 
       # We don't want absolute filename.
@@ -699,13 +751,26 @@ sub unpack_rules_archive($)
           if ($filename =~ /\.\./);
     }
 
-
-  # Looks good. Now we can untar it.
+ # Looks good. Now we can untar it.
     print STDERR "Archive successfully downloaded, unpacking... "
       unless ($quiet);
 
-    clean_exit("failed to untar $archive.")
-      if system("tar","xf","$archive");
+    if ($use_external_bins) {
+        clean_exit("failed to untar $archive.")
+          if system("tar","xf","$archive");
+    } else {
+        mkdir("rules") or clean_exit("could not create \"rules\" directory: $!\n");
+        foreach my $file ($tar->list_files) {
+            next unless ($file =~ /^rules\/[^\/]+$/);
+
+            my $content = $tar->get_content($file);
+
+            open(RULEFILE, ">", "$file")
+              or clean_exit("could not open \"$file\" for writing: $!\n");
+            print RULEFILE $content;
+            close(RULEFILE);
+        }
+    }
 
     clean_exit("no \"rules\" directory found in tar file.")
       unless (-d "$dir/rules");
@@ -929,7 +994,7 @@ sub setup_rules_hash($)
         }
     }
 
-    print STDERR "done.\n" 
+    print STDERR "done.\n"
       unless ($quiet);
 
     return (%rh);
@@ -945,7 +1010,7 @@ sub get_first_only($ $ $)
     my $second_arr_ref = shift;
     my %arr_hash;
 
-    @arr_hash{@$second_arr_ref} = ();   
+    @arr_hash{@$second_arr_ref} = ();
 
     foreach my $line (@$first_arr_ref) {
 
@@ -1006,13 +1071,28 @@ sub make_backup($ $)
   # we have our rules to be backed up).
     chdir("$tmpdir") or clean_exit("could not change directory to $tmpdir: $!");
 
-  # Execute tar command. This will archive "rules-backup-$date/"
-  # into the file rules-backup-$date.tar, placed in $tmpdir.
-    clean_exit("tar command did not exit with status 0 when archiving backup files.\n")
-      if (system("tar","cf","rules-backup-$date.tar","rules-backup-$date"));
+    if ($use_external_bins) {
+        clean_exit("tar command did not exit with status 0 when archiving backup files.\n")
+          if (system("tar","cf","rules-backup-$date.tar","rules-backup-$date"));
 
-    clean_exit("gzip command did not exit with status 0 when compressing backup file.\n")
-      if (system("gzip","rules-backup-$date.tar"));
+        clean_exit("gzip command did not exit with status 0 when compressing backup file.\n")
+          if (system("gzip","rules-backup-$date.tar"));
+    } else {
+        my $tar = Archive::Tar->new;
+        opendir(RULES, "rules-backup-$date")
+          or clean_exit("unable to open directory \"rules-backup-$date\": $!");
+
+        while ($_ = readdir(RULES)) {
+            next if (/^\.\.?$/);
+            $tar->add_files("rules-backup-$date/$_");
+        }
+
+        closedir(RULES);
+
+        $tar->write("rules-backup-$date.tar.gz", 1)
+          or clean_exit("could not create backup archive: ".
+                        $tar->error());
+    }
 
   # Change back to old directory (so it will work with -b <directory> as either
   # an absolute or a relative path.
@@ -1020,7 +1100,7 @@ sub make_backup($ $)
       or clean_exit("could not change directory back to $old_dir: $!");
 
     copy("$tmpdir/rules-backup-$date.tar.gz", "$dest_dir/")
-      or clean_exit("unable to copy $tmpdir/rules-backup-$date.tar.gz ".
+      or clean_exit("unable to copy $backup_tmp_dir/rules-backup-$date.tar.gz ".
                     "to $dest_dir/: $!\n");
 
     print STDERR " saved as $dest_dir/rules-backup-$date.tar.gz.\n"
