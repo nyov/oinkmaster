@@ -15,7 +15,7 @@ sub sanity_check();
 sub download_rules($ $);
 sub unpack_rules_archive($);
 sub disable_and_modify_rules($ $ $);
-sub setup_rules_hash($ $);
+sub setup_rules_hash($);
 sub find_line($ $);
 sub print_changes($ $);
 sub print_changetype($ $ $);
@@ -115,7 +115,7 @@ disable_and_modify_rules(\%{$config{sid_disable_list}},
                          \%{$config{sid_modify_list}}, \%new_files);
 
 # Setup rules hash.
-my %rh = setup_rules_hash($config{output_dir}, \%new_files);
+my %rh = setup_rules_hash(\%new_files);
 
 # Compare the new rules to the old ones.
 my %changes = get_changes(\%rh, \%new_files);
@@ -598,9 +598,8 @@ sub disable_and_modify_rules($ $ $)
 # Format for rules will be:     rh{old|new}{rules{filename}{sid} = rule
 # Format for non-rules will be: rh{old|new}{other}{filename}     = array of lines
 # List of added files will be stored as rh{added_files}{filename}
-sub setup_rules_hash($ $)
+sub setup_rules_hash($)
 {
-    my $old_dir       = shift;
     my $new_files_ref = shift;
     my %rh;
 
@@ -634,9 +633,9 @@ sub setup_rules_hash($ $)
 	close(NEWFILE);
 
 	# Also read in old file if it exists.
-        if (-f "$old_dir/$file") {
-            open(OLDFILE, "<$old_dir/$file")
-              or clean_exit("could not open $old_dir/$file for reading: $!");
+        if (-f "$config{output_dir}/$file") {
+            open(OLDFILE, "<$config{output_dir}/$file")
+              or clean_exit("could not open $config{output_dir}/$file for reading: $!");
 
 	    while (<OLDFILE>) {
 	        s/\s*\n$/\n/;                # remove trailing whitespaces (for rules and non-rules)
