@@ -56,7 +56,7 @@ Check the INSTALL file.
 How does it work?
 ~~~~~~~~~~~~~~~~~ 
 It fetches the new Snort rules archive from the URL specified in oinkmaster.conf
-(the latest CVS snapshot), #comments out the unwanted rules and prints what have
+(the latest CVS snapshot), comments out the unwanted rules and prints what have
 been added/removed/modified since the last update. Unwanted rules are specified 
 in the file oinkmaster.conf. In this file you can also tell Oinkmaster to 
 skip entire files that you don't care about (i.e. don't want to update or watch
@@ -80,7 +80,7 @@ becomes a fairly simple task.
 
 Usage information
 ~~~~~~~~~~~~~~~~~
-First try ./oinkmaster.pl -h for more usage information and available options. 
+Try ./oinkmaster.pl -h for more usage information and available options. 
 
 As a first test, you can create an empty rules directory, for example
 "/tmp/rules". Then try executing "./oinkmaster.pl -o /tmp/rules"
@@ -92,8 +92,8 @@ the ones in your rules/ directory, and Oinkmaster will tell you if
 something has been updated.
 
 By default, all rules will be uncommented (yes, even those ones that are
-commented by default in the rules archive distribution, but please note that
-these are disabled on purpose and for a reason so you probably want to
+commented out by default in the rules archive distribution, but please note
+that these are disabled on purpose and for a reason so you probably want to
 consider disabling them again). Instead, we let the file oinkmaster.conf
 decide which rules that should be disabled. 
 
@@ -108,10 +108,11 @@ You can also add entire files to be totally ignored by adding "file filename"
 to oinkmaster.conf where "filename" is a file in the archive you don't care
 about at all. These files will not be checked for changes and they will not be
 added/updated on your system. For example if you don't include the file 
-icmp-info.rules from your snort.conf and don't care about keeping it up to date,
-you can to add the line "file icmp-info.rules" to oinkmaster.conf.
-Although it may be a good idea to track rules changes even for rules files you
-don't use. Who knows, you might find something interesting some day.
+icmp-info.rules from your snort.conf and don't care about keeping it up to date
+and don't want to be notified of changes, you can to add the line
+"file icmp-info.rules" to oinkmaster.conf. Although it may be a good idea to
+track rules changes even for rules files you don't use.
+Who knows, you might find something interesting some day.
 
 
 
@@ -120,7 +121,7 @@ Usage examples
 To automagically update the rules every night 02:30 and make backup
 of the old ones in /snort/backup/ if there were any updates, and sending
 difference between the files to syslog, you could use something like this
-in your crontab (consider adding the -c flag though):
+in your crontab (consider adding the -c flag (careful mode) though):
 
 30 2 * * * cd /usr/local/oinkmaster-0.4; ./oinkmaster.pl -o /snort/rules/snort.org-rules/ -b /snort/backup 2>&1 | logger -t oinkmaster
 
@@ -207,18 +208,18 @@ classtype:attempted-dos; sid:277; rev:2;)
 
 
 
-If there were any added files (i.e. files that have not been included in the rules archive
-before), you should probably consider including them from your Snort configuration file.
-If there were any removed files, you should probably consider excluding them from your Snort
-configuration file. Note that if a SID is moved from one file to another, it will be regarded
-as 'removed' from the first one and 'added' to the new one.
+If there were any added files (i.e. files that have not been included in 
+the rules archive before), you should probably consider including them 
+from your Snort configuration file. If there were any removed files, you 
+should probably consider excluding them from your Snort configuration 
+file. Note that if a SID is moved from one file to another, it will be 
+regarded as 'removed' from the first one and 'added' to the new one.
 
--r ...
 
 
 Misc. important notes
 ~~~~~~~~~~~~~~~~~~~~~
-o It's a good idea to have a separate directory for your snort.org rules
+o It's a really good idea to have a separate directory for your snort.org rules
   on your snort machine. Why? Because if you have a local rules file called
   "coolstuff.rules" in the output directory (-o <dir>), and a file
   called "coolstuff.rules" is one day added to the snortrules.tar.gz
@@ -226,17 +227,15 @@ o It's a good idea to have a separate directory for your snort.org rules
   also be a problem with the "local.rules" file if you use that one for
   your local rules. In that case you probably don't want it to get
   overwritten by the empty local.rules from the archive every update.
-  That's why its ignored by default in oinkmaster.conf. Same thing goes for
-  "snort.conf".
+  That's why its ignored by default in oinkmaster.conf.
+  Same thing goes for snort.conf. Personally I keep an extra copy of snort.conf
+  in the rules directory and specify another snort.conf when starting Snort.
+  This way I can keep track of changes in the snort.conf from the rules archive
+  while keeping my customized copy intact. If there are added/removed rules files
+  in the archive, you will have to edit your snort.conf manually and 
+  include/exclude those files. Oinkmaster does not do that kind of stuff.
 
-
-
-o Oinkmaster will never modify your Snort configuration file.
-  This means that if there are added files in the rules archive, they will be
-  added to your rules directory by Oinkmaster but they still won't be included
-  by Snort. Oinkmaster will print a reminder when this happens.
-
-  Oinkmaster also never deletes any rules files from your system.
+o Oinkmaster also never deletes any rules files from your system.
   So if a file called foo.rules is usually included in snortrules.tar.gz but is
   one day removed from it, the old foo.rules will still be left in your rules
   directory. Oinkmaster will notify you of this but only if you use the "-r"
@@ -255,9 +254,9 @@ o Oinkmaster will never modify your Snort configuration file.
   overwritten after each update which means that all possible local 
   modifications will be lost. Therefore it's better to move rules you need 
   to modify to some local rules file instead. That's my opinion anyway.
-  Of course if you need to change something like the variables ($home_net/$external
-  etc) after every update it's probably better to just run the rules files thru sed
-  or another script after each Oinkmaster update.
+  Of course if you need to change something like the variables 
+  ($home_net/$external etc) after every update it's probably better to just
+  run the rules files thru sed or another script after each Oinkmaster update.
 
 
 
