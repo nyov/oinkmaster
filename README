@@ -3,7 +3,7 @@
 README for Oinkmaster v1.0
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Written by Andreas Östling <andreaso@it.su.se>.
+Oinkmaster was written by Andreas Östling <andreaso@it.su.se>.
 Feedback is of course appreciated.
 
 Homepage:
@@ -18,26 +18,32 @@ cvs -z3 -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/oinkmaster co oinkmast
 
 
 
-Intro
-~~~~~
-Oinkmaster is simple Perl script released under the BSD license to help you
-update your Snort 2.0+ rules and comment out the unwanted ones after each
-update. It also has a few other useful features regarding rules management. 
-Oinkmaster will tell you exactly what had changed since the last update, 
-giving you good control of your rules. It is most often used to 
-update the official rules from www.snort.org but can just as well be used 
-for managing/distributing your homemade rules. Oinkmaster may be useful 
-in conjunction with any program that can use Snort rules, like Snort (doh!)
-or Prelude-NIDS.
+Introduction
+~~~~~~~~~~~~
+Oinkmaster is simple Perl script released under the BSD license that 
+helps you keep your Snort rules current with little or no user 
+interaction. It has quite a few nifty features regarding rules management, 
+such as ability to enable, disable and modify specified rules after each 
+update. It will tell you the exact changes from the previous rules, so you 
+have total control of your rules.
+
+Oinkmaster is most often used to grab the latest official rules tarball from 
+www.snort.org and apply a set of modifications to them (such as disabling 
+unwanted rules) before merging the changes into your local rules files, 
+but it can just as well be used to manage/distribute both official and 
+local local rules to multiple sensors with ability to finetune the rules 
+on each sensor or group of sensors. 
 
 Oinkmaster is based on the (now extremely obsolete) arachNIDS snort rules 
 updater which was pretty much the same thing but for the arachNIDS Snort
-rules exports at http://www.whitehats.com/, which have not been maintained
-for a very long time.
+rules exports at http://www.whitehats.com/ which have not been maintained
+for a very long time, and it may be useful in conjunction with any program
+that can use Snort rules, like Snort (doh!) or Prelude-NIDS.
 
-Use Oinkmaster with care and at your own risk.
-Check the INSTALL file for quick installation instructions.
-You may also find the FAQ useful.
+Use Oinkmaster with care and at your own risk. Check the INSTALL file for 
+quick installation instructions. You may also find the FAQ useful, and 
+README.gui if you want to use the graphical front-end to Oinkmaster. If 
+you're on Windows, have a look at README.win32.
 
 Check out http://www.snort.org/ for more information about Snort and its
 rules.
@@ -47,15 +53,10 @@ rules.
 Requirements
 ~~~~~~~~~~~~
 It should work on most UNIX-like systems with a recent version of Perl 5.
-You also need either tar, gzip and wget, or the Perl modules
+You also need either the binaries tar, gzip and wget, or the Perl modules
 Archive::Tar, IO::Zlib and LWP::UserAgent. (See oinkmaster.conf for more
-information about this.)
-
-So far it has been successfully tested on OpenBSD, FreeBSD, NetBSD, Linux,
-AIX, Solaris and Mac OS X. You can also run it under Windows with
-either Cygwin or ActivePerl (see README.win32 for more information about 
-that). Let me know if you do or don't manage to run it on an unlisted 
-platform.
+information about this.) So far it has been successfully tested on OpenBSD,
+FreeBSD, NetBSD, Linux, AIX, Solaris, Mac OS X and Microsoft Windows.
 
 Again, use it at your own risk!
 
@@ -63,60 +64,53 @@ Again, use it at your own risk!
 
 What problem does Oinkmaster solve?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-We've all been there - we download and use the Snort rules and realize
-that many of them aren't suitable for our environment.
-So we disable (or modify) the ones we don't like, and everything is fine.
-Since we always want to run the latest and greates rules, we download
-the new rules from www.snort.org as soon as they have been updated.
-Oops - all our customized rules are now overwritten, and we have 
-to do it all over again. This is where Oinkmaster comes in - it will 
-automatically do those boring modifications to the rules that you
-would usually have to do manually after each update.
+To have any use of your NIDS, you must keep ýour signatures (or "rules") 
+current. On www.snort.org, there is a rules tarball that is updated with
+new and improved rules on a regaular basis. Very soon you will realize 
+that this tarball contains rules that are not suitable for your 
+environment, so you delete (or comment out) them from your local rules 
+files. Everything is fine until it's time to update the rules, since 
+you will have to apply all these modifications again (and you must also 
+keep track of these modifications so you can repeat them after each 
+update). This clearly becomes a boring and difficult task if you do it 
+manually, especially if you have many sensors and make lots of local 
+finetunes of the rules.
 
-You could say that Oinkmaster is a documented way of applying a set of 
-modifications to the new rules (such as disabling, enabling and modifying 
-them) after each download of the updated rules tarball before overwriting 
-your local rules files. This means that all permanent modifications must 
-be done by editing oinkmaster.conf, not by editing your rules files directly. 
+This is where Oinkmaster comes in - it will automatically do those boring 
+modifications to the rules that you would usually have to do manually 
+after each update. You could say that Oinkmaster is a documented way of 
+applying a set of modifications to the new rules (such as disabling, 
+enabling and modifying them) after each download of the updated rules 
+tarball before overwriting your local rules files. This means that all 
+permanent modifications must be done by editing oinkmaster.conf, not by 
+editing your rules files directly. 
 
 
 
 How it works
 ~~~~~~~~~~~~
-It's actually really simple. A step by step list of how a rules update
-with Oinkmaster works:
+It's actually really simple. Here follows a step by step list of how a 
+rules update with Oinkmaster works. (Optional features may of course 
+activate additional procedures, but this is how the basic update works.)
 
-1) It fetches the Snort rules archive from the specified location.
 
-2) It unpacks this archive and looks for a "rules" directory in it.
+1) It fetches the Snort rules archive from the specified location
+   (www.snort.org by default, but it could be anything really).
+
+2) It unpacks this archive and looks for a directory called "rules" in it.
    All rules files in here (i.e. files matching the "rules_update" regexp
    specified in oinkmaster.conf) are read into memory.
 
 3) It processes these rules as you've told it to in oinkmaster.conf.
-   It basically opens each rules file, enables/disables/modifies rules
-   as requested, and writes the result back to the same file again (which are
-   still inside the temporary directory).
+   It basically opens each rules file, cleans some leading/trailing 
+   whitespaces from it, enables/disables/modifies rules as requested, and 
+   writes the result back to the same file again (which are still inside 
+   the temporary directory).
 
 4) These new files are now compared to the rules in your output directory 
-   (the one specified with "-o"). Files that are not identical are copied
+   (the one specified by "-o"). Files that are not identical are copied
    from the temporary directory to the output directory.
    Detailed result of the comparison is then printed.
-
-Optional features may of course activate additional procedure, but this
-is how the basic update works.
-
-This script should probably be run manually but can also be run as a cron job.
-But of course, be very careful when doing the latter. Think about what you're
-doing. It usually doesn't take much for these automatic updating scripts
-to fail, so things could easily get messed up from one update to another
-because of different layout in the rules archive, typo in a rule, bugs in
-the script etc etc (at least run snort -T on the new rules before restarting
-your running Snort). And as always when updating the Snort rules, there 
-may be some changes that you really don't like (or at least want to know 
-about before using), so you should always manually verify the new rules 
-before using them. Since Oinkmaster will print all changes in the new 
-rules to the screen (in an easy-to-read format), this becomes a fairly 
-simple task. 
 
 
 
@@ -125,27 +119,25 @@ Usage information
 Try ./oinkmaster.pl -h for more usage information and available options.
 
 As a first test, you can create an empty rules directory, for example
-/tmp/rules/. Then try executing "oinkmaster.pl -o /tmp/rules".
-Since your /tmp/rules/ directory is empty, all rules files in the downloaded
-archive will be regarded as added, and copied to that directory.
-Then try "oinkmaster.pl -o /tmp/rules" one more time.
-This time the files in the downloaded archive will be compared to the ones
-in /tmp/rules/ and Oinkmaster will tell you if something has been
-updated.
+/tmp/rules/. Then try executing "oinkmaster.pl -o /tmp/rules". Since your 
+/tmp/rules/ directory is empty, all rules files in the downloaded archive 
+will be regarded as added, and copied to that directory. Then try 
+"oinkmaster.pl -o /tmp/rules" one more time. This time the files in the 
+downloaded archive will be compared to the ones in /tmp/rules/ and 
+Oinkmaster will tell you if something has been updated. 
 
 If you already have several rules commented out (or removed) in your current
-local rules, you need to add the SIDs of those to oinkmaster.conf manually 
-(or check out the contrib directory for a help script) before running 
-Oinkmaster, or they will be re-enabled after each update. 
+local rules, you need to add the SIDs (Snort rule ID) of those to 
+oinkmaster.conf manually (or check out the contrib directory for a help script)
+before running Oinkmaster, or they will be re-enabled after each update. 
 
-You disable rules by adding "disablesid x" to the file oinkmaster.conf, where
-x is the Snort rule ID (the "sid") of the rule in question.
-So if you want the rule with sid 12345 to be commented out after each update,
-you just append the line "disablesid 12345" to oinkmaster.conf.
-When you update the rules the next time, this rule will be commented out
-and Oinkmaster will notify you about that change.
+You disable rules by adding "disablesid x" to oinkmaster.conf, where
+x is the SID of the rule in question. So if you want the rule with sid 
+12345 to be commented out after each update, you add the line "disablesid 
+12345" to oinkmaster.conf. When you update the rules the next time, this 
+rule will be commented out and Oinkmaster will notify you of that change.
 
-You can also add entire files to be totally ignored by adding
+You can also add entire files to be totally ignored by adding 
 "skipfile filename" options to oinkmaster.conf where "filename" is a file
 in the distribution archive you don't care about at all. These files will
 not be checked for changes and they will not be added or updated. For
@@ -160,6 +152,21 @@ The skilled/brave/stupid people can also use the "modifysid" keyword in
 oinkmaster.conf to make arbitrary changes to certain rules after each download.
 This is an excellent way to screw up your rules, so don't use it unless you
 really have to. See oinkmaster.conf for more information and examples.
+
+
+This script should probably be run manually but can also be run as a cron job.
+But of course, be very careful when doing the latter. Think about what you're
+doing. It usually doesn't take much for these automatic updating scripts
+to fail, so things could easily get messed up from one update to another
+because of different layout in the rules archive, typo in a rule, bugs in
+the script etc etc (at least run snort -T on the new rules before restarting
+your running Snort). And as always when updating the Snort rules, there 
+may be some changes that you really don't like (or at least want to know 
+about before using), so you should always manually verify the new rules 
+before using them. Since Oinkmaster will print all changes in the new 
+rules to the screen (in an easy-to-read format), this becomes a fairly 
+simple task. 
+
 
 
 
