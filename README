@@ -113,6 +113,9 @@ oinkmaster.conf. Although it may be a good idea to track changes even for
 rules files you don't use. Who knows, you might find something interesting
 some day.
 
+You are allowed to specify comma-separated lists of SIDs or files after "disablesid"
+and "skipfile". See comments and examples oinkmaster.conf.
+
 
 
 Usage examples

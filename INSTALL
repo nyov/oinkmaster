@@ -8,7 +8,7 @@ o Untar/unpack the distribution file in some temporary directory:
   This will create a directory called oinkmaster-version.
   Move this directory to some suitable location, for example /usr/local/.
 
-o Check out the file oinkmaster.conf. There are some options you may want to
+o Edit the file oinkmaster.conf. There are some options you may want to
   change. Here you will also tell Oinkmaster which SIDs or files you want to
   disable or ignore. As you will see, a few things are skipped by default.
   See the README file and the notes in oinkmaster.conf for more information.
@@ -33,6 +33,4 @@ o That's it!
   unless -p is specified.
 
   You really should check out the README file first.
-  It contains some very important information.
-
   You may also run oinkmaster.pl -h for more usage information and options.

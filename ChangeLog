@@ -1,30 +1,31 @@
 v0.4 - 200204XX
 ~~~~~~~~~~~~~~~
 o More or less rewritten from scratch.
-o Removed several stupid command line options.
-o Print warning message if two (or more) rules share the same SID.
-o Update all files matching a regexp (see config file).
-o Skip diffing files matching another regexp (see config file).
-o Added option -p to preserve disabled rules in downloaded archive.
-o "file" and "sid" keywords in oinkmaster.conf are obsolete.
-  They are now called "skipfile" and "disablesid" (to avoid confusion
-  when possibly adding new keywords in the future).
-
-
-
-v0.3 - never
-~~~~~~~~~~~~
-o The file rules.ignore has been renamed to oinkmaster.conf.
-  ("rules.ignore" will no longer be searched for.)
+o The file rules.ignore has been renamed to oinkmaster.conf, which contains
+  more than just the sids to disable.
 o Slightly improved error checking.
 o Better output format (or at least it has changed).
 o Oinkmaster will now also update other files (and print changes in them) than
   *.rules and classification.conf. It's now *.rules, *.conf, *.config, *.txt
   and *.map so we also update the MIB and sid-msg.map files for example.
-  Snort.conf is disabled in oinkmaster.conf by default though, so we 
-  don't overwrite our own config.
+  Files to be updated is defined by a regexp in oinkmaster.conf so this can
+  easily be changed.
+o Removed several stupid command line options.
+o Print warning message if two (or more) rules share the same SID.
+o Added option -p to preserve disabled rules in downloaded archive.
+o "file" and "sid" keywords in oinkmaster.conf are now invalid.
+  They are now called "skipfile" and "disablesid" (to avoid confusion
+  when possibly adding new keywords in the future).
+o Instead of specifying one "disablesid X" per line, you can now also use
+  a comma-separated list, e.g. "disablesid 1,2,3,4,42".
+  Same goes for the skipfile keyword.
 o Various minor bug fixes and tweaks.
 o Some documentation updates.
+
+
+
+v0.3 - never (was rewritten and became v0.4)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 
