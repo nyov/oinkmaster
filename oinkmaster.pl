@@ -18,7 +18,7 @@ sub disable_and_modify_rules($ $ @);
 sub setup_rules_hash($ $ @);
 sub find_line($ @);
 sub print_changes($ $);
-sub do_backup;
+sub make_backup($ $);
 sub get_modified_files($ $);
 sub get_changes($ $);
 sub clean_exit($);
@@ -123,7 +123,6 @@ setup_rules_hash(\%rh, $output_dir, keys(%new_files));
 my %changes = get_changes(\%rh, keys(%new_files));
 
 
-
 # Update files that contain changes (move these new files from the temporary
 # directory to the output directory, unless running in careful mode.
 # Added files will also be regarded as "modified", since we want to
@@ -133,14 +132,14 @@ my %changes = get_changes(\%rh, keys(%new_files));
 # Get list of modified files (with full path).
 my @modified_files = get_modified_files(\%changes, \%new_files);
 
+
 if ($#modified_files < 0) {
     print "nothing changed!\n";
+} else {
+    make_backup($output_dir, $backup_dir)
+      if (defined($backup_dir));
 }
 
-# XXX do backup somewhere
-
-# Move files listed in @modified_files into our output directory, unless careful mode.
-# XXX be a sub?
 
 unless ($careful) {
     foreach my $file_w_path (@modified_files) {
@@ -602,30 +601,33 @@ sub find_line($ @)
 
 
 # Backup files in $output_dir matching $config{update_files} into $backup_dir.
-sub do_backup
+sub make_backup($ $)
 {
-    my ($date, $tmpbackupdir, $old_dir);
+    my $src_dir  = shift;  # dir with the rules to be backed up
+    my $dest_dir = shift;  # where to put the tarball containing the backed up rules
 
-    $date = strftime("%Y%m%d-%H%M", localtime);
-    $tmpbackupdir = "$TMPDIR/rules-backup-$date";
+    my $date    = strftime("%Y%m%d-%H%M", localtime);
+    my $bu_tmp_dir = "$TMPDIR/rules-backup-$date";
 
     print STDERR "Creating backup of old rules..." unless ($quiet);
 
-    mkdir("$tmpbackupdir", 0700)
-      or clean_exit("Error: could not create temporary backup directory $tmpbackupdir: $!");
+    mkdir("$bu_tmp_dir", 0700)
+      or clean_exit("Error: could not create temporary backup directory $bu_tmp_dir: $!");
 
-    opendir(OLDRULES, "$output_dir") or clean_exit("Error: could not open directory $output_dir: $!");
+  # Copy all rules files from the rules dir to the temporary backup dir.
+    opendir(OLDRULES, "$src_dir")
+      or clean_exit("Error: could not open directory $src_dir: $!");
     while ($_ = readdir(OLDRULES)) {
-        copy("$output_dir/$_", "$tmpbackupdir/")
-          or warn("WARNING: error copying $output_dir/$_ to $tmpbackupdir: $!")
+        copy("$src_dir/$_", "$bu_tmp_dir/")
+          or warn("WARNING: error copying $src_dir/$_ to $bu_tmp_dir: $!")
             if (/$config{update_files}/ && !exists($config{file_ignore_list}{$_}));
     }
     closedir(OLDRULES);
 
   # Change directory to $TMPDIR (so we'll be right below the directory where
   # we have our rules to be backed up).
-    $old_dir = getcwd or clean_exit("Error: could not get current directory: $!");
-    chdir("$TMPDIR")  or clean_exit("Error: could not change directory to $TMPDIR: $!");
+    my $old_dir = getcwd or clean_exit("Error: could not get current directory: $!");
+    chdir("$TMPDIR")     or clean_exit("Error: could not change directory to $TMPDIR: $!");
 
   # Execute tar command. This will archive "rules-backup-$date/"
   # into the file rules-backup-$date.tar, placed in $TMPDIR.
