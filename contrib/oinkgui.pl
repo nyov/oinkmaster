@@ -879,7 +879,7 @@ sub execute_oinkmaster(@)
                 logmsg($_, 'OUTPUT');
             }
         } else {
-            open(STDERR, '>&', 'STDOUT');
+            open(STDERR, '>&STDOUT');
             exec(@cmd);
         }
         close(OINK);
