@@ -359,14 +359,14 @@ sub download_rules($ $)
         print STDERR "Downloading rules archive from $url...\n"
           unless ($quiet);
         if ($quiet) {
-            clean_exit("unable to download rules (got error code from wget).\n".
+            clean_exit("unable to download rules from $url (got error code from wget).\n".
                        "Consider running in non-quiet mode if the problem persists.")
               if (system("wget","-q","-O","$localfile","$url"));         # quiet mode
         } elsif ($verbose) {
-            clean_exit("unable to download rules (got error code from wget).")
+            clean_exit("unable to download rules from $url (got error code from wget).")
               if (system("wget","-v","-O","$localfile","$url"));         # verbose mode
         } else {
-            clean_exit("unable to download rules (got error code from wget).")
+            clean_exit("unable to download rules from $url (got error code from wget).")
               if (system("wget","-nv","-O","$localfile","$url"));        # normal mode
         }
     } elsif ($url =~ /^file/) {        # grab file from local filesystem
