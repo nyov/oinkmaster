@@ -469,7 +469,21 @@ sub disable_and_modify_rules($ $ @)
 	open(OUTFILE, ">$file")
           or clean_exit("Error: could not open $file for writing: $!");
 	RULELOOP:foreach my $line (@_) {
-            unless ($line =~ /$SNORT_RULE_REGEXP/) {    # only care about snort rules
+
+          # Only care about snort rules we understand.
+          # (The other lines are printed right back to the file.)
+            unless ($line =~ /$SNORT_RULE_REGEXP/) {
+
+	      # Our regexp didn't match, but make a less strict check to see if
+              # it's likely to be a Snort rule anyway. If it is, then print a warning
+              # message unless running in quiet mode.
+   	        if (!$quiet && $line =~ /^\s*#*\s*(?:alert|log|pass) .*msg.*;\)\n$/) {
+		    $_ = $file;
+                    $_ =~ s/.*\///;    # remove path
+		    warn("\nWARNING: I don't understand this rule in downloaded file $_ ".
+                         "(perhaps bad syntax?):\n  $line");
+                }
+
 	        print OUTFILE $line;
 		next RULELOOP;
 	    }
@@ -513,7 +527,7 @@ sub disable_and_modify_rules($ $ @)
 
 	    chomp($line);
 	    $line .= "\n";
-            print OUTFILE $line;       # Write line back to the rules file.
+            print OUTFILE $line;       # Write rule back to the rules file.
         }
         close(OUTFILE);
     }
