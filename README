@@ -267,12 +267,23 @@ o It's a really good idea to have a separate directory for your snort.org rules
   another snort.conf when starting Snort. This way you can keep track of 
   changes in the snort.conf from the rules archive while keeping your 
   customized copy intact. If there are added/removed rules files in the 
-  archive or added/changed variables in snort.conf, you will have to edit 
+  archive or added/modified variables in snort.conf, you will have to edit 
   your production copy of snort.conf manually and update as needed. 
   Oinkmaster does not do that kind of stuff. Yes, this means that if 
-  there is a new variable added to a rules file, your new rules will not 
-  even work until you define that variable in your snort.conf manually. 
+  there is a new variable added the distribution snort.conf and that is used
+  in the new rules, your new rules will not even load until you define that
+  variable in your snort.conf manually. 
   See, auto-updating with auto-restart is bad unless you're careful.
+
+  As of oinkmaster 0.8, you can run with -U <file> though, which means that
+  Oinkmaster will search snort.conf in the downloaded rules archive for all
+  variable definitions, and then verify against <file> (which probably is your
+  local production copy of snort.conf). Variables that exist in the
+  distribution snort.conf but not in <file> will be added at the beginning
+  of <file>. Variables that have been modified are NOT updated, the -U
+  argument only cares about totally new ones.
+  This is of course not guaranteed to solve the problem, but it may be
+  convenient on home networks and such if you think it's a good idea.
 
 o Oinkmaster also never deletes any rules files from your system.
   So if a file called foo.rules is usually included in the rules distribution
