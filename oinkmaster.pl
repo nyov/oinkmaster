@@ -383,8 +383,8 @@ sub download_rules($ $)
 sub unpack_rules_archive($)
 {
     my $archive  = shift;
-    my $ok_lead  = 'a-zA-Z0-9_';           # allowed leading char in filenames in the tar archive
-    my $ok_chars = 'a-zA-Z0-9_\.\-/\n';    # allowed chars in filenames in the tar archive
+    my $ok_lead  = 'a-zA-Z0-9_';         # allowed leading char in filenames in the tar archive
+    my $ok_chars = 'a-zA-Z0-9_\.\-/';    # allowed chars in filenames in the tar archive
 
     my ($dir) = ($archive =~ /(.*)\//);  # extract directory part of the filename
 
@@ -412,6 +412,8 @@ sub unpack_rules_archive($)
 
   # For each filename in the archive...
     foreach $_ (@_) {
+       chomp;
+
       # Make sure the leading char is valid (not an absolute path, for example).
         clean_exit("Error: forbidden leading character in filename in tar archive. Offending file/line:\n$_")
           unless (/^[$ok_lead]/);
