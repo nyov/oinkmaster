@@ -32,7 +32,7 @@ Optional arguments:
 If the rules have been modified, a tarball of your old rules will be put 
 in
 .I dir
-before overwriting them with the new files. No backup if done if no file 
+before overwriting them with the new files. No backup is done if no file 
 has changed or if Oinkmaster is running in careful mode.
 .IP "\fB-c
 Run in careful mode. This means that Oinkmaster will only check for 
@@ -67,7 +67,7 @@ The rev keyword is ignored when the comparison and removal of common
 parts is performed because it would often make the whole idea fail.
 (If you feel it's important to be able to verify that the rev number
 has increased when a rule has been updated, do not use the minimized
-diff mode.).
+diff mode.)
 
 Normally when a rule has changed the entire old and new versions are
 printed, but the actual change between them can be hard to see if the rules

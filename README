@@ -24,7 +24,7 @@ Oinkmaster is most often used to grab the latest official rules tarball
 from www.snort.org and apply a set of modifications to them (such as 
 disabling unwanted rules) before merging the changes into your local rules 
 files, but it can just as well be used to manage/distribute both official 
-and local local rules to multiple sensors with ability to fine-tune the 
+and local rules to multiple sensors with ability to fine-tune the 
 rules on each sensor or group of sensors. It understands single-line rules
 as well as multi-line rules.
 
@@ -165,7 +165,7 @@ job. But of course, be very careful when doing the latter. Think about
 what you're doing. It usually doesn't take much for these automatic 
 updating scripts to fail, so things could easily get messed up from one 
 update to another because of different layout in the rules archive, typo 
-in a rule, bugs in the script etc etc. (At least run snort -T on the new 
+in a rule, bugs in the script etc., etc. (At least run snort -T on the new 
 rules before restarting your Snort process!). And as always when updating
 the Snort rules, there may be some changes that you really don't like 
 (or at least want to know about before using), so you should always 
@@ -242,7 +242,7 @@ o Enabled and modified:
      is now activated. The actual rule had also been modified.
 
 o Removed:
-  - The rule does no longer exist in the new rules file.
+  - The rule no longer exists in the new rules file.
 
 o Disabled:
   - The rule still exists but has now been commented out (perhaps because 
@@ -260,7 +260,7 @@ o Modified inactive:
     out) rule.
 
 
-Non-rule changes will also be printed, if any. Non-rule lines are simply 
+Non-rule changes, if any, will also be printed. Non-rule lines are simply 
 lines that are not actual rules (or rules that for some reason could not 
 be successfully parsed), and Oinkmaster will keep track of those 
 as well.
@@ -380,4 +380,4 @@ o Oinkmaster never deletes any rules files from your system.
 o Don't depend too much on this script for the rules updating process.
   It's just intended to be a small help and you should always keep an eye
   on it. Manual reviewing of all your rules and configuration should 
-  always be done,
+  always be done.

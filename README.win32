@@ -29,7 +29,7 @@ o When using Cygwin (standalone or from within a Cygwin shell) you should
   Cygwin shell. 
 
 o Remember that filenames/directories with spaces specified on the 
-  command line needs to be quoted, e.g.
+  command line need to be quoted, e.g.
   -C "c:\some directory\oinkmaster.conf"
 
 o Depending on your Perl installation, you may or may not be able to call

@@ -54,6 +54,7 @@ o The default URL in oinkmaster.conf is now
   is the latest stable version of Snort at the time of this release.
 o The FAQ has been updated, especially the sections about local 
   customization of rules.
+o Fixed a bunch of documentation typos (thanks to JP Vossen!).
 
 
 

@@ -33,15 +33,15 @@ Q16: If I make a modification directly in a rules file that is updated by
      Oinkmaster, will that change be permanent?
 Q17: Should I run Oinkmaster as root?
 Q18: I get "/usr/bin/perl: bad interpreter" when starting.
-Q19: I've been running Oinkmaster several times and it still says there 
-     are no changes in the rules, how often are the rules tarballs on 
+Q19: I've run Oinkmaster several times and it still says there are no
+     changes in the rules, how often are the rules tarballs on 
      www.snort.org updated?
 Q20: Can Oinkmaster send email or execute a command when the rules have
      been modified?
 Q21: What do I do if I need to locally customize (not disable) some 
      rules (and so that those modifications become permanent)?
 Q22: I want to disable rules by editing the files directly and putting 
-     a "#" in front of the rules. How to these changes become permanent?
+     a "#" in front of the rules. How do these changes become permanent?
 
 --------------
 
@@ -63,11 +63,11 @@ A1:  Check the "url = ..." line in oinkmaster.conf (or argument to "-u"
      download layout again at any time, so if you experience problems, go 
      to the Snort web site and see if anything is mentioned there.
 
-     If you are absolutely sure you use the right rules for your version
-     of Snort but still have problems, you may need to read the Snort
-     manual because it is likely that your local configuration is broken.
-     For example, the new rules maybe contains new variables that you
-     forgot to add. But of course there can be times when the rules
+     If you are absolutely sure you're using the right rules for your
+     version of Snort but still have problems, you may need to read the
+     Snort manual because it is likely that your local configuration is
+     broken. For example, the new rules maybe contains new variables that
+     you forgot to add. But of course there can be times when the rules
      archive actually is broken somehow (remember that auto-update of the
      rules with automatic Snort restart is bad unless you are careful).
      These issues are often mentioned on the Snort mailing lists.
@@ -117,7 +117,7 @@ A3:  Yes, there are several situations where Oinkmaster can be handy when
      2) Create a script that re-creates the rules tarball from the rules
         just downloaded. You could then either push this new archive to 
         all the sensors or have each sensor pull the tarball from foohost 
-        using '-u scp://user@foohost:/...'. If your sensors does not have 
+        using '-u scp://user@foohost:/...'. If your sensor does not have 
         a way to talk to other hosts at all (like when only using 
         receive-only cables), the rules archive will obviously have to be 
         distributed manually using a removable media like a USB memory 
@@ -162,8 +162,7 @@ A5:  localsid is processed first and if there is such a statement for a
      use both "enablesid 1" and "disablesid 1" in oinkmaster.conf (in 
      any order), SID 1 will first be disabled and then enabled. So if 
      SID 1 was enabled by default in the downloaded rules archive, this 
-     is a NOOP. Disabling a disabled rule is also a NOOP, as is enabling 
-     an enabled rule.
+     is a NOOP. Disabling a disabled rule is also a NOOP.
 
 
 
@@ -309,10 +308,10 @@ A10: If you download the snort rules archive from a web site (e.g.
 
 Q11: Can Oinkmaster be used to update rules from www.whitehats.com?
 
-A11: No, the Snort rules on www.whitehats.com has currently not been 
-     maintained for a long long time and should not be used, although the 
-     arachNIDS database is still a good source of information for older 
-     rules. Use the rules on www.snort.org instead.
+A11: No, the Snort rules on www.whitehats.com have not been maintained for
+     a long long time and should not be used, although the arachNIDS
+     database is still a good source of information for older rules.
+     Use the rules on www.snort.org instead.
 
      (And for Oinkmaster to work in a technical sense, the rules package 
      must be a gzipped tar file that contains a directory called 
@@ -330,7 +329,7 @@ A12: No. (Not unless there is a bug in Oinkmaster anyway.) Oinkmaster was
      'msg: "some message";' and 'sid: <sid>;'. Some basic syntax checks 
      are also performed, but the rest is ignored.
 
-     If a rule can not be successfully parsed for some reason, it will 
+     If a rule cannot be successfully parsed for some reason, it will 
      simply be regarded as a non-rule line (or multiple non-rule lines if 
      it is a multi-line rule). Since non-rule lines are also compared and 
      updated by Oinkmaster, things will work as usual anyway except that
@@ -416,8 +415,8 @@ A18: By default, Oinkmaster assumes that Perl is found as /usr/bin/perl.
 
 
 
-Q19: I've been running Oinkmaster several times and it still says there 
-     are no changes in the rules, how often are the rules tarballs on 
+Q19: I've run Oinkmaster several times and it still says there are no
+     changes in the rules, how often are the rules tarballs on 
      www.snort.org updated?
 
 A19: The tarballs are currently generated from the CVS repository many 
@@ -442,7 +441,7 @@ A19: The tarballs are currently generated from the CVS repository many
 Q20: Can Oinkmaster send email or execute a command when the rules have
      been modified?
 
-A20: There is no build-in function in Oinkmaster to do that, because that
+A20: There is no built-in function in Oinkmaster to do that, because that
      functionality does not belong there. However, it is very easy to do
      it with a small wrapper. You can for example run Oinkmaster with the
      -q flag so it doesn't give any output unless the rules had changed,
@@ -474,8 +473,8 @@ A20: There is no build-in function in Oinkmaster to do that, because that
 Q21: What do I do if I need to locally customize (not disable) some 
      rules (and so that those modifications become permanent)?
 
-A21: As seen in Q16 you can not just edit a local rules file and 
-     customize the rules, because they would become overwritten during 
+A21: As seen in Q16 you cannot just edit a local rules file and 
+     customize the rules, because they would be overwritten during 
      the next update. There is however often a need of being able to do 
      such modifications to the rules, and there are a few different 
      ways you could do this with Oinkmaster. One way is often the best 
