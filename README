@@ -7,16 +7,14 @@ Written by Andreas Östling <andreaso@it.su.se>.
 Feedback is of course appreciated.
 
 Homepage:
-http://nitzer.dhs.org/oinkmaster/
+http://oinkmaster.sourceforge.net/
 
 Browsable CVS repository:
-http://devel.it.su.se/cgi-bin/local/cvsweb.cgi/oinkmaster/
+http://cvs.sourceforge.net/viewcvs.py/oinkmaster/
 
-Or to do a CVS checkout via command line, set the CVSROOT environment
-variable to ":pserver:cvs@cvs.it.su.se:/afs/su.se/services/cvs/public/cvsroot"
-and then do "cvs login" with "cvs" as password. Then you can use the 
-regular CVS commands, like "cvs co oinkmaster" (remember that this will 
-get you the current development snapshot).
+Or to do a CVS checkout via command line, use this command 
+(remember that this will get you the current development snapshot):
+cvs -z3 -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/oinkmaster co oinkmaster 
 
 
 
