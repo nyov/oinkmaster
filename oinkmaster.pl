@@ -777,9 +777,9 @@ sub make_backup($ $)
   # an absolute or a relative path.
     chdir("$old_dir") or clean_exit("could not change directory back to $old_dir: $!");
 
-  # Move the archive to the backup directory.
-    move("$tmpdir/rules-backup-$date.tar.gz", "$dest_dir/")
-      or warn("WARNING: unable to move $tmpdir/rules-backup-$date.tar.gz ".
+  # Copy the archive to the backup directory.
+    copy("$tmpdir/rules-backup-$date.tar.gz", "$dest_dir/")
+      or warn("WARNING: unable to copy $tmpdir/rules-backup-$date.tar.gz ".
               "to $dest_dir/: $!\n");
 
     print STDERR " saved as $dest_dir/rules-backup-$date.tar.gz.\n"
@@ -1093,8 +1093,8 @@ sub update_rules($ @)
     foreach my $file_w_path (@files) {
         my $file = $file_w_path;
         $file =~ s/.*\///;    # remove path
-        move("$file_w_path", "$dst_dir/$file")
-          or clean_exit("could not move $file_w_path to $file: $!");
+        copy("$file_w_path", "$dst_dir/$file")
+          or clean_exit("could not copy $file_w_path to $file: $!");
     }
 }
 
