@@ -180,18 +180,18 @@ FILELOOP:foreach $file (keys(%new_files)) {                  # for each new file
   # First check for added non-rule lines.
     foreach $_ (@{$new_other{$file}}) {
         unless (find_line($_, @{$old_other{$file}})) {
+            $other_changed = 1;
             fix_fileinfo("other_added", $file);
             $changes{other_added} .= "       $_";
-            $other_changed = 1;
         }
     }
 
   # Check for removed non-rule lines.
     foreach $_ (@{$old_other{$file}}) {
         unless (find_line($_, @{$new_other{$file}})) {
+            $other_changed = 1;
             fix_fileinfo("other_removed", $file);
             $changes{other_removed} .= "       $_";
-            $other_changed = 1;
         }
     }
 
