@@ -24,10 +24,7 @@ o Perl is now started with tainting checks enabled by default.
   you'll have to make sure you start oinkmaster by calling 
   "perl -T oinkmaster.pl ..." to avoid getting the error message 
   'Too late for "-T" option ...'.
-o Added 'enablesid' keyword to oinkmaster.conf.
-  It will do exactly what you think, i.e. enable a disabled rule.
-  The order in oinkmaster.conf does not matter. All the
-  'modifysid' will be processed first, then 'disablesid' and last 'enablesid'.
+o Added 'enablesid' option to oinkmaster.conf.
 o Slightly improved rules parsing (order of sid and msg does not matter).
 o oinkmaster.conf will be searched for in /etc/ and /usr/local/etc/ by default.
 o Make contrib/create-sidmap.pl and contrib/addsid.pl take an arbtitrary number
@@ -35,7 +32,10 @@ o Make contrib/create-sidmap.pl and contrib/addsid.pl take an arbtitrary number
 o Added a FAQ.
 o Use ISO 8601 format for date string in backup filename.
 o wget is now always run in verbose mode, although the output is not displayed
-  unless you run Oinkmaster in verbose mode as well, or if an error occurs.
+  unless you run Oinkmaster in verbose mode as well, or if an error occurs (i.e.
+  no more need to re-run in verbose mode just to get decent error messages).
+o deleted.rules is now ignored (with a "skipfile delete.rules") in the 
+  default oinkmaster.conf.
 o Many other minor improvements.
 
 
