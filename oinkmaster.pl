@@ -931,7 +931,7 @@ sub make_backup($ $)
 
     my ($sec, $min, $hour, $mday, $mon, $year) = (localtime)[0 .. 5];
 
-    my $date = sprintf("%4d-%02d-%02dT-%02d:%02d:%02d",
+    my $date = sprintf("%4d-%02d-%02dT%02d:%02d:%02d",
                        $year + 1900, $mon + 1, $mday, $hour, $min, $sec);
 
     my $backup_tmp_dir = "$tmpdir/rules-backup-$date";
