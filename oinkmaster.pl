@@ -160,14 +160,14 @@ FILELOOP:foreach $file (keys(%new_files)) {                  # for each new file
 	  	    }
 		}
 
-	    } else {    # sid not found in old file
+	    } else {    # sid not found in old file so it must have been added
 	        $rules_changed = 1;
  		fix_fileinfo("added_new", $file);
 	        $changes{added_new} .= "       $new_rule";
 	    }
     } # foreach sid
 
-  # Check for removed rules, i.e. sids that exist in the new file but not in the old one.
+  # Check for removed rules, i.e. sids that exist in the old file but not in the new one.
     foreach $sid (keys(%{$old_rules{$file}})) {
         unless (exists($new_rules{$file}{$sid})) {
             $old_rule = $old_rules{$file}{$sid};
