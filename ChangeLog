@@ -1,4 +1,4 @@
-v0.7 - 2002XXXX
+v0.7 - 20021205
 ~~~~~~~~~~~~~~~
 o oinkmaster.conf will now be searched for in /usr/local/etc/ by
   default (instead of in the current directory).

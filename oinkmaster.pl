@@ -70,7 +70,7 @@ my $start_date = scalar(localtime);
 parse_cmdline(\%config);
 
 # Why would anyone want to run as root?
-die("Don't run as root!\nExiting") if (!$>);
+die("Don't run as root!\nExiting...\n") if (!$>);
 
 # Create empty temporary directory. Die if we can't create unique filename.
 mkdir("$TMPDIR", 0700)
