@@ -21,7 +21,9 @@ sub print_changes($ $);
 sub make_backup($ $);
 sub get_modified_files($ $);
 sub get_changes($ $);
+sub update_rules($ @);
 sub clean_exit($);
+
 
 my $VERSION           = 'Oinkmaster v0.7 by Andreas Östling <andreaso@it.su.se>';
 my $TMPDIR            = "/tmp/oinkmaster.$$";
@@ -116,46 +118,37 @@ disable_and_modify_rules(\%{$config{sid_disable_list}},
                          \%{$config{sid_modify_list}}, keys(%new_files));
 
 # Setup rules hash.
-# XXX really pass output dir here?
 setup_rules_hash(\%rh, $output_dir, keys(%new_files));
 
 # Compare the new rules to the old ones.
 my %changes = get_changes(\%rh, keys(%new_files));
 
-
-# Update files that contain changes (move these new files from the temporary
-# directory to the output directory, unless running in careful mode.
-# Added files will also be regarded as "modified", since we want to
-# update (i.e. add) those as well.
-# Create backup first, if requested.
-
-# Get list of modified files (with full path).
+# Get list of modified files (with full path to the new file).
 my @modified_files = get_modified_files(\%changes, \%new_files);
 
-
-if ($#modified_files < 0) {
-    print "nothing changed!\n";
-} else {
-    make_backup($output_dir, $backup_dir)
-      if (defined($backup_dir));
-}
-
-
-unless ($careful) {
-    foreach my $file_w_path (@modified_files) {
-
-        my $file = $file_w_path;
-        $file =~ s/.*\///;                                      # remove path
-
-        move("$file_w_path", "$output_dir/$file")
-          or clean_exit("Error: could not move $file_w_path to $file: $!")
+# Update files listed in %modified_files (move the new files from the temporary
+# directory into our output directory), unless we're running in careful mode.
+# Create backup first if running with -b.
+if ($#modified_files > -1) {
+    if ($careful) {
+        print STDERR "No need to backup old files (running in careful mode), skipping.\n"
+          if (defined($backup_dir) && (!$quiet));
+    }  else {
+        make_backup($output_dir, $backup_dir) if (defined($backup_dir));
+        update_rules($output_dir, @modified_files);
     }
+} else {
+    print STDERR "No files modified - no need to backup old files, skipping.\n"
+      if (defined($backup_dir) && !$quiet);
 }
 
+# Print changes.
+if (($#modified_files > -1 || exists($changes{removed_files})) || !$quiet) {
+    print "\nNote: Oinkmaster is running in careful mode - not updating/adding anything.\n"
+      if ($careful); # XXX && something changed
 
-print_changes(\%changes, \%rh);
-
-
+    print_changes(\%changes, \%rh);
+}
 
 clean_exit("");
 
@@ -215,8 +208,11 @@ sub parse_cmdline()
     if (defined($opt_o)) {       # -o <dir>, the only required option.
         $output_dir = $opt_o;
     } else {
-        show_usage;
+        show_usage();
     }
+
+  # Don't accept additional (unknown) arguments.
+    $_ = shift(@ARGV) && show_usage();
 
   # Remove possible trailing slash (just for cosmetic reasons).
     $output_dir =~ s/\/+$//;
@@ -768,8 +764,8 @@ sub get_changes($ $)
 
     while ($_ = readdir(OLDRULES)) {
         $changes{removed_files}{"$_"}++
-          if (/$config{update_files}/ && !exists($config{file_ignore_list}{$_})
-            && !-e "$TMPDIR/rules/$_");
+          if ($check_removed && /$config{update_files}/ &&
+              !exists($config{file_ignore_list}{$_}) && !-e "$TMPDIR/rules/$_");
     }
     closedir(OLDRULES);
 
@@ -830,6 +826,22 @@ sub get_changes($ $)
     print STDERR "done.\n" unless ($quiet);
 
     return(%changes);
+}
+
+
+
+# Copy modified rules to the output directory.
+sub update_rules($ @)
+{
+    my $dst_dir = shift;
+    my @files   = @_;
+
+    foreach my $file_w_path (@files) {
+        my $file = $file_w_path;
+        $file =~ s/.*\///;                                      # remove path
+        move("$file_w_path", "$output_dir/$file")
+          or clean_exit("Error: could not move $file_w_path to $file: $!")
+    }
 }
 
 
