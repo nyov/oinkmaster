@@ -277,9 +277,9 @@ sub show_usage()
 
 $VERSION
 
-Usage: $progname -o <outdir> [options]
+Usage: $progname -o <output directory> [options]
 
-<outdir> is where to put the new files.
+<output directory> is where to put the new files.
 This should be the directory where you store your Snort rules.
 
 Options:
@@ -349,6 +349,7 @@ sub parse_cmdline($)
     if ($$cfg_ref{output_dir}) {
         $$cfg_ref{output_dir} = File::Spec->canonpath($$cfg_ref{output_dir});
     } else {
+        warn("Error: no output directory specified.\n");
         show_usage();
     }
 
