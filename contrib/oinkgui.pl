@@ -47,10 +47,17 @@ my @urls = qw(http://www.snort.org/dl/rules/snortrules-stable.tar.gz
              );
 
 
-my $bgcolor        = 'Bisque3';
-my $butcolor       = 'Bisque2';
-my $actbutcolor    = 'Bisque2';
-my $labelcolor     = 'Bisque1';
+my %color = (
+    bgcolor              => 'Bisque3',
+    butcolor             => 'Bisque2',
+    actbutcolor          => 'Bisque2',
+    labelcolor           => 'Bisque1',
+    file_label_ok        => '#00e000',
+    file_label_not_ok    => 'red',
+    out_frame_foreground => 'white',
+    out_frame_background => 'black',
+);
+
 
 
 $config{careful}       = 0;
@@ -154,13 +161,13 @@ EDITOR:foreach my $ed (@editors) {
 if ($ENV{HOME}) {
     $gui_config_file = "$ENV{HOME}/.oinkguirc"
 } elsif ($ENV{HOMEDRIVE} && $ENV{HOMEPATH}) {
-   $gui_config_file = "$ENV{HOMEDRIVE}/$ENV{HOMEPATH}/.oinkguirc";
+   $gui_config_file = "$ENV{HOMEDRIVE}$ENV{HOMEPATH}\\.oinkguirc";
 }
 
 
 # Create main window.
 my $main = MainWindow->new(
-  -background => "$bgcolor",
+  -background => "$color{bgcolor}",
   -title      => "$version"
 );
 
@@ -168,13 +175,13 @@ my $main = MainWindow->new(
 my $out_frame = $main->Scrolled('ROText',
   -setgrid    => 'true',
   -scrollbars => 'e',
-  -background => 'black',
-  -foreground => 'white',
+  -background => $color{out_frame_background},
+  -foreground => $color{out_frame_foreground},
 );
 
 my $help_label = $main->Label(
     -relief     => 'groove',
-    -background => "$labelcolor"
+    -background => "$color{labelcolor}"
 );
 
 my $balloon = $main->Balloon(
@@ -198,21 +205,21 @@ my $req_tab = $notebook->add("required",
 
 
 # Create frame with oinkmaster.pl location.
-my ($oinkscript_frame, $oinkscript_label, $oinkscript_entry, $oinkscript_but) = 
+my $oinkscript_frame = 
   create_fileSelectFrame($req_tab, "oinkmaster.pl", 'EXECFILE', \$config{oinkmaster}, 'NOEDIT');
 
 $balloon->attach($oinkscript_frame, -statusmsg => $help{oinkscript});
 
 
 # Create frame with oinkmaster.conf location.
-my ($oinkconf_frame, $oinkconf_label, $oinkconf_entry, $oinkconf_but) = 
+my $oinkconf_frame = 
   create_fileSelectFrame($req_tab, "oinkmaster.conf", 'ROFILE', \$config{oinkmaster_conf}, 'EDIT');
 
 $balloon->attach($oinkconf_frame, -statusmsg => $help{oinkconf});
 
 
 # Create frame with output directory.
-my ($outdir_frame, $outdir_label, $outdir_entry, $outdir_but) = 
+my $outdir_frame =
   create_fileSelectFrame($req_tab, "output directory", 'WRDIR', \$config{outdir}, 'NOEDIT');
 
 $balloon->attach($outdir_frame, -statusmsg => $help{outdir});
@@ -227,21 +234,21 @@ my $opt_tab = $notebook->add("optional",
 
 
 # Create frame with alternate URL location.
-my ($url_frame, $url_label, $url_entry, $url_but) = 
+my $url_frame =
   create_fileSelectFrame($opt_tab, "Alternate URL", 'URL', \$config{url}, 'NOEDIT');
 
 $balloon->attach($url_frame, -statusmsg => $help{url});
 
 
 # Create frame with variable file.
-my ($varfile_frame, $varfile_label, $varfile_entry, $varfile_but) = 
+my $varfile_frame =
   create_fileSelectFrame($opt_tab, "Variable file", 'WRFILE', \$config{varfile}, 'EDIT');
 
 $balloon->attach($varfile_frame, -statusmsg => $help{varfile});
 
 
 # Create frame with backup dir location.
-my ($backupdir_frame, $backupdir_label, $backupdir_entry, $backupdir_but) = 
+my $backupdir_frame =
   create_fileSelectFrame($opt_tab, "Backup directory", 'WRDIR', \$config{backupdir}, 'NOEDIT');
 
 $balloon->attach($backupdir_frame, -statusmsg => $help{backupdir});
@@ -258,7 +265,7 @@ $notebook->pack(
 
 # Create the frame to the left.
 my $left_frame = $main->Frame(
-  -background => "$labelcolor", 
+  -background => "$color{labelcolor}", 
   -border     => '2'
 )->pack(
   -side       => 'left',
@@ -269,7 +276,7 @@ my $left_frame = $main->Frame(
 # Create "GUI settings" label.
 $left_frame->Label(
   -text       => "GUI settings:",
-  -background => "$labelcolor"
+  -background => "$color{labelcolor}"
 )->pack(
   -side       => 'top',
   -fill       => 'x'
@@ -283,7 +290,7 @@ create_actionbutton($left_frame, "Save current settings", \&save_config);
 # Create "options" label at the top of the left frame.
 $left_frame->Label(
   -text       => "Options:", 
-  -background => "$labelcolor"
+  -background => "$color{labelcolor}"
 )->pack(side  => 'top',
         fill  => 'x'
 );
@@ -309,7 +316,7 @@ $balloon->attach(
 # Create "mode" label.
 $left_frame->Label(
   -text       => "Mode:", 
-  -background => "$labelcolor"
+  -background => "$color{labelcolor}"
 )->pack(side  => 'top',
         fill  => 'x'
 );
@@ -326,7 +333,7 @@ create_radiobutton($left_frame, "verbose",    \$config{mode});
 $main->Label(
   -text       => "Output messages:", 
   -width      => '100', 
-  -background => "$labelcolor"
+  -background => "$color{labelcolor}"
 )->pack(
   -side       => 'top',
   -fill       => 'x'
@@ -350,7 +357,7 @@ $help_label->pack(
 # Create "actions" label.
 $left_frame->Label(
   -text       => "Actions:",
-  -background => "$labelcolor"
+  -background => "$color{labelcolor}"
 )->pack(
   -side       => 'top',
   -fill       => 'x'
@@ -457,46 +464,46 @@ sub update_file_label_color($ $ $)
     $filename =~ s/\s+$//;
 
     unless ($filename) {
-        $label->configure(-background => 'red');
+        $label->configure(-background => $color{file_label_not_ok});
         return (1);
     }
 
     if ($type eq "URL") {
         if ($filename =~ /^(?:http|ftp):\/\/.+\.tar\.gz$/) {
-            $label->configure(-background => "#00e000");
+            $label->configure(-background => $color{file_label_ok});
         } elsif ($filename =~ /^(?:file:\/\/)*(.+\.tar\.gz)$/) {
             my $file = $1;
             if (-f "$file" && -r "$file") {
-                $label->configure(-background => "#00e000");
+                $label->configure(-background => $color{file_label_ok});
             } else {
-                $label->configure(-background => 'red');
+                $label->configure(-background => $color{file_label_not_ok});
             }
         } else {
-            $label->configure(-background => 'red');
+            $label->configure(-background => $color{file_label_not_ok});
         }
     } elsif ($type eq "ROFILE") {
         if (-f "$filename" && -r "$filename") {
-            $label->configure(-background => "#00e000");
+            $label->configure(-background => $color{file_label_ok});
         } else {
-            $label->configure(-background => 'red');
+            $label->configure(-background => $color{file_label_not_ok});
         }
     } elsif ($type eq "EXECFILE") {
         if (-f "$filename" && (-x "$filename" || $^O eq 'MSWin32')) {
-            $label->configure(-background => "#00e000");
+            $label->configure(-background => $color{file_label_ok});
         } else {
-            $label->configure(-background => 'red');
+            $label->configure(-background => $color{file_label_not_ok});
         }
     } elsif ($type eq "WRFILE") {
         if (-f "$filename" && -w "$filename") {
-            $label->configure(-background => "#00e000");
+            $label->configure(-background => $color{file_label_ok});
         } else {
-            $label->configure(-background => 'red');
+            $label->configure(-background => $color{file_label_not_ok});
         }
     } elsif ($type eq "WRDIR") {
         if (-d "$filename" && -w "$filename") {
-            $label->configure(-background => "#00e000");
+            $label->configure(-background => $color{file_label_ok});
         } else {
-            $label->configure(-background => 'red');
+            $label->configure(-background => $color{file_label_not_ok});
         }
     } else {
        print STDERR "incorrect type ($type)\n";
@@ -516,7 +523,7 @@ sub create_checkbutton($ $ $)
  
     my $button = $frame->Checkbutton(
       -text       => $name,
-      -background => $butcolor,
+      -background => $color{butcolor},
       -variable   => $var_ref,
       -relief     => 'raise',
       -anchor     => 'w',
@@ -540,7 +547,7 @@ sub create_actionbutton($ $ $)
     my $button = $frame->Button(
       -text       => "$name",
       -command    => sub { &$func_ref }, 
-      -background => "$actbutcolor",
+      -background => "$color{actbutcolor}",
     )->pack(
       -fill       => 'x',
     );
@@ -558,7 +565,7 @@ sub create_radiobutton($ $ $)
  
     my $button = $frame->Radiobutton(
       -text       => "$name",
-      -background => "$butcolor",
+      -background => "$color{butcolor}",
       -variable   =>  $mode_ref,
       -relief     => 'raised',
       -anchor     => 'w',
@@ -634,7 +641,7 @@ sub create_fileSelectFrame($ $ $ $ $)
     if ($edtype eq 'EDIT') {
         my $edit_but = $frame->Button(
           -text       => "Edit",
-          -background => "$actbutcolor",
+          -background => "$color{actbutcolor}",
           -command    => sub {
                                  unless (-e "$$var_ref") {
                                      logmsg("Select an existing file first!.\n\n", 'ERROR');
@@ -659,7 +666,7 @@ sub create_fileSelectFrame($ $ $ $ $)
   # Create browse-button.
     my $but = $frame->Button(
       -text       => "browse ...",
-      -background => "$actbutcolor",
+      -background => "$color{actbutcolor}",
       -command    => sub {
                             fileDialog($var_ref, $name, $type);
                          }
@@ -667,9 +674,7 @@ sub create_fileSelectFrame($ $ $ $ $)
       -side       => 'left',
     );
 
-
-
-    return ($frame, $label, $entry, $but);
+    return ($frame);
 }
 
 
@@ -754,8 +759,9 @@ sub test_config()
             exec(@cmd);
         }
         close(OINK);
-        logmsg("\n", 'MISC');
     }
+
+    logmsg("\n", 'MISC');
 }
 
 
@@ -772,23 +778,30 @@ sub update_rules()
 {
     my @cmd;
 
-    create_cmdline(\@cmd) || return;
     clear_messages();
-    logmsg("@cmd:\n", 'EXEC');
-
     $main->Busy(-recurse => 1);
 
-    if (open(OINK,"-|")) {
+    create_cmdline(\@cmd) || return;
+    logmsg("@cmd:\n", 'EXEC');
+
+    if ($^O eq 'MSWin32') {
+        open(OINK, "@cmd 2>&1|");
         while (<OINK>) {
             logmsg($_, 'OUTPUT');
-            $main->update;
         }
+        close(OINK);
     } else {
-        open(STDERR, '>&', 'STDOUT');
-        exec(@cmd);
+        if (open(OINK,"-|")) {
+            while (<OINK>) {
+                logmsg($_, 'OUTPUT');
+            }
+        } else {
+            open(STDERR, '>&', 'STDOUT');
+            exec(@cmd);
+        }
+        close(OINK);
     }
-    close(OINK);
- 
+
     logmsg("Done.\n\n", 'EXEC');
     $main->Unbusy;
 }
@@ -799,53 +812,58 @@ sub create_cmdline($)
 {
     my $cmd_ref = shift;
 
-  # Clean leading/trailing whitespaces from all filenames.
-    my @filename_vars = qw(
-      oinkmaster oinkmaster_conf outdir varfile url backupdir
-    );
+    my $oinkmaster      = File::Spec->rel2abs($config{oinkmaster});
+    my $oinkmaster_conf = $config{oinkmaster_conf};
+    my $outdir          = $config{outdir};
+    my $varfile         = $config{varfile};
+    my $url             = $config{url};
+    my $backupdir       = $config{backupdir};
 
-    foreach my $var (@filename_vars) {
-        next unless (exists($config{$var}));
-        $config{$var} =~ s/^\s+//;
-        $config{$var} =~ s/\s+$//;
+  # Assume file:// if url prefix is missing.
+    if ($url) {
+        $url = "file://$url" unless ($url =~ /(?:http|ftp|file):\/\//);
     }
- 
-    unless ($config{oinkmaster} && (-x "$config{oinkmaster}" || $^O eq 'MSWin32')) {
+
+    foreach my $var_ref (\$oinkmaster, \$oinkmaster_conf, \$outdir, 
+                         \$varfile, \$url, \$backupdir) {
+        $$var_ref =~ s/^\s+//;
+        $$var_ref =~ s/\s+$//;
+        if ($^O eq 'MSWin32' && $$var_ref) {
+            $$var_ref = "\"$$var_ref\"";
+        }
+    }
+
+    unless ($oinkmaster && (-x "$oinkmaster" || $^O eq 'MSWin32')) {
         logmsg("Location to oinkmaster.pl is not set correctly!\n\n", 'ERROR');
         return (0);
     }
 
-    unless ($config{oinkmaster_conf}) {
+    unless ($oinkmaster_conf) {
         logmsg("Location to configuration file is not set correctly!\n\n", 'ERROR');
         return (0);
     }
 
-    unless ($config{outdir}) {
+    unless ($outdir) {
         logmsg("Output directory is not set!\n\n", 'ERROR');
         return (0);
     }
 
     push(@$cmd_ref, 
-      File::Spec->rel2abs($config{oinkmaster}), 
-      "-C", "$config{oinkmaster_conf}", 
-      "-o", "$config{outdir}");
+      $oinkmaster, 
+      "-C", "$oinkmaster_conf", 
+      "-o", "$outdir");
 
-    push(@$cmd_ref, "-c")                       if ($config{careful});
-    push(@$cmd_ref, "-e")                       if ($config{enable_all});
-    push(@$cmd_ref, "-r")                       if ($config{check_removed});
-    push(@$cmd_ref, "-q")                       if ($config{mode} eq "quiet");
-    push(@$cmd_ref, "-Q")                       if ($config{mode} eq "über-quiet");
-    push(@$cmd_ref, "-v")                       if ($config{mode} eq "verbose");
-    push(@$cmd_ref, "-U", "$config{varfile}")   if ($config{varfile});
-    push(@$cmd_ref, "-b", "$config{backupdir}") if ($config{backupdir});
+    push(@$cmd_ref, "-c")               if ($config{careful});
+    push(@$cmd_ref, "-e")               if ($config{enable_all});
+    push(@$cmd_ref, "-r")               if ($config{check_removed});
+    push(@$cmd_ref, "-q")               if ($config{mode} eq "quiet");
+    push(@$cmd_ref, "-Q")               if ($config{mode} eq "über-quiet");
+    push(@$cmd_ref, "-v")               if ($config{mode} eq "verbose");
+    push(@$cmd_ref, "-U", "$varfile")   if ($varfile);
+    push(@$cmd_ref, "-b", "$backupdir") if ($backupdir);
 
-
-  # Assume file:// if url prefix is missing.
-    if ($config{url}) {
-        my $url = $config{url};
-        $url = "file://$url" unless ($url =~ /(?:http|ftp|file):\/\//);
-        push(@$cmd_ref, "-u", "$url");
-    }
+    push(@$cmd_ref, "-u", "$url")
+      if ($url);
 
     return (1);
 }
