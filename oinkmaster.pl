@@ -575,7 +575,10 @@ sub setup_rule_hashes
         open(NEWFILE, "$tmpdir/rules/$file") or clean_exit("Could not open $tmpdir/rules/$file: $!");
 	while (<NEWFILE>) {
 	    if (/$snort_rule_regexp/) {
-	        $new_rules{"$file"}{"$2"} = $_;
+	        $sid = $2;
+		print STDERR "WARNING: duplicate SID in downloaded rules archive: SID $sid\n"
+		  if (exists($new_rules{"$file"}{"$sid"}));
+	        $new_rules{"$file"}{"$sid"} = $_;
 	    } else {
 	        push(@{$new_other{"$file"}}, $_);  # use array so the lines stay sorted
 	    }
@@ -590,6 +593,8 @@ sub setup_rule_hashes
 		    $sid = $2;
 		    s/^\s*//;     # remove leading whitespaces
 		    s/^#+\s+/#/;  # make sure comment syntax is how we like it
+		    print STDERR "WARNING: duplicate SID in your local rules: SID $sid\n"
+		      if (exists($old_rules{"$file"}{"$sid"}));
                     $old_rules{$file}{$sid} = $_;
                 } else {
                     push(@{$old_other{$file}}, $_);
