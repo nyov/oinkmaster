@@ -564,15 +564,16 @@ sub download_rules($ $)
 {
     my $url       = shift;
     my $localfile = shift;
-    my $ret;
     my $log       = "$tmpdir/wget.log";
+    my $ret;
 
   # Use wget if URL starts with "http[s]" or "ftp".
     if ($url =~ /^(?:https*|ftp)/) {
-        print STDERR "Downloading rules archive from $url...\n"
+        print STDERR "Downloading rules archive from $url... "
           unless ($quiet);
 
         if ($verbose) {
+            print "\n";
             clean_exit("could not download rules")
               if (system("wget","-v","-O","$localfile","$url"));
         } else {
@@ -583,6 +584,7 @@ sub download_rules($ $)
                 close(LOG);
                 clean_exit("could not download rules. Output from wget follows:\n\n @log");
             }
+            print "done.\n" unless ($quiet);
         }
 
   # Grab file from local filesystem if file://...
@@ -1415,7 +1417,7 @@ sub get_next_entry($ $ $ $ $ $)
           # If there are no more lines, this can not be a valid multi-line rule.
             if (!($line = shift(@$arr_ref))) {
 
-                warn("WARNING: got EOF while parsing multi-line rule: $$multi_ref\n")
+                warn("\nWARNING: got EOF while parsing multi-line rule: $$multi_ref\n")
                   if ($verbose);
 
                 @_ = split(/\n/, $$multi_ref);
@@ -1456,7 +1458,7 @@ sub get_next_entry($ $ $ $ $ $)
 
             return (1);   # return multi
         } else {
-            warn("WARNING: invalid multi-line rule: $$single_ref\n")
+            warn("\nWARNING: invalid multi-line rule: $$single_ref\n")
               if ($verbose && $$multi_ref !~ /^\s*#/);
 
             @_ = split(/\n/, $$multi_ref);
@@ -1486,7 +1488,7 @@ sub get_next_entry($ $ $ $ $ $)
 
       # Do extra check and warn if it *might* be a rule anyway, 
       # but that we just couldn't parse for some reason.
-        warn("WARNING: line may be a rule but it could not be parsed (missing sid or msg?): $line\n")
+        warn("\nWARNING: line may be a rule but it could not be parsed (missing sid or msg?): $line\n")
           if ($verbose && $line =~ /^\s*alert .+msg\s*:\s*".+"\s*;/);
 
         $$nonrule_ref = $line;
