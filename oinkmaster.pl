@@ -1120,7 +1120,7 @@ sub is_in_path($)
 # of just exit(0).
 sub clean_exit($)
 {
-    system("/bin/rm","-r","-f","$tmpdir")
+    system("rm","-r","-f","$tmpdir")
       and warn("WARNING: unable to remove temporary directory $tmpdir.\n");
 
     if ($_[0] eq "") {
