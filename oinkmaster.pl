@@ -124,12 +124,15 @@ FILELOOP:foreach $file (keys(%new_files)) {                  # for each new file
 
   # Skip diff if file maches skip_diff regexp.
     if (exists($config{skip_diff}) && $file =~ /$config{skip_diff}/) {
-	$skip_diff_files .= "    -> $file";
+	$skip_diff_files .= "\n    -> $file";
 	$skip_diff_files .= " (local copy updated)" unless ($careful);
 	$skip_diff_files .= "\n";
 	$modified_files{$file}++;
         next FILELOOP;
     }
+
+  # This one will tell us if the filename info has been printed or not.
+    undef(%printed);
 
     foreach $sid (keys(%{$new_rules{$file}})) {         # for each sid in the new file
         $new_rule = $new_rules{$file}{$sid};            # save the rule in $new_rule for easier access
@@ -661,7 +664,7 @@ sub fix_fileinfo
     my $filename = shift;
 
     unless (exists($printed{$type})) {                         # filename info already added?
-        $changes{$type} = "   -> File \"$filename\":\n";       # nope, add it.
+        $changes{$type} .= "\n    -> File \"$filename\":\n";   # nope, add it.
         $printed{$type}++;                                     # so we know it has now been added
     }
 
