@@ -67,11 +67,12 @@ it all over again.
 How it works
 ~~~~~~~~~~~~
 It fetches the Snort rules archive from the URL specified in oinkmaster.conf,
-comments out the unwanted rules and prints what have been added/removed/modified
-since the last update. Unwanted rules are specified in the file oinkmaster.conf.
-In this file you can also tell Oinkmaster to skip entire files that you don't care
-about (i.e. don't want to update or check for changes). See oinkmaster.conf for
-the defaults and more information.
+comments out the unwanted rules and prints what have been 
+added/removed/modified since the last update. Unwanted rules are specified 
+in the file oinkmaster.conf. In this file you can also tell Oinkmaster to 
+skip entire files that you don't care about (i.e. don't want to update or 
+check for changes). See oinkmaster.conf for the defaults and more 
+information.
 
 This script should probably be run manually but can also be run as a cron job.
 But of course, be very careful when doing the latter. Think about what you're
@@ -260,18 +261,18 @@ o It's a really good idea to have a separate directory for your snort.org rules
   on your snort machine. Why? Because if you have a local rules file called
   "coolstuff.rules" in the output directory and a file called "coolstuff.rules"
   is one day added to the rules distribution archive, your local file will be
-  overwritten by that one.
-  Same thing goes for snort.conf - we don't want our snort.conf to be overwritten
-  after each update. Personally I keep an extra (unused) copy of
-  snort.conf in the rules directory but specify another snort.conf when starting
-  Snort. This way I can keep track of changes in the snort.conf from the rules
-  archive while keeping my customized copy intact. If there are added/removed
-  rules files in the archive or added/changed variables in snort.conf, you will
-  have to edit your production copy of snort.conf manually and update as needed.
-  Oinkmaster does not do that kind of stuff. Yes, this means that if there is
-  a new variable added to a rules file, your new rules will not even work
-  until you define that variable in your snort.conf manually.
-  See, auto-updating with auto-restart is bad.
+  overwritten by that one. Same thing goes for snort.conf - we don't want 
+  our snort.conf to be overwritten after each update. It's a good idea to keep
+  an extra (unused) copy of snort.conf in the rules directory but specify 
+  another snort.conf when starting Snort. This way you can keep track of 
+  changes in the snort.conf from the rules archive while keeping your 
+  customized copy intact. If there are added/removed rules files in the 
+  archive or added/changed variables in snort.conf, you will have to edit 
+  your production copy of snort.conf manually and update as needed. 
+  Oinkmaster does not do that kind of stuff. Yes, this means that if 
+  there is a new variable added to a rules file, your new rules will not 
+  even work until you define that variable in your snort.conf manually. 
+  See, auto-updating with auto-restart is bad unless you're careful.
 
 o Oinkmaster also never deletes any rules files from your system.
   So if a file called foo.rules is usually included in the rules distribution
