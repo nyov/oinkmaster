@@ -53,7 +53,7 @@ $gui_config{check_removed} = 0;
 
 $gui_config{mode} = 'normal';
 
-my $animate = 0;
+my $animate = 1;
 
 $gui_config{oinkmaster}             = "";
 $gui_config{oinkmaster_config_file} = "";
@@ -165,10 +165,6 @@ $notebook->pack(
   -side   => 'top'
 );
 
-#$req_tab->pack();
-#$opt_tab->pack();
-
-
 
 # Create the option frame to the left.
 my $opt_frame = $main->Frame(
@@ -268,7 +264,7 @@ create_actionbutton($opt_frame, "Exit",               \&exit);
 if ($animate) {
     foreach (split(//, "Welcome to $version")) {
         logmsg("$_", 'MISC');
-        select(undef, undef, undef, 0.03);
+        $out_frame->after(5);
     }
 } else {
     logmsg("Welcome to $version", 'MISC');
@@ -341,9 +337,12 @@ sub update_file_label_color($ $ $)
     my $filename = shift;
     my $type     = shift;  # FILE|DIR
 
+    $filename =~ s/^\s+//g;
+    $filename =~ s/\s+$//g;
+
     unless ($filename) {
         $label->configure(-background => 'red');
-        return;
+        return (1);
     }
 
     if ($type eq "FILE") {
@@ -351,21 +350,20 @@ sub update_file_label_color($ $ $)
             $label->configure(-background => "#00e000");
         } else {
             $label->configure(-background => 'red');
-            logmsg("$filename does not exist or is not a regular file\n", 'ERROR');
         }
-        return;
+        return (1);
     }
 
     if ($type eq "DIR") {
-        if (-d "$filename") {
+        if (-d "$filename" && -w "$filename") {
             $label->configure(-background => "#00e000");
         } else {
             $label->configure(-background => 'red');
-            logmsg("$filename does not exist or is not a directory\n", 'ERROR');
         }
-        return;
+        return (1);
     }
 
+    return (1);
 }
 
 
@@ -458,7 +456,7 @@ sub create_fileSelectFrame($ $ $)
     my $entry = $frame->Entry(
       -background      => 'white',
       -width           => '80',
-      -validate        => 'focusout',
+      -validate        => 'key',
       -validatecommand => sub { update_file_label_color($label, $_[0], $type) },
     )->pack(
       -side            => 'left',
@@ -579,6 +577,8 @@ sub update_rules()
     clear_messages();
     logmsg("@cmd:\n", 'EXEC');
 
+    $main->Busy(-recurse => 1);
+
     if (open(OINK,"-|")) {
         while (<OINK>) {
             logmsg($_, 'OUTPUT');
@@ -591,6 +591,7 @@ sub update_rules()
     close(OINK);
  
     logmsg("Done.\n\n", 'EXEC');
+    $main->Unbusy;
 }
 
 
@@ -606,6 +607,12 @@ sub create_cmdline($)
     my $url         = $url_entry->get;
     my $backupdir   = $backupdir_entry->get;
 
+  # Clean leading/trailing whitespaces from all filenames.
+    foreach my $var_ref (\$oinkmaster, \$config_file, \$outdir, \$varfile, \$url, \$backupdir) {
+        $$var_ref =~ s/^\s+//g;
+        $$var_ref =~ s/\s+$//g;
+    }
+ 
     unless ($oinkmaster && -x "$oinkmaster") {
         logmsg("Location to oinkmaster.pl is not set correctly!\n\n", 'ERROR');
         return (0);
