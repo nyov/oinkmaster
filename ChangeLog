@@ -2,6 +2,8 @@ v0.7 - 2002XXXX
 ~~~~~~~~~~~~~~~
 o Don't print warning when using "-e" in quiet mode.
 o "-p" is now not just obsolete, but invalid.
+o Support file://... in URL. File will be copied from the
+  local filesystem. Suggested by aidan.carty@entropy.ie.
 
 
 

@@ -71,19 +71,25 @@ mkdir("$tmpdir", 0700)
   or die("Could not create temporary directory $tmpdir: $!\nExiting");
 
 # Pull down the rules archive.
-# Die if wget doesn't exit with status level 0.
-print STDERR "Downloading rules archive from $url...\n" unless ($quiet);
-if ($quiet) {
-    clean_exit("Unable to download rules.\n".
-               "Consider running in non-quiet mode if the problem persists.")
-      if (system("wget","-q","-nv","-O","$tmpdir/$outfile","$url"));   # quiet mode
-} elsif ($verbose) {
-    clean_exit("Unable to download rules.")
-      if (system("wget","-v","-O","$tmpdir/$outfile","$url"));         # verbose mode
-} else {
-    clean_exit("Unable to download rules.")
-      if (system("wget","-nv","-O","$tmpdir/$outfile","$url"));        # normal mode
+if ($url =~ /^(?:http|ftp)/) {     # Use wget if URL starts with http:// or ftp://
+    print STDERR "Downloading rules archive from $url...\n" unless ($quiet);
+    if ($quiet) {
+        clean_exit("Unable to download rules.\n".
+                   "Consider running in non-quiet mode if the problem persists.")
+          if (system("wget","-q","-nv","-O","$tmpdir/$outfile","$url"));   # quiet mode
+    } elsif ($verbose) {
+        clean_exit("Unable to download rules.")
+          if (system("wget","-v","-O","$tmpdir/$outfile","$url"));         # verbose mode
+    } else {
+        clean_exit("Unable to download rules.")
+          if (system("wget","-nv","-O","$tmpdir/$outfile","$url"));        # normal mode
+    }
+} else {                           # Grab file from local filesystem.
+    $url =~ s/^file:\/\///;        # Remove file://, the rest is the actual filename.
+    print STDERR "Copying rules archive from $url...\n" unless ($quiet);
+    copy("$url", "$tmpdir/$outfile") or clean_exit("Unable to copy $url: $!");
 }
+
 
 # Verify and unpack archive. This will leave us with a directory
 # called "rules/" in the temporary directory, containing the new rules.
@@ -335,7 +341,7 @@ sub show_usage
                  "\nOptions:\n".
 		 "-C <cfg>   Use this config file instead of the default ($config_file)\n".
 		 "-b <dir>   Backup old rules into <dir> if anything had changed\n".
-		 "-u <url>   Download from this URL (http:// or ftp:// ...tar.gz)\n".
+		 "-u <url>   Download from this URL (http://, ftp:// or file:// ...tar.gz)\n".
                  "           instead of the URL specified in $config_file\n".
 		 "-c         Careful mode. Don't update anything, just check for changes\n".
 		 "-e         Re-enable all rules that are disabled by default in the rules distribution.\n".
@@ -456,7 +462,7 @@ sub sanity_check
 
   # Make sure $url is defined (either by -u <url> or url=... in the conf).
     die("Incorrect URL or URL not specified in neither $config_file nor command line.\nExiting")
-      unless (defined($url) && $url =~ /^(?:http|ftp):\/\/\S+.*\.tar\.gz$/);
+      unless (defined($url) && $url =~ /^(?:http|ftp|file):\/\/\S+.*\.tar\.gz$/);
 
   # Make sure the output directory exists and is writable.
     die("The output directory \"$output_dir\" doesn't exist or isn't writable by you.\nExiting")
