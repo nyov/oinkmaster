@@ -11,6 +11,8 @@ sub parse_cmdline;
 sub read_config;
 sub sanity_check;
 sub unpack_rules_archive;
+sub disable_rules;
+sub setup_rule_hashes;
 
 my $version     = 'Oinkmaster v0.4 by Andreas Östling <andreaso@it.su.se>';
 my $config_file = "./oinkmaster.conf";
@@ -19,6 +21,9 @@ my $outfile     = "snortrules.tar.gz";
 my $verbose     = 0;
 my $quiet       = 0;
 
+# Regexp to match a Snort rule line.
+# The msg string will go into $1, and the sid will go into $2.
+my $snort_rule_regexp = '^\s*#*\s*(?:alert|log|pass) .+msg\s*:\s*"(.+?)"\s*;.+sid\s*:\s*(\d+)\s*;';
 
 use vars qw
    (
@@ -29,12 +34,12 @@ my (
       $output_dir
    );
 
-my (
-      @new_files
-   );
+#my (
+#
+#   );
 
 my (
-      %sid_disable_list, %file_ignore_list, %config
+      %sid_disable_list, %file_ignore_list, %config, %old_files, %new_files
    );
 
 
@@ -76,19 +81,34 @@ unpack_rules_archive;
 # files, unless filename exists in %file_ignore_list.
 opendir(NEWRULES, "$tmpdir/rules") or die("could not open directory $tmpdir/rules: $!\nExiting");
 while ($_ = readdir(NEWRULES)) {
-    push(@new_files, $_)
+    $new_files{$_}++
       if (/$config{update_files}/ && !exists($file_ignore_list{$_}));
 }
 closedir(NEWRULES);
 
+# Create list of (old) files that are in our output directory.
+opendir(OLDRULES, "$output_dir") or die("could not open directory $output_dir: $!\nExiting");
+while ($_ = readdir(OLDRULES)) {
+    $old_files{$_}++
+      if (/$config{update_files}/ && !exists($file_ignore_list{$_}));
+}
+closedir(OLDRULES);
+
 # Make sure there is at least one file to be updated.
-$_ = $#new_files + 1;
+$_ = keys(%new_files);
 if ($_  < 1) {
     die("Found no files in archive to be updated\nExiting");
 } else {
     print STDERR ("Found $_ files to be updated.\n")
       unless ($quiet);
 }
+
+# Disable (#comment out) all rules listed in %sid_disable_list.
+# All files will still be left in the temporary directory.
+disable_rules;
+
+setup_rule_hashes;
+
 
 # END OF MAIN #
 
@@ -256,6 +276,73 @@ sub unpack_rules_archive
 
   # Change back to old dir.
     chdir("$old_dir") or die("could not change directory back to $tmpdir: $!\nExiting");
+}
+
+
+
+# Disable (#comment out) all rules listed in %sid_disable_list.
+# All files will still be left in the temporary directory.
+sub disable_rules
+{
+    my ($num_disabled, $msg, $sid, $line, $file);
+
+    $num_disabled = 0;
+    print STDERR "Disabling rules...\n" unless ($quiet);
+
+    foreach $file (keys(%new_files)) {
+        open(INFILE, "<$tmpdir/rules/$file") or die("could not open $tmpdir/rules/$file: $!\nExiting");
+	@_ = <INFILE>;
+        close(INFILE);
+
+      # Write back to the same file.
+	open(OUTFILE, ">$tmpdir/rules/$_") or die("could not open $tmpdir/rules/$_: $!\nExiting");
+	RULELOOP:foreach $line (@_) {
+            unless ($line =~ /$snort_rule_regexp/) {    # Only care about snort rules.
+	        print OUTFILE $line;
+		next RULELOOP;
+	    }
+
+	    ($msg, $sid) = ($1, $2);
+            if (exists($sid_disable_list{$sid})) {      # should this sid be disabled?
+                if ($verbose) {
+                    $_ = $file;
+                    $_ =~ s/.+\///;                     # remove path, just keep the filename.
+                    $_ = sprintf("Disabling sid %-5s in file %-20s (%s)\n", $sid, $_, $msg);
+                    print STDERR "$_";
+                }
+                $line = "#$line" unless ($line =~ /^\s*#/);
+                $num_disabled++;
+            } else {                     # Sid was not listed in the config file. Uncomment it to be
+                $line =~ s/^\s*#*\s*//;  # sure, since some rules may be commented by default.
+            }
+
+            print OUTFILE $line;       # Write line back to the rules file.
+        }
+        close(OUTFILE);
+    }
+    print STDERR "Disabled $num_disabled rules.\n" unless ($quiet)
+}
+
+
+
+sub setup_rule_hashes
+{
+    my ($file);
+
+    foreach $file (keys(%new_files)) {
+        open(NEWFILE, "$tmpdir/rules/$file") or die("could not open $tmpdir/rules/$file: $!\n");
+	while (<NEWFILE>) {
+	    if (/$snort_rule_regexp/) {
+#print "sätter new_files($file)($2)\n";
+#	        $new_files{"$file"}{"123"} = "foo";
+$new_files{$file}{$2} = $_;
+	    } else {
+#	        $new_files{
+	    }
+	}
+	close(NEWFILE);
+    }
+
 }
 
 #### EOF ####
