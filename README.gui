@@ -1,0 +1,71 @@
+# $Id$ #
+
+Intro
+~~~~~
+
+Oinkmaster GUI (oinkgui.pl in the contrib directory) is my very first 
+attempt at creating a graphical user interface. It was written just for 
+fun. The result is not the prettiest interface you've seen, but it 
+actually works. It runs on Unix systems and also on Windows with 
+ActivePerl. Send feedback to Andreas Östling <andreaso@it.su.se>.
+
+
+
+How to install
+~~~~~~~~~~~~~~
+
+This GUI is simply a front-end used to create the right command line and
+then execute Oinkmaster with it. In other words, oinkmaster.pl can be run 
+without the GUI but the GUI can not be run without oinkmaster.pl.
+It may be easiest if you make sure you have Oinkmaster (without the GUI) 
+up and running first, although it's not required. See Oinkmaster's own
+INSTALL and README (and README.win32 of you're on Windows) for more 
+information. 
+
+The GUI is written in Perl and requires the Perl Tk module.
+If you're on Unix, get the latest version from 
+http://www.cpan.org/authors/id/NI-S/. At the time of writing, 
+http://www.cpan.org/authors/id/NI-S/Tk-800.024.tar.gz is probably the one 
+you'll want. Unpack it and run "perl Makefile.pl && make && make install" 
+and you should be able to start the GUI by running oinkgui.pl.
+(If you're on *BSD, the TK module is probably available in your ports 
+system.)
+
+If you're on Windows with ActivePerl, you do not need any extra module
+since everything is probably installed already. Should the Tk Perl module 
+be missing, you can install it with "ppm install Tk" from the command 
+line.If you want a non-ugly interface when browsing for directories, you need 
+to install the Win32::FileOp module. This is strongly recommended and is 
+as simple as typing "ppm install Win32::FileOp" on the command line.
+Then you just need to copy the GUI perl file to some suitable 
+directory and execute it. Using the GUI under Cygwin is untested and may 
+or may not work.
+
+
+
+Usage
+~~~~~~
+
+When you start the GUI for the first time, all required files/directories 
+will not be automatically set (although some of them may be).
+All entries under the "Required files and directories" tab must 
+be set correctly or you will not be able to do anything. When they are set 
+correctly (i.e. when all the labels have turned green), you are ready to 
+go. The files/directories under the "Optional files and directories" 
+tab are not required and if you leave a field empty, that option will
+simply not be used.
+
+When all required fields are set, it's recommended to push the 
+"Test configuration" button. This will execute Oinkmaster and make it test 
+its configuration and then exit. If the configuration test is successful,
+you should be ready to update the rules.
+
+When you're happy with all the filename entries and options, you probably 
+want to push the "Save config" button. All GUI settings will then be save 
+to a configuration file which you can load later with then "Load config" 
+button. It's also loaded automatically on startup.
+
+You can try placing the mouse pointer over a button or filename entry and 
+a short help message will be displayed under the big black output window.
+
+To find out more about Oinkmaster, consult its own documentation.
