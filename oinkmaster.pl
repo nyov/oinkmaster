@@ -52,6 +52,10 @@ my $preserve_comments = 1;
 # will go into $1 and the sid will go into $2 if the regexp matches.
 my $SNORT_RULE_REGEXP = '^\s*#*\s*(?:alert|log|pass) .+msg\s*:\s*"(.+?)"\s*;.+sid\s*:\s*(\d+)\s*;.*\)\s*$';
 
+# Regexp to match the start (the first line) of a possible multi-line rule.
+my $SNORT_MULTILINE_REGEXP = '^\s*#*\s*(?:alert|log|pass) .*\\\s*\n$';
+
+
 use vars qw
    (
       $opt_b $opt_c $opt_C $opt_e $opt_h $opt_o
@@ -1093,7 +1097,7 @@ sub get_next_entry($ $ $ $)
 
     my $line = shift(@$arr_ref) || return(0);
 
-    if ($line =~ /^\s*#*\s*(?:alert|log|pass) .*\\\s*\n$/i) {    # start multi-line rule?
+    if ($line =~ /$SNORT_MULTILINE_REGEXP/oi) {    # start multi-line rule?
         $$single_ref = $line;
         $$multi_ref  = $line;
 
