@@ -278,13 +278,14 @@ o It's a really good idea to have a separate directory for your snort.org rules
 
   As of oinkmaster 0.8, you can run with -U <file> though, which means that
   Oinkmaster will search snort.conf in the downloaded rules archive for all
-  variable definitions, and then verify against <file> (which probably is your
-  local production copy of snort.conf). Variables that exist in the
-  distribution snort.conf but not in <file> will be added at the beginning
-  of <file>. Variables that have been modified are NOT updated, the -U
-  argument only cares about totally new ones.
-  This is of course not guaranteed to solve the problem, but it may be
-  convenient on home networks and such if you think it's a good idea.
+  variables (the "var somevar something" lines) and then verify against 
+  <file> (which probably is your local production copy of snort.conf). 
+  Variables that exist in the distribution snort.conf but not in <file> 
+  will be added to <file> directly after any other variables it may contain. 
+  Variables that have been modified are NOT updated, the -U argument only 
+  cares about totally new ones. This is of course not guaranteed to solve 
+  the problem, but it may be convenient on home networks and such if you 
+  think it's a good idea.
 
 o Oinkmaster also never deletes any rules files from your system.
   So if a file called foo.rules is usually included in the rules distribution
