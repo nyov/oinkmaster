@@ -9,6 +9,10 @@ o A few minor cleanups.
 o Warn instead of exit in case of invalid lines in the config file.
 o Added possibility to modify sids, using the "modifysid" keyword
   in the config file.
+o Added makesidex.pl by Jerry Applebaum <JApplebaum@APTEGRITY.com>
+  to contrib section that may be helpful to new users.
+  It strips out the sid's from everything you've commented out and
+  writes them out in a format that can be appended to the oinkmaster.con
 
 
 
