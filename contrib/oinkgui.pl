@@ -127,7 +127,7 @@ select STDOUT;
 $| = 1;
 
 # Find out if can use Win32::FileOp.
-my $use_fileop = 1;
+my $use_fileop = 0;
 $use_fileop = 1 if (eval "require Win32::FileOp");
 
 
@@ -186,12 +186,14 @@ my $main = MainWindow->new(
 );
 
 
+# Create scrolled frame with output messages.
 my $out_frame = $main->Scrolled('ROText',
   -setgrid    => 'true',
   -scrollbars => 'e',
   -background => $color{out_frame_bg},
   -foreground => $color{out_frame_fg},
 );
+
 
 my $help_label = $main->Label(
     -relief     => 'groove',
@@ -266,7 +268,7 @@ $filetypes = [
 ];
 
 my $url_frame =
-  create_fileSelectFrame($opt_tab, "Alternate URL", 'URL', 
+  create_fileSelectFrame($opt_tab, "Alternate URL", 'URL',
                          \$config{url}, 'NOEDIT', $filetypes);
 
 $balloon->attach($url_frame, -statusmsg => $help{url});
@@ -274,7 +276,7 @@ $balloon->attach($url_frame, -statusmsg => $help{url});
 
 # Create frame with variable file.
 $filetypes = [
-  ['Snort files', ['.conf', '.config', '.rules']],
+  ['Snort configuration files', ['.conf', '.config']],
   ['All files',    '*'                           ]
 ];
 
@@ -354,7 +356,7 @@ $balloon->attach(
 
 # Create "mode" label.
 $left_frame->Label(
-  -text       => "Mode:",
+  -text       => "Output mode:",
   -background => "$color{label}"
 )->pack(side  => 'top',
         fill  => 'x'
@@ -371,7 +373,7 @@ create_radiobutton($left_frame, "verbose",    \$config{mode});
 # Create "activity messages" label.
 $main->Label(
   -text       => "Output messages:",
-  -width      => '120',
+  -width      => '110',
   -background => "$color{label}"
 )->pack(
   -side       => 'top',
@@ -439,6 +441,24 @@ $balloon->attach(
   create_actionbutton($left_frame, "Exit", \&exit),
   -statusmsg => $help{exit}
 );
+
+
+
+# Make the mousewheel scroll the output window. Taken from Mastering Perl/Tk.
+if ($^O eq 'MSWin32') {
+    $out_frame->bind('<MouseWheel>' =>
+        [ sub { $_[0]->yview('scroll', -($_[1] / 120) * 3, 'units')},
+            Ev('D') ]
+    );
+} else {
+    $out_frame->bind('<4>' => sub {
+        $_[0]->yview('scroll', -3, 'units') unless $Tk::strictMotif;
+    });
+
+    $out_frame->bind('<5>' => sub {
+        $_[0]->yview('scroll', +3, 'units') unless $Tk::strictMotif;
+    });
+}
 
 
 
@@ -522,9 +542,9 @@ sub update_file_label_color($ $ $)
     }
 
     if ($type eq "URL") {
-        if ($filename =~ /^(?:http|ftp):\/\/.+\.tar\.gz$/) {
+        if ($filename =~ /^(?:http|ftp|scp):\/\/.+\.tar\.gz$/) {
             $label->configure(-background => $color{file_label_ok});
-                } elsif ($filename =~ /^(?:file:\/\/)*(.+\.tar\.gz)$/) {
+        } elsif ($filename =~ /^(?:file:\/\/)*(.+\.tar\.gz)$/) {
             my $file = $1;
             if (-f "$file" && -r "$file") {
                 $label->configure(-background => $color{file_label_ok});
@@ -599,7 +619,10 @@ sub create_actionbutton($ $ $)
 
     my $button = $frame->Button(
       -text       => "$name",
-      -command    => sub { &$func_ref },
+      -command    => sub {
+                            &$func_ref;
+                            $out_frame->focus;
+                         },
       -background => "$color{button}",
     )->pack(
       -fill       => 'x',
@@ -914,11 +937,14 @@ sub create_cmdline($)
 
   # Assume file:// if url prefix is missing.
     if ($url) {
-        $url = "file://$url" unless ($url =~ /(?:http|ftp|file):\/\//);
+        $url = "file://$url" unless ($url =~ /(?:http|ftp|file|scp):\/\//);
     }
 
     $oinkmaster = File::Spec->rel2abs($oinkmaster)
       if ($oinkmaster);
+
+    $outdir    = File::Spec->canonpath("$outdir");
+    $backupdir = File::Spec->canonpath("$backupdir");
 
   # Clean leading/trailing whitespaces, also add leading/trailing "" if win32.
     foreach my $var_ref (\$oinkmaster, \$oinkmaster_conf, \$outdir,
@@ -949,10 +975,6 @@ sub create_cmdline($)
         logmsg("Output directory is not set!\n\n", 'ERROR');
         return (0);
     }
-
-  # Replace \ with / to avoid problems on win32.
-    $outdir    =~ s/\\/\//g;
-    $backupdir =~ s/\\/\//g;
 
     push(@$cmd_ref,
       "$perl", "$oinkmaster",
