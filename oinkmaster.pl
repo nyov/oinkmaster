@@ -571,23 +571,18 @@ sub download_rules($ $)
         print STDERR "Downloading rules archive from $url...\n"
           unless ($quiet);
 
-        if ($quiet) {
-            $ret = system("wget","-v","-o", "$log","-O","$localfile","$url");
-        } elsif ($verbose) {
+        if ($verbose) {
             clean_exit("could not download rules")
               if (system("wget","-v","-O","$localfile","$url"));
         } else {
-            $ret = system("wget","-v","-o","$log","-O","$localfile","$url");
+            if (system("wget","-v","-o","$log","-O","$localfile","$url")) {
+                open(LOG, "<", "$log")
+                  or clean_exit("could not open $log for reading: $!");
+                my @log = <LOG>;
+                close(LOG);
+                clean_exit("could not download rules. Output from wget follows:\n\n @log");
+            }
         }
-
-    if ($ret) {
-        open(LOG, "<", "$log")
-          or clean_exit("could not open $log for reading: $!");
-        my @log = <LOG>;
-        close(LOG);
-
-        clean_exit("could not download rules. Output from wget follows:\n @log");
-    }
 
   # Grab file from local filesystem if file://...
     } elsif ($url =~ /^file/) {
