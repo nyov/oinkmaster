@@ -1856,13 +1856,13 @@ sub parse_singleline_rule($ $ $)
 
     if ($line =~ /$SINGLELINE_RULE_REGEXP/oi) {
 
-        if ($line =~ /msg\s*:\s*"(.+?)"\s*;/i) {
+        if ($line =~ /\bmsg\s*:\s*"(.+?)"\s*;/i) {
             $$msg_ref = $1;
         } else {
             return (0);
         }
 
-        if ($line =~ /sid\s*:\s*(\d+)\s*;/i) {
+        if ($line =~ /\bsid\s*:\s*(\d+)\s*;/i) {
             $$sid_ref = $1;
         } else {
             return (0);
