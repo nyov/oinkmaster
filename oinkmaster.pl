@@ -573,7 +573,7 @@ sub download_rules($ $)
           unless ($quiet);
 
         if ($verbose) {
-            print "\n";
+            print STDERR "\n";
             clean_exit("could not download rules")
               if (system("wget","-v","-O","$localfile","$url"));
         } else {
@@ -584,7 +584,7 @@ sub download_rules($ $)
                 close(LOG);
                 clean_exit("could not download rules. Output from wget follows:\n\n @log");
             }
-            print "done.\n" unless ($quiet);
+            print STDERR "done.\n" unless ($quiet);
         }
 
   # Grab file from local filesystem if file://...
@@ -620,7 +620,7 @@ sub download_rules($ $)
         print STDERR "Copying rules archive from $url using scp:\n"
           unless ($quiet);
 
-        clean_exit("scp returned error when trying to copy $url to $localfile")
+        clean_exit("scp returned error when trying to copy $url")
           if (system(@cmd));
     }
 
