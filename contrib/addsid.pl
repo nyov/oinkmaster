@@ -5,6 +5,12 @@
 # XXX should create a sid map
 
 my $usage   = "usage: $0 <rulesdir> <start sid>\n";
+
+# Set this to the default classtype you want to add, if missing.
+# Comment out if you don't want to add a classtype.
+my $classtype = "misc-attack";
+
+# Only >= 1000000 is reserved for personal use.
 my $min_sid = 1000000;
 
 my $rulesdir = shift || die("$usage");
@@ -60,15 +66,22 @@ while ($file = readdir(RULESDIR)) {
             my $msg = $1;
 
             if ($single !~ /sid\s*:\s*\d+\s*;/) {
-                print STDERR "Missing sid in \"$msg\"\n";
+                print STDERR "Adding sid to \"$msg\"\n";
 		$sid++;
                 $multi =~ s/;\s*\)\s*\n/; sid:$sid;)\n/;
 	    }
 
             if ($single !~ /rev\s*:\s*\d+\s*;/) {
-                print STDERR "Missing rev in \"$msg\"\n";
+                print STDERR "Adding rev to \"$msg\"\n";
                 $multi =~ s/;\s*\)\s*\n/; rev:1;)\n/;
 	    }
+
+            if (defined($classtype)) {
+                if ($single !~ /classtype\s*:\s*".*"\s*;/) {
+                    print STDERR "Adding classtype to \"$msg\"\n";
+                    $multi =~ s/;\s*\)\s*\n/; classtype:"$classtype";)\n/;
+	        }
+            }
 
             $newfile .= $multi;
 
