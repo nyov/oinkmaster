@@ -89,9 +89,11 @@ If you already have several rules commented out (or removed) in your current
 rules, you need to add those SIDs to oinkmaster.conf manually, or they
 will be re-enabled after each update. Some rules may be commented out by
 default in the rules distribution, and as of Oinkmaster 0.6 they will stay
-that way. If you want to enable them you have to use the "-e" switch. Note that 
-those rules are commented out for a reason (they may not even work!), 
-so be careful. Also note that possible local modifications you've done inside the 
+that way. If you want to enable them, you have to use the "-e" switch. Note that 
+those rules are commented out for a reason (they may not even work!) so be careful. 
+There may of course also be rules that are commented out by default but that you'd
+still like to use. It's probably easiest to put these in a local rules file instead.
+Also note that possible local modifications you've done inside the 
 official Snort rules files will be lost since the files will be overwritten by the
 new versions from the downloaded rules archive after each update.
 
@@ -283,4 +285,5 @@ o Oinkmaster also never deletes any rules files from your system.
 
 o Don't depend too much on this script for the rules updating process.
   It's just intended to be a small help and you should always keep an eye 
-  on it.
+  on it. Manual reviewing of your rules should always be done every now 
+  and then.
