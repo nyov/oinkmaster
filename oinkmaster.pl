@@ -123,7 +123,7 @@ print STDERR "Comparing new files to the old ones... "
   unless ($quiet);
 
 FILELOOP:foreach $file (keys(%new_files)) {                  # for each new file
-    next FILELOOP if (exists($added_files{$file}));          # skip of its an added file
+    next FILELOOP if (exists($added_files{$file}));          # skip diff if it's an added file
 
   # Skip diff if file maches skip_diff regexp.
     if (exists($config{skip_diff}) && $file =~ /$config{skip_diff}/) {
@@ -163,7 +163,7 @@ FILELOOP:foreach $file (keys(%new_files)) {                  # for each new file
 		}
 
 	    } else {    # sid not found in old file
-	        $rules_changed  = 1;
+	        $rules_changed = 1;
  		fix_fileinfo("added_new", $file);
 	        $changes{added_new} .= "   $new_rule";
 	    }
@@ -198,7 +198,7 @@ FILELOOP:foreach $file (keys(%new_files)) {                  # for each new file
 
 } # foreach new file
 
-# Create list of possibly removed files if -r is specified.
+# Add list of possibly removed files into $removed_files if -r is specified.
 if ($check_removed) {
     opendir(OLDRULES, "$output_dir")
       or clean_exit("Could not open directory $output_dir: $!");
@@ -214,7 +214,7 @@ if ($check_removed) {
 print STDERR "done.\n" unless ($quiet);
 
 # Update files listed in %modified_files (move the new files from the temporary
-# directory into our -o <outout directory>, unless we're running in careful mode.
+# directory into our -o <dir>, unless we're running in careful mode.
 # Also create backup first if running with -b.
 if ($rules_changed || $other_changed || defined($skip_diff_files)) {
     if ($careful) {
@@ -249,9 +249,9 @@ $something_changed = 1
       || keys(%added_files) > 0 || defined($removed_files));
 
 if ($something_changed || !$quiet) {
-    print "\n[***] Results from Oinkmaster started $start_date [***]\n";
-    print "\nNote: Oinkmaster was running in careful mode - no files were really updated or added.\n"
+    print "\nNote: Oinkmaster is running in careful mode - no files on your system modified or added.\n"
       if ($careful && $something_changed);
+    print "\n[***] Results from Oinkmaster started $start_date [***]\n";
 
   # Print rule changes.
     print "\n[*] Rules added/removed/modified: [*]\n";
@@ -281,9 +281,9 @@ if ($something_changed || !$quiet) {
   # Print non-rule changes.
     print "\n[*] Non-rule lines added/removed: [*]\n";
     if ($other_changed) {
-        print "\n  [+++]       Added line(s):       [+++]\n $changes{other_added}"
+        print "\n  [+++]       Added lines:       [+++]\n $changes{other_added}"
           if (exists($changes{other_added}));
-        print "\n  [---]      Removed line(s):      [---]\n $changes{other_removed}"
+        print "\n  [---]      Removed lines:      [---]\n $changes{other_removed}"
           if (exists($changes{other_removed}));
         print "\n";
     } else {
@@ -299,7 +299,7 @@ if ($something_changed || !$quiet) {
                "    None.\n";
     }
 
-  # Print list of possibly deleted files if -r is specified.
+  # Print list of files possibly removed from the downloaded archive if -r is specified.
     if ($check_removed) {
         if (defined($removed_files)) {
             print "\n[*] Possibly removed files (consider removing them from your".
@@ -385,7 +385,7 @@ sub read_config
 
     $line = 0;
 
-    open(CONF, "$config_file") or die("Could not open $config_file: $!\nExiting");
+    open(CONF, "<$config_file") or die("Could not open $config_file: $!\nExiting");
 
     while (<CONF>) {
         $line++;
@@ -394,14 +394,14 @@ sub read_config
 	s/\s*$//;                        # remove trailing whitespaces
         next unless (/\S/);              # skip blank lines
 
-        if (/^\s*disablesids*\s+(\d.*)/) {                        # disablesid
+        if (/^disablesids*\s+(\d.*)/) {                            # disablesid
 	    $args = $1;
 	    foreach $_ (split(/\s*,\s*/, $args)) {
                 die("Line $line in $config_file is invalid, giving up.\nExiting")
 		  unless (/^\d+$/);
                 $sid_disable_list{$_}++;
 	    }
-        } elsif (/^\s*skipfiles*\s+(.*)/) {                       # skipfile
+        } elsif (/^skipfiles*\s+(.*)/) {                           # skipfile
 	    $args = $1;
 	    foreach $_ (split(/\s*,\s*/, $args)) {
                 die("Line $line in $config_file is invalid, giving up.\nExiting")
@@ -430,7 +430,7 @@ sub read_config
 sub sanity_check
 {
    my @req_config   = qw (path update_files);
-   my @req_binaries = qw (which wget gzip tar rm);
+   my @req_binaries = qw (which gzip rm tar wget);
 
   # Can't use both -q and -v.
     die("Both quiet mode and verbose mode at the same time doesn't make sense.\nExiting")
@@ -465,47 +465,47 @@ sub sanity_check
 # Make a few checks on $outfile (the downloaded rules archive) and then unpack it.
 sub unpack_rules_archive
 {
-    my ($old_dir, $ok_chars, $filename);
+    my ($old_dir, $ok_chars, $tmpoutfile);
 
-    $ok_chars = 'a-zA-Z0-9_\.\-/\n :';   # allowed characters in the tar archive
-    $filename = $outfile;                # so we don't modify the global filename variable
+    $ok_chars = 'a-zA-Z0-9_\.\-/\n :';   # allowed characters for filenames in the tar archive
+    $tmpoutfile = $outfile;                # so we don't modify the global filename variable
 
     $old_dir = getcwd or clean_exit("Could not get current directory: $!");
     chdir("$tmpdir")  or clean_exit("Could not change directory to $tmpdir: $!");
 
-    unless (-s "$filename") {
+    unless (-s "$tmpoutfile") {
         clean_exit("Failed to get rules archive: ".
-                   "$tmpdir/$filename doesn't exist or hasn't non-zero size.");
+                   "$tmpdir/$tmpoutfile doesn't exist or hasn't non-zero size.");
     }
 
   # Run integrity check (gzip -t) on the gzip file.
     clean_exit("Integrity check on gzip file failed (file transfer failed or ".
                "file in URL not in gzip format?)")
-      if (system("gzip","-t","$filename"));
+      if (system("gzip","-t","$tmpoutfile"));
 
   # Decompress it.
-    system("gzip","-d","$filename") and clean_exit("Unable to uncompress $outfile.");
+    system("gzip","-d","$tmpoutfile") and clean_exit("Unable to uncompress $outfile.");
 
   # Suffix has now changed from .tar.gz to .tar.
-    $filename =~ s/\.gz$//;
+    $tmpoutfile =~ s/\.gz$//;
 
   # Run integrity check on the tar file by doing a "tar tf"
   # on it and checking the return value.
     clean_exit("Integrity check on tar file failed (file transfer failed or ".
                "file in URL not a compressed tar file?)")
-      if (system("tar tf \"$filename\" >/dev/null"));
+      if (system("tar tf \"$tmpoutfile\" >/dev/null"));
 
   # Look for uncool stuff in the archive.
     if (open(TAR,"-|")) {
         @_ = <TAR>;                       # read output of the "tar vtf" command into @_
     } else {
-        exec("tar","vtf","$filename")
+        exec("tar","vtf","$tmpoutfile")
           or die("Unable to execute untar/unpack command: $!\nExiting");
     }
 
     foreach $_ (@_) {
       # We don't want to have any weird characters in the tar file.
-        clean_exit("Forbidden characters in tar archive. Offending file/line:\n$_")
+       clean_exit("Forbidden characters in tar archive. Offending file/line:\n$_")
           if (/[^$ok_chars]/);
       # We don't want to unpack any "../../" junk.
         clean_exit("File in tar archive contains \"..\" in filename.\nOffending file/line:\n$_")
@@ -519,8 +519,8 @@ sub unpack_rules_archive
   # Looks good. Now we can finally untar it.
     print STDERR "Archive successfully downloaded, unpacking... "
       unless ($quiet);
-    clean_exit("Failed to untar $filename.")
-      if system("tar","xf","$filename");
+    clean_exit("Failed to untar $tmpoutfile.")
+      if system("tar","xf","$tmpoutfile");
     clean_exit("No \"rules/\" directory found in tar file.")
       unless (-d "rules");
 
@@ -592,7 +592,7 @@ sub setup_rule_hashes
     my ($file, $sid);
 
     foreach $file (keys(%new_files)) {
-        open(NEWFILE, "$tmpdir/rules/$file") or clean_exit("Could not open $tmpdir/rules/$file: $!");
+        open(NEWFILE, "<$tmpdir/rules/$file") or clean_exit("Could not open $tmpdir/rules/$file: $!");
 	while (<NEWFILE>) {
 	    if (/$snort_rule_regexp/) {
 	        $sid = $2;
@@ -607,7 +607,7 @@ sub setup_rule_hashes
 
      # Also read in old file if it exists.
         if (-f "$output_dir/$file") {
-            open(OLDFILE, "$output_dir/$file") or clean_exit("Could not open $output_dir/$file: $!");
+            open(OLDFILE, "<$output_dir/$file") or clean_exit("Could not open $output_dir/$file: $!");
 	    while (<OLDFILE>) {
                 if (/$snort_rule_regexp/) {
 		    $sid = $2;
