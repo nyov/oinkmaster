@@ -59,17 +59,25 @@ Show valid command line arguments with short descriptions
 Enable interactive mode. You will be asked to approve the changes (if 
 any) before updating anything.
 .IP "\fB-m
-Minimize and simplify diff when printing result by removing common leading
-and trailing parts of the old and new rule, so it's easier to see the
-actual change. A few characters to the left and to the right of the change
-are also printed so you get some context. Normally when a rule has changed
-the entire old and new versions are printed, but the actual change
-between them can be hard to see if the rules are long, complex and many.
-The normal output could look something like this:
+Minimize/simplify the diff when printing result for modified rules by
+removing common leading and trailing parts of the old and new rule so
+it's easier to see the actual change. A few characters to the left and
+to the right of the change are also printed so you get some context.
+The rev keyword is ignored when the comparison and removal of common
+parts is performed because it would often make the whole idea fail.
+(If you feel it's important to be able to verify that the rev number
+has increased when a rule has been updated, do not use the minimized
+diff mode.).
+
+Normally when a rule has changed the entire old and new versions are
+printed, but the actual change between them can be hard to see if the rules
+are long, complex and many.
+.PP
+       The normal output could look like this:
 .PP
 .nf
-       Old: alert tcp any any -> any 22 (msg: "foo"; flow:established,to_server;)
-       New: alert tcp any any -> any 123 (msg: "foo"; flow:established,to_server;)
+       Old: alert tcp any any -> any 22 (msg: "foo"; flags: A+; rev:1;)
+       New: alert tcp any any -> any 123 (msg: "foo"; flags: A+; rev:2;)
 .fi
 .PP
        When using
@@ -77,8 +85,8 @@ The normal output could look something like this:
 it would instead look something like:
 .PP
 .nf
-       Old: ... any any -> any 22 (msg: "foo";...
-       New: ... any any -> any 123 (msg: "foo";...
+       Old: ...any any -> any 22 (msg: "foo";...
+       New: ...any any -> any 123 (msg: "foo";...
 .fi
 .IP "\fB-q
 Run in quiet mode. Nothing is printed unless there are changes in the 
