@@ -1020,8 +1020,8 @@ sub get_changes($ $)
 # in the ignore list.
 sub get_new_filenames($ $)
 {
-    my $fn_ref    = shift;
-    my $rules_dir = shift;
+    my $new_files_ref = shift;
+    my $rules_dir     = shift;
 
     opendir(NEWRULES, "$rules_dir")
       or clean_exit("could not open directory $rules_dir: $!");
@@ -1033,7 +1033,7 @@ sub get_new_filenames($ $)
     closedir(NEWRULES);
 
   # Return number of new interesting filenames.
-    return (keys(%$fn_ref));
+    return (keys(%$new_files_ref));
 }
 
 
@@ -1068,7 +1068,7 @@ sub is_in_path($)
 
 
 
-# Remove temporary directory and exit. 
+# Remove temporary directory and exit.
 # If a non-empty string is given as argument, it will be regarded
 # as an error message and we will use die() with the message instead
 # of just exit(0).
@@ -1077,12 +1077,12 @@ sub clean_exit($)
     system("/bin/rm","-r","-f","$TMPDIR")
       and warn("WARNING: unable to remove temporary directory $TMPDIR.\n");
 
-    if ($_[0] ne "") {
+    if ($_[0] eq "") {
+        exit(0);
+    } else {
         $_ = $_[0];
 	chomp;
         die("\n$0: Error: $_\nOink, oink. Exiting...\n");
-    } else {
-        exit(0);
     }
 }
 
