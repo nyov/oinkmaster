@@ -27,6 +27,7 @@ o New command line option, -U <file>. If specified, variable definitions that
   will be inserted at the beginning of it. See README for more info.
 o Avoid using move() from File::Copy since some versions of it lies about
   the error message (e.g. "Cross-device link" instead of "Permission denied").
+  Thanks to Del Armstrong for investigating this issue!
 
 
 
