@@ -41,7 +41,7 @@ o Allow location of editor to be set in the GUI and do not search for a
   default one in a predefined list anymore.
 o Removed 'P' flag from tar as it is incompatible together with 't' in
   gtar, which is now used by default on FreeBSD 5.2-CURRENT and later
-  (PR ports/70806). Thanks to SANETO Takanori for reporting.
+  (PR ports/70806). Thanks to Saneto Takanori for reporting.
 o The GUI will now always use the same Perl binary when executing 
   oinkmaster.pl as the one running the GUI itself.
 o By popular demand: support marking rules as locally modified to prevent
@@ -54,6 +54,8 @@ o The default URL in oinkmaster.conf is now
   is the latest stable version of Snort at the time of this release.
 o The FAQ has been updated, especially the sections about local 
   customization of rules.
+o Fixed bug so -e works correctly in conjunction with modifysid.
+  Thanks to Alex Butcher.
 o Fixed a bunch of documentation typos (thanks to JP Vossen!).
 
 

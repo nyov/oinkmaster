@@ -484,12 +484,12 @@ sub read_config($ $)
                         $args[$i - 1] =~ s/"$//;
                         $template =~ s/%ARG$i%/$args[$i - 1]/g;
                     }
+                }
 
-                  # There should be no %ARGx% stuff left now.
-                    if ($template =~ /%ARG\d%/) {
-                        warn("WARNING: too few arguments for template \"$template_name\"\n");
-                        $_ = "error";  # so it will be reported as an invalid line later
-                    }
+              # There should be no %ARGx% stuff left now.
+                if ($template =~ /%ARG\d%/) {
+                    warn("WARNING: too few arguments for template \"$template_name\"\n");
+                    $_ = "error";  # so it will be reported as an invalid line later
                 }
 
                 unless ($_ eq "error") {
@@ -511,8 +511,6 @@ sub read_config($ $)
                 warn("WARNING: line $linenum in $config_file: ".
                      "template \"$template_name\" already defined, keeping old\n");
             } else {
-                print STDERR "Setting template \"$template_name\": $template\n"
-                  if ($config{verbose});
                 $templates{$template_name} = $template;
             }
 
@@ -1094,7 +1092,7 @@ sub process_rules($ $ $ $ $ $)
     }
 
   # Phase #2 - read all rules files again, but when writing active rules
-  # back to the files, use the one store in the sid hash (which is free of dups).
+  # back to the files, use the one stored in the sid hash (which is free of dups).
 
     foreach my $file (sort(keys(%$newfiles_ref))) {
 
@@ -1235,10 +1233,14 @@ sub process_rule($ $ $ $ $ $ $)
     $$stats_ref{total}++;
 
   # Some rules may be commented out by default.
+  # Enable them if -e is specified (both single-line and multi-line,
+  # version, because we don't know which version one we're going to
+  # use below.
   # Enable them if -e is specified.
     if ($multi =~ /^#/ && $config{enable_all}) {
-        $multi =~ s/^#*//;
-        $multi =~ s/\n#*/\n/g;
+        $multi  =~ s/^#*//;
+        $multi  =~ s/\n#*/\n/g;
+        $single =~ s/^#*//;
         $$stats_ref{enabled}++;
     }
 
@@ -1261,9 +1263,8 @@ sub process_rule($ $ $ $ $ $ $)
                          "repl=$repl\nBefore: $single\n"
 	      if ($print_messages && $config{verbose});
 
-          # Replace rule with its single-line version in case it's
-          # a multi-line rule. This makes substitutions more logical
-          # so we don't have to care about where the \n\\ are.
+          # Do the substitution on the single-line version and put it
+          # back in $multi.
             $single =~ s/$subst/$repl/ee;
             $multi = $single;
 
@@ -2273,6 +2274,7 @@ sub minimize_diff($ $)
     $new_is_disabled = 1 if ($new_rule =~ s/^#//);
 
   # Go forward char by char until they aren't equeal.
+  # $i will bet set to the index where they diff.
     my @old = split(//, $old_rule);
     my @new = split(//, $new_rule);
 
@@ -2282,6 +2284,7 @@ sub minimize_diff($ $)
     }
 
   # Now same thing but backwards.
+  # $j will bet set to the index where they diff.
     @old = reverse(split(//, $old_rule));
     @new = reverse(split(//, $new_rule));
 
