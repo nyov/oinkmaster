@@ -5,8 +5,8 @@ Oinkmaster FAQ
 
 Q1:  Oinkmaster says the file in URL does not exist (or it exists but
      doesn't work with my Snort).
-Q2:  I want to download the rules archive using the program XXXXX, which 
-     I can't do with Oinkmaster.
+Q2:  Can I use an external utility to download the rules archive rather
+     than one of the built-in methods?
 Q3:  Can Oinkmaster be useful for distributing rules locally to my 
      sensors?
 Q4:  Can Oinkmaster be useful for distributing my homemade rules to my 
@@ -74,12 +74,13 @@ A1:  Check the "url = ..." line in oinkmaster.conf (or argument to "-u"
 
 
 
-Q2:  I want to download the rules archive using the program XXXXX, which 
-     I can't do with Oinkmaster.
+Q2:  Can I use an external utility to download the rules archive rather
+     than one of the built-in methods?
 
-A2:  Use whatever program you want to download the rules archive to the 
-     local filesystem first, and then run Oinkmaster with
-     -u file://<filename>.
+A2:  Yes, use whatever program you want and download the rules archive to the 
+     local filesystem first, and then run Oinkmaster and point to that file 
+     using file://<filename> as URL specification (url=<url> in oinkmaster.conf
+     or -u <url> on the command line).
 
 
 
