@@ -738,14 +738,16 @@ sub unpack_rules_archive($ $)
 
         my $stdout_file = "$tmpdir/tar_content.out";
 
-        open(my $oldout, ">&STDOUT") or clean_exit("could not dup STDOUT: $!");
+        open(my $oldout, ">&STDOUT")      or clean_exit("could not dup STDOUT: $!");
         open(STDOUT, '>', "$stdout_file") or clean_exit("could not redirect STDOUT: $!");
 
-        system("tar", "tfP", "$archive")
-          and clean_exit("could not list files in tar archive (is it broken?)");
+        my $ret = system("tar", "tfP", "$archive");
 
         close(STDOUT);
         open(STDOUT, ">&", $oldout) or clean_exit("could not dup STDOUT: $!");
+
+        clean_exit("could not list files in tar archive (is it broken?)")
+          if ($ret);
 
         open(TAR, "$stdout_file") or clean_exit("failed to open $stdout_file: $!");
         @tar_content = <TAR>;
