@@ -1127,7 +1127,7 @@ sub process_rules($ $ $ $ $ $)
                 print OUTFILE $$rh_tmp_ref{old}{rules}{basename($file)}{$sid};
                 $sids{$sid}{printed} = 1;
 
-                warn("\nSID $sid is marked as local, keeping your version from ".
+                warn("SID $sid is marked as local, keeping your version from ".
                       basename($file) . ".\n".
                      "Your version:       $$rh_tmp_ref{old}{rules}{basename($file)}{$sid}".
                      "Downloaded version: $multi\n")
