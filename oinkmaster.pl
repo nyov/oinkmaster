@@ -10,7 +10,7 @@ use Cwd;
 
 sub show_usage;
 sub parse_cmdline;
-sub read_config;
+sub read_config($ $);
 sub sanity_check;
 sub download_rules;
 sub unpack_rules_archive;
@@ -46,11 +46,11 @@ use vars qw
    );
 
 my (
-      $output_dir, $backup_dir, $start_date, $added_files, $removed_files, $url
+      $output_dir, $backup_dir, $added_files, $removed_files
    );
 
 my (
-      %sid_disable_list, %file_ignore_list, %config, %changes, %added_files,
+      %file_ignore_list, %config, %changes, %added_files,
       %new_files, %new_rules, %new_other, %old_rules, %old_other, %printed,
       %modified_files, %sid_modify_list
    );
@@ -59,10 +59,13 @@ my (
 
 #### MAIN ####
 
-select(STDERR); $| = 1;         # No buffering.
-select(STDOUT); $| = 1;
+# No buffering.
+select(STDERR);
+$| = 1;
+select(STDOUT);
+$| = 1;
 
-$start_date = scalar(localtime);
+my $start_date = scalar(localtime);
 
 # Parse command line arguments. Will exit if something is wrong.
 parse_cmdline;
@@ -71,7 +74,7 @@ parse_cmdline;
 die("Don't run as root!\nExiting") if (!$>);
 
 # Read in $config_file. Will exit if something is wrong.
-read_config;
+read_config($config_file, \%config);
 
 # Do some basic sanity checking and exit if something fails.
 # A new PATH will be set.
@@ -103,7 +106,7 @@ closedir(NEWRULES);
 clean_exit("Found no files in archive matching \"$config{update_files}\".")
   if (keys(%new_files) < 1);
 
-# Disable (#comment out) all rules listed in %sid_disable_list.
+# Disable (#comment out) all rules in conf{sid_disable_list}.
 # All files will still be left in the temporary directory.
 disable_rules;
 
@@ -343,7 +346,7 @@ sub parse_cmdline
 
     $backup_dir    = $opt_b if (defined($opt_b));
     $config_file   = $opt_C if (defined($opt_C));
-    $url           = $opt_u if (defined($opt_u));
+    $config{url}   = $opt_u if (defined($opt_u));
     $careful           = 1  if (defined($opt_c));
     $preserve_comments = 0  if (defined($opt_e));
     $quiet             = 1  if (defined($opt_q));
@@ -365,11 +368,11 @@ sub parse_cmdline
 
 
 
-sub read_config
+sub read_config($ $)
 {
-    my ($args, $linenum);
-
-    $linenum = 0;
+    my $config_file = shift;
+    my $cfgref      = shift;
+    my $linenum     = 0;
 
     open(CONF, "<$config_file") or die("Could not open $config_file: $!\nExiting");
 
@@ -385,42 +388,40 @@ sub read_config
 
         next unless (/\S/);   # skip blank lines
 
-        if (/^disablesids*\s+(\d.*)/i) {                           # disablesid
-	    $args = $1;
+        if (/^disablesids*\s+(\d.*)/i) {                   # disablesid
+	    my $args = $1;
 	    foreach $_ (split(/\s*,\s*/, $args)) {
   	        if (/^\d+$/) {
-                    $sid_disable_list{$_}++;
+                    $$cfgref{sid_disable_list}{$_}++;
 	        } else {
-                    print STDERR ("WARNING: line $linenum in $config_file is invalid, ignoring\n")
+                    warn("WARNING: line $linenum in $config_file is invalid, ignoring\n")
 	        }
 	    }
-        } elsif (/^modifysid\s+(\d+)\s+(.*)/i) {                   # modifysid
+        } elsif (/^modifysid\s+(\d+)\s+(.*)/i) {           # modifysid
             push(@{$sid_modify_list{$1}}, $2);
-        } elsif (/^skipfiles*\s+(.*)/i) {                          # skipfile
-	    $args = $1;
+       } elsif (/^skipfiles*\s+(.*)/i) {                   # skipfile
+	    my $args = $1;
 	    foreach $_ (split(/\s*,\s*/, $args)) {
 	        if (/^\S.*\S$/) {
                     $verbose && print STDERR "Adding file to ignore list: $_.\n";
                     $file_ignore_list{$_}++;
 		} else {
-                    print STDERR ("WARNING: line $linenum in $config_file is invalid, ignoring\n")
+                    warn("WARNING: line $linenum in $config_file is invalid, ignoring\n")
 		}
 	    }
-	} elsif (/^url\s*=\s*(.*)/i) {                             # URL to use
-	    $url = $1 unless (defined($url));                      # may already be defined by -u <url>
-	} elsif (/^path\s*=\s*(.*)/i) {                            # $PATH to be used
-	    $config{path} = $1;
-	} elsif (/^update_files\s*=\s*(.*)/i) {                    # regexp of files to be updated
-	    $config{update_files} = $1;
-	} elsif (/^skip_diff\s*=\s*(.*)/i) {                       # regexp of files to skip comparison for
-	    $config{skip_diff} = $1;
-        } else {                                                   # invalid line
-            print STDERR ("WARNING: line $linenum in $config_file is invalid, ignoring\n")
+	} elsif (/^url\s*=\s*(.*)/i) {                   # URL to use
+	    $$cfgref{url} = $1 unless (exists($$cfgref{url}));   # may already be defined by -u <url>
+	} elsif (/^path\s*=\s*(.*)/i) {                  # $PATH to be used
+	    $$cfgref{path} = $1;
+	} elsif (/^update_files\s*=\s*(.*)/i) {          # regexp of files to be updated
+	    $$cfgref{update_files} = $1;
+        } else {                                         # invalid line
+            warn("WARNING: line $linenum in $config_file is invalid, ignoring\n")
         }
-
     }
     close(CONF)
 }
+
 
 
 
@@ -437,7 +438,7 @@ sub sanity_check
 
   # Make sure all required variables is defined in the config file.
     foreach $_ (@req_config) {
-        die("$_ not defined in $config_file\nExiting")
+        die("The required parameter \"$_\" is not defined in $config_file\nExiting")
           unless (exists($config{$_}));
     }
 
@@ -453,7 +454,8 @@ sub sanity_check
 
   # Make sure $url is defined (either by -u <url> or url=... in the conf).
     die("Incorrect URL or URL not specified in neither $config_file nor command line.\nExiting")
-      unless (defined($url) && $url =~ /^(?:http|ftp|file):\/\/\S+.*\.tar\.gz$/);
+      unless (exists($config{'url'}) && $config{'url'} 
+        =~ /^(?:http|ftp|file):\/\/\S+.*\.tar\.gz$/);
 
   # Make sure the output directory exists and is readable.
     die("The output directory \"$output_dir\" doesn't exist or isn't readable by you.\nExiting")
@@ -473,24 +475,27 @@ sub sanity_check
 # Pull down the rules archive.
 sub download_rules
 {
-    if ($url =~ /^(?:http|ftp)/) {     # Use wget if URL starts with http:// or ftp://
-        print STDERR "Downloading rules archive from $url...\n" unless ($quiet);
+    if ($config{'url'} =~ /^(?:http|ftp)/) {     # Use wget if URL starts with http:// or ftp://
+        print STDERR "Downloading rules archive from $config{'url'}...\n" unless ($quiet);
         if ($quiet) {
             clean_exit("Unable to download rules.\n".
                        "Consider running in non-quiet mode if the problem persists.")
-              if (system("wget","-q","-nv","-O","$TMPDIR/$outfile","$url"));   # quiet mode
+              if (system("wget","-q","-nv","-O","$TMPDIR/$outfile","$config{'url'}"));   # quiet mode
         } elsif ($verbose) {
             clean_exit("Unable to download rules.")
-              if (system("wget","-v","-O","$TMPDIR/$outfile","$url"));         # verbose mode
+              if (system("wget","-v","-O","$TMPDIR/$outfile","$config{'url'}"));         # verbose mode
         } else {
             clean_exit("Unable to download rules.")
-              if (system("wget","-nv","-O","$TMPDIR/$outfile","$url"));        # normal mode
+              if (system("wget","-nv","-O","$TMPDIR/$outfile","$config{'url'}"));        # normal mode
         }
-    } else {                           # Grab file from local filesystem.
-        $url =~ s/^file:\/\///;        # Remove file://, the rest is the actual filename.
-	clean_exit("The file $url does not exist.\n")       unless (-e "$url");
-        print STDERR "Copying rules archive from $url...\n" unless ($quiet);
-        copy("$url", "$TMPDIR/$outfile") or clean_exit("Unable to copy $url to $TMPDIR/$outfile: $!");
+    } else {                                # Grab file from local filesystem.
+        $config{'url'} =~ s/^file:\/\///;   # Remove file://, the rest is the actual filename.
+	clean_exit("The file $config{'url'} does not exist.\n")
+          unless (-e "$config{'url'}");
+        print STDERR "Copying rules archive from $config{'url'}...\n"
+          unless ($quiet);
+        copy("$config{'url'}", "$TMPDIR/$outfile")
+          or clean_exit("Unable to copy $config{'url'} to $TMPDIR/$outfile: $!");
     }
 }
 
@@ -510,7 +515,7 @@ sub unpack_rules_archive
 
     unless (-s "$tmpoutfile") {
         clean_exit("Failed to get rules archive: ".
-                   "$TMPDIR/$tmpoutfile doesn't exist or hasn't non-zero size.");
+                   "downloaded file $TMPDIR/$tmpoutfile doesn't exist or hasn't non-zero size.");
     }
 
   # Run integrity check (gzip -t) on the gzip file.
@@ -561,7 +566,7 @@ sub unpack_rules_archive
 
 
 # Open all rules files in temporary directory and disable (#comment out) all rules
-# listed in %sid_disable_list. All files will still be left in the temporary directory.
+# in conf{sid_disable_list}. All files will still be left in the temporary directory.
 sub disable_rules
 {
     my ($num_disabled, $msg, $sid, $line, $file);
@@ -569,7 +574,7 @@ sub disable_rules
     $num_disabled = 0;
 
     if (!$preserve_comments && !$quiet) {
-        print STDERR "Warning: all rules that are disabled by default will be re-enabled\n";
+        warn("Warning: all rules that are disabled by default will be re-enabled\n");
     }
 
     print STDERR "Disabling rules according to $config_file... " unless ($quiet);
@@ -611,14 +616,14 @@ sub disable_rules
 	        print STDERR "Modifying sid $sid with expression: $_\n  Before:$line"
 		  if ($verbose);
 		eval "\$line =~ $_";
-		print STDERR "WARNING: error in expression \"$_\": $@\n"
+		warn("WARNING: error in expression \"$_\": $@\n")
 		  if ($@);
 		print STDERR "  After:$line\n"
                   if ($verbose);
 	    }
 
           # Disable rule, if requested.
-            if (exists($sid_disable_list{$sid})) {
+            if (exists($config{sid_disable_list}{"$sid"})) {
                 print STDERR "Disabling sid $sid: $msg\n" if ($verbose);
                 $line = "#$line" unless ($line =~ /^#/);
                 $num_disabled++;
@@ -644,14 +649,15 @@ sub setup_rule_hashes
     my ($file, $sid);
 
     foreach $file (keys(%new_files)) {
-        print STDERR "WARNING: downloaded rules file $file is empty (maybe correct, maybe not)\n"
+        warn("WARNING: downloaded rules file $file is empty (maybe correct, maybe not)\n")
           if (!-s "$TMPDIR/rules/$file" && !$quiet);
 
-        open(NEWFILE, "<$TMPDIR/rules/$file") or clean_exit("Could not open $TMPDIR/rules/$file: $!");
+        open(NEWFILE, "<$TMPDIR/rules/$file")
+          or clean_exit("Could not open $TMPDIR/rules/$file: $!");
 	while (<NEWFILE>) {
 	    if (/$SNORT_RULE_REGEXP/) {
 	        $sid = $2;
-		print STDERR "WARNING: duplicate SID in downloaded rules archive: SID $sid\n"
+		warn("WARNING: duplicate SID in downloaded rules archive: SID $sid\n")
 		  if (exists($new_rules{"$file"}{"$sid"}) && !$quiet);
 	        $new_rules{"$file"}{"$sid"} = $_;
 	    } else {
@@ -669,7 +675,7 @@ sub setup_rule_hashes
 		    s/^\s*//;     # remove leading whitespaces
 		    s/\s*\n$/\n/; # remove trailing whitespaces
 		    s/^#+\s*/#/;  # make sure comment syntax is how we like it
-		    print STDERR "WARNING: duplicate SID in your local rules: SID $sid\n"
+		    warn("WARNING: duplicate SID in your local rules: SID $sid\n")
 		      if (exists($old_rules{"$file"}{"$sid"}) && !$quiet);
                     $old_rules{$file}{$sid} = $_;
                 } else {
@@ -741,7 +747,7 @@ sub do_backup
     opendir(OLDRULES, "$output_dir") or clean_exit("Could not open directory $output_dir: $!");
     while ($_ = readdir(OLDRULES)) {
         copy("$output_dir/$_", "$tmpbackupdir/")
-          or print STDERR "WARNING: error copying $output_dir/$_ to $tmpbackupdir: $!"
+          or warn("WARNING: error copying $output_dir/$_ to $tmpbackupdir: $!")
             if (/$config{update_files}/ && !exists($file_ignore_list{$_}));
     }
     closedir(OLDRULES);
@@ -753,11 +759,11 @@ sub do_backup
 
   # Execute tar command. This will archive "rules-backup-$date/"
   # into the file rules-backup-$date.tar, placed in $TMPDIR.
-    print STDERR "WARNING: tar command did not exit with status 0 when archiving backup files.\n"
+    warn("WARNING: tar command did not exit with status 0 when archiving backup files.\n")
       if (system("tar","cf","rules-backup-$date.tar","rules-backup-$date"));
 
   # Compress it.
-    print STDERR "WARNING: gzip command did not exit with status 0 when compressing backup file.\n"
+    warn("WARNING: gzip command did not exit with status 0 when compressing backup file.\n")
       if (system("gzip","rules-backup-$date.tar"));
 
   # Change back to old directory (so it will work with -b <directory> as either
@@ -766,7 +772,7 @@ sub do_backup
 
   # Move the archive to the backup directory.
     move("$TMPDIR/rules-backup-$date.tar.gz", "$backup_dir/")
-      or print STDERR "WARNING: unable to move $TMPDIR/rules-backup-$date.tar.gz to $backup_dir/: $!\n";
+      or warn("WARNING: unable to move $TMPDIR/rules-backup-$date.tar.gz to $backup_dir/: $!\n");
 
     print STDERR " saved as $backup_dir/rules-backup-$date.tar.gz.\n"
       unless ($quiet);
@@ -779,7 +785,7 @@ sub do_backup
 sub clean_exit
 {
     system("rm","-r","-f","$TMPDIR")
-      and print STDERR "WARNING: unable to remove temporary directory $TMPDIR.\n";
+      and warn("WARNING: unable to remove temporary directory $TMPDIR.\n");
 
     if (defined($_[0])) {
         $_ = $_[0];
