@@ -337,8 +337,8 @@ sub update_file_label_color($ $ $)
     my $filename = shift;
     my $type     = shift;  # FILE|DIR
 
-    $filename =~ s/^\s+//g;
-    $filename =~ s/\s+$//g;
+    $filename =~ s/^\s+//;
+    $filename =~ s/\s+$//;
 
     unless ($filename) {
         $label->configure(-background => 'red');
@@ -508,6 +508,9 @@ sub show_version()
 {
     my $oinkmaster = $oinkscript_entry->get;
 
+    $filename =~ s/^\s+//;
+    $filename =~ s/\s+$//;
+
     unless ($oinkmaster && -x "$oinkmaster") {
         logmsg("Location to oinkmaster.pl is not set correctly!\n\n", 'ERROR');
         return;
@@ -524,6 +527,9 @@ sub show_version()
 sub show_help()
 {
     my $oinkmaster = $oinkscript_entry->get;
+
+    $filename =~ s/^\s+//;
+    $filename =~ s/\s+$//;
 
     unless ($oinkmaster && -x "$oinkmaster") {
         logmsg("Location to oinkmaster.pl is not set correctly!\n\n", 'ERROR');
@@ -609,8 +615,8 @@ sub create_cmdline($)
 
   # Clean leading/trailing whitespaces from all filenames.
     foreach my $var_ref (\$oinkmaster, \$config_file, \$outdir, \$varfile, \$url, \$backupdir) {
-        $$var_ref =~ s/^\s+//g;
-        $$var_ref =~ s/\s+$//g;
+        $$var_ref =~ s/^\s+//;
+        $$var_ref =~ s/\s+$//;
     }
  
     unless ($oinkmaster && -x "$oinkmaster") {
