@@ -3,12 +3,11 @@
 README for Oinkmaster v1.1
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Oinkmaster was written by Andreas Östling <andreaso@it.su.se>.
+Oinkmaster is written by Andreas Östling <andreaso@it.su.se>.
 Feedback is of course appreciated.
 
 Homepage:
 http://oinkmaster.sourceforge.net/
-
 
 
 Introduction
@@ -38,7 +37,10 @@ program that can use Snort rules, like Snort (doh!) or Prelude-NIDS.
 Use Oinkmaster with care and at your own risk. Check the INSTALL file for 
 quick installation instructions. You may also find the FAQ useful, and 
 README.gui if you want to use the graphical front-end. If you're on 
-Windows, have a look at README.win32.
+Windows, have a look at README.win32. Information about the available
+command line options can be found in the manual page (oinkmaster.1).
+If it's not installed on your system you don't want to install it, you
+can read it directly with "groff -man -Tascii oinkmaster.1 | less".
 
 Check out http://www.snort.org/ for more information about Snort and its
 rules.
@@ -272,12 +274,14 @@ been disabled.
 [///]     Modified active rules:     [///]
 
      -> Modified active in exploit.rules (1):
-        old: alert tcp $EXTERNAL_NET any -> $HOME_NET 515 (msg:"EXPLOIT LPD dvips remote command execution attempt"; 
-flow:to_client,established; content:"psfile=|2260|"; reference:cve,CVE-2001-1002; reference:nessus,11023; 
-classtype:system-call-detect; sid:1821; rev:2;)
-        new: alert tcp $EXTERNAL_NET any -> $HOME_NET 515 (msg:"EXPLOIT LPD dvips remote command execution attempt"; 
-flow:to_server,established; content:"psfile=|2260|"; reference:cve,CVE-2001-1002; reference:nessus,11023; 
-classtype:system-call-detect; sid:1821; rev:3;)
+        old: alert tcp $EXTERNAL_NET any -> $HOME_NET 515 (msg:"EXPLOIT LPRng overflow"; 
+flow:to_server; content: "|43 07 89 5B 08 8D 4B 08 89 43 0C B0 0B CD 80 31 C0 FE C0 CD 80 
+E8 94 FF FF FF 2F 62 69 6E 2F 73 68 0A|"; reference:cve,CVE-2000-0917; 
+reference:bugtraq,1712; classtype:attempted-admin; sid:301;  rev:4;)
+        new: alert tcp $EXTERNAL_NET any -> $HOME_NET 515 (msg:"EXPLOIT LPRng overflow"; 
+flow:to_server,established; content: "|43 07 89 5B 08 8D 4B 08 89 43 0C B0 0B CD 80 31 C0 
+FE C0 CD 80 E8 94 FF FF FF 2F 62 69 6E 2F 73 68 0A|"; reference:cve,CVE-2000-0917; 
+reference:bugtraq,1712; classtype:attempted-admin; sid:301;  rev:4;)
 
 [---]         Disabled rules:        [---]
 
@@ -291,6 +295,18 @@ rev:5;)
 
 [*] Added files: [*]
     None.
+
+
+If you think it's too hard to see the actual difference between the old
+and new rule, you could use the "-m" argument to remove common leading
+and trailing parts from the rules (see the manual page for details).
+The above modified rule would then instead look like this:
+
+[///]     Modified active rules:     [///]
+
+     -> Modified active in exploit.rules (1):
+        old SID 301: ...low"; flow:to_server; content: "|43 07 8...
+        new SID 301: ...low"; flow:to_server,established; content: "|43 07 8...
 
 
 If there were any added files (i.e. files that have not been included in
