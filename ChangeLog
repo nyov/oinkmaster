@@ -10,8 +10,8 @@ o Slightly improved modifysid/template documentation and examples.
 o Suppress warnings about non-matching modifysid expressions when
   running in super quiet mode (-Q).
 o As requested by a few poeple, permit filename as argument to
-  modifysid (and use_template) to apply a substitution expression on a 
-  per-file basis.
+  modifysid (and use_template) to apply a substitution expression on all
+  rules in the specified files(s).
 o The FAQ has been updated with Q23 on how to update the rules from 
   multiple sources and how to handle the sid-msg.map file.
 o Process modifysid/use_template statements of all types in the exact

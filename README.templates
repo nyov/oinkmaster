@@ -3,15 +3,15 @@ $Id$ #
 
 General info
 ------------
-A modifysid template is nothing more than an easier way to define and 
-use modifysid expressions. With a template, you only need to define the 
-(often complex) modifysid expression once, and then call the template by 
-name every time you want to use it instead of repeating the modifysid 
-expression. For more information about modifysid, see the default 
-oinkmaster.conf file. Basically, a modifysid expression is simply a 
-substitution expression that will be applied on specified rules after 
-each update, so that you can make some tweaks to the rules. Lots of 
-template examples can be found in the template-examples.conf file.
+Modifysid templates are nothing more than an easier way to use the
+standard modifysid expressions. With a template, you only need to 
+define the (often complex) modifysid expression once, and then call the 
+template by name every time you want to use it instead of repeating the 
+modifysid expression. For more information about modifysid, see the 
+default oinkmaster.conf file. Basically, a modifysid expression is 
+simply a substitution expression that will be applied on specified rules 
+after each update, so that you can make some tweaks to the rules. Lots 
+of template examples can be found in the template-examples.conf file.
 
 
 
@@ -37,9 +37,9 @@ The syntax to use a template is:
 use_template <name> <sid> [ "arg1" "arg2" ... ]
 
 You can also use the wildcard ("*") or a comma-separated list of SIDs 
-or filenames as <sid>, just as with a regular modifysid expression. 
-Everything after <sid> is optional, unless you require arguments in your 
-template definition (keep reading). The arguments must be quoted strings,
+as <sid>, just as with a regular modifysid expression. Everything after 
+<sid> is optional, unless you require arguments in your template 
+definition (keep reading). The arguments must be quoted strings,
 separated with space.
 
 The "modifythis" | "withthis" stuff in define_template works just like 
@@ -92,7 +92,7 @@ As use_template statements are simply translated into modifysid
 statements, you can use multiple use_template for the same SID. They 
 will be processed in order of appearance in the config file, just like 
 regular modifysid statements. Also remember that they apply both on
-active and inactive (disabled) rules.
+active and inactive (disabled) rules. 
 
 
 
