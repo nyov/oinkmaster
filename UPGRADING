@@ -10,7 +10,7 @@ Here are a few notes about issues in some specific versions:
   regular expressions, which may (or may not) mean that you have to adjust 
   your arguments to reflect this.
   There are also a few new options you may want to specify in your
-  oinkmaster.conf (see the default one for explanations and exaples), 
+  oinkmaster.conf (see the default one for explanations and examples), 
   although none of them are required.
   
 
