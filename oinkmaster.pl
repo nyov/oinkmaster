@@ -328,7 +328,7 @@ sub show_usage
 {
     print STDERR "$version\n\n".
                  "Usage: $0 -o <dir> [options]\n\n".
-		 "<dir> is where to put the new rules files.\n".
+		 "<dir> is where to put the new files.\n".
 	         "This should be the directory where you store your snort.org rules.\n".
                  "Note that your current files will be overwritten by the new ones\n".
                  "if they had been modified.\n".
@@ -341,9 +341,9 @@ sub show_usage
                  "-r         Check for rules files that exist in the output directory\n".
                  "           but not in the downloaded rules archive (i.e. files that may\n".
                  "           have been removed from the archive).\n".
-		 "-p         Preserve disabled rules in downloaded rules. Highly recommended!\n".
+		 "-p         Preserve disabled rules in downloaded rules.\n".
                  "           Some rules may be disabled by default in the rules distribution\n".
-                 "           and Oinkmaster will re-enable them unless -p is specified.\n".
+                 "           and Oinkmaster will re-enable them unless -p is specified\n".
                  "-q         Quiet mode. No output unless changes were found\n".
 		 "-v         Verbose mode\n".
                  "-h         Show usage help\n\n";
@@ -562,21 +562,26 @@ sub disable_rules
 	    }
 	    ($msg, $sid) = ($1, $2);
 
-          # Remove leading whitespaces, and whitespaces next to the leading #.
+          # Remove leading whitespaces and whitespaces next to the leading #.
 	    $line =~ s/^\s*//;
 	    $line =~ s/^#+\s*/#/;
 
           # Some rules may be commented out by default, but we want our oinkmaster.conf to decide
-          # what to disable, so uncomment all rules by default unless -p is specified.
-            $line =~ s/^#*// unless ($preserve_comments);
+          # what to disable, so uncomment all rules by unless -p is specified.
+	    if ($line =~ /^#/) {
+		if ($preserve_comments) {
+		    print STDERR "Preserving disabed rule (sid $sid): $msg\n"
+		        if ($verbose && !exists($sid_disable_list{$sid}));
+		} else {
+		    print STDERR "Enabling disabled rule (sid $sid): $msg\n"
+		        if ($verbose && !exists($sid_disable_list{$sid}));
+		    $line =~ s/^#*//;
+		}
+	    }
 
-            if (exists($sid_disable_list{$sid})) {      # should this sid be disabled?
-                if ($verbose) {
-                    $_ = $file;
-                    $_ =~ s/.+\///;                     # remove path, just keep the filename
-                    $_ = sprintf("Disabling sid %-5s in file %-20s (%s)\n", $sid, $_, $msg);
-                    print STDERR "$_";
-                }
+          # Disable rule, if requested.
+            if (exists($sid_disable_list{$sid})) {
+                print STDERR "Disabling sid $sid: $msg\n" if ($verbose);
                 $line = "#$line" unless ($line =~ /^#/);
                 $num_disabled++;
 	    }
