@@ -23,6 +23,7 @@ sub get_modified_files($ $);
 sub get_changes($ $);
 sub get_new_filenames($ $);
 sub update_rules($ @);
+sub is_in_path($);
 sub clean_exit($);
 
 
@@ -297,7 +298,7 @@ sub read_config($ $)
 sub sanity_check()
 {
    my @req_config   = qw (path update_files);  # Required parameters in oinkmaster.conf.
-   my @req_binaries = qw (which gzip rm tar);  # These binaries are always required.
+   my @req_binaries = qw (gzip rm tar);        # These binaries are always required.
 
   # Can't use both -q and -v.
     clean_exit("both quiet mode and verbose mode at the same time doesn't make sense.")
@@ -315,11 +316,10 @@ sub sanity_check()
 
   # Make sure all required binaries can be found.
   # (Wget is not required if user specifies file:// as url. That check is done below.)
-    foreach $_ (@req_binaries) {
-        clean_exit("\"$_\" binary not found ".
-                   "(perhaps you must edit $config_file and change 'path').")
-          if (system("which \"$_\" >/dev/null 2>&1"));
-    }
+     foreach $_ (@req_binaries) {
+         clean_exit("\"$_\" could not be found in PATH")
+           unless (is_in_path($_));
+     }
 
   # Make sure $url is defined (either by -u <url> or url=... in the conf).
     clean_exit("incorrect URL or URL not specified in neither $config_file nor command line.")
@@ -327,9 +327,8 @@ sub sanity_check()
         $config{'url'}  =~ /^(?:http|ftp|file):\/\/\S+.*\.tar\.gz$/);
 
   # Wget must be found if url is http:// or ftp://.
-    clean_exit("\"wget\" binary not found ".
-               "(perhaps you must edit $config_file and change 'path').")
-      if ($config{'url'} =~ /^(http|ftp):/ && system("which \"wget\" >/dev/null 2>&1"));
+    clean_exit("\"wget\" not found in PATH")
+      if ($config{'url'} =~ /^(http|ftp):/ && !is_in_path("wget"));
 
   # Make sure the output directory exists and is readable.
     clean_exit("the output directory \"$config{output_dir}\" doesn't exist ".
@@ -978,6 +977,20 @@ sub update_rules($ @)
         move("$file_w_path", "$dst_dir/$file")
           or clean_exit("could not move $file_w_path to $file: $!");
     }
+}
+
+
+
+# Return true if file is in PATH and is executable.
+sub is_in_path($)
+{
+    my $file = shift;
+
+    foreach $_ (split(/:/, $ENV{PATH})) {
+        return (1) if (-x "$_/$file");
+    }
+
+    return (0);
 }
 
 
