@@ -760,7 +760,7 @@ sub print_changes($ $)
 
   # Print added rules.
     if (exists($$ch_ref{rules}{added})) {
-        print "\n[+++]         Added rules:          [+++]\n";
+        print "\n[+++]         Added rules:           [+++]\n";
 	print_changetype($PRINT_NEW, \%{$$ch_ref{rules}{added}}, $rh_ref);
     }
 
