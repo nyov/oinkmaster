@@ -22,6 +22,7 @@ sub create_cmdline($);
 sub fileDialog($ $ $ $);
 sub load_config();
 sub save_config();
+sub save_messages();
 sub update_file_label_color($ $ $);
 sub create_fileSelectFrame($ $ $ $ $ $);
 sub create_checkbutton($ $ $);
@@ -41,7 +42,7 @@ my @oinkmaster_conf = qw(
 
 # Graphical editors to look for.
 my @editors = qw(
-    kwrite kate kedit gedit xemacs xedit wordpad
+    kwrite kate kedit gedit xemacs xedit wordpad notepad
 );
 
 # List of URLs that will show up in the URL BrowseEntry.
@@ -102,6 +103,7 @@ my %help = (
 
   # Action buttons.
     clear        => 'Clear current output messages.',
+    save         => 'Save current output messages to file.',
     exit         => 'Exit the GUI.',
     update       => 'Execute Oinkmaster to update the rules.',
     test         => 'Test current Oinkmaster configuration. ' .
@@ -209,25 +211,27 @@ my $req_tab = $notebook->add("required",
 
 
 # Create frame with oinkmaster.pl location.
-my $types = [
+my $filetypes = [
   ['Oinkmaster script', 'oinkmaster.pl'],
   ['All files',         '*'            ]
 ];
+
 my $oinkscript_frame = 
   create_fileSelectFrame($req_tab, "oinkmaster.pl", 'EXECFILE', 
-                         \$config{oinkmaster}, 'NOEDIT', $types);
+                         \$config{oinkmaster}, 'NOEDIT', $filetypes);
 
 $balloon->attach($oinkscript_frame, -statusmsg => $help{oinkscript});
 
 
 # Create frame with oinkmaster.conf location.
-$types = [
+$filetypes = [
   ['configuration files', '.conf'],
   ['All files',           '*'    ]
 ];
+
 my $oinkconf_frame = 
   create_fileSelectFrame($req_tab, "oinkmaster.conf", 'ROFILE', 
-                         \$config{oinkmaster_conf}, 'EDIT', $types);
+                         \$config{oinkmaster_conf}, 'EDIT', $filetypes);
 
 $balloon->attach($oinkconf_frame, -statusmsg => $help{oinkconf});
 
@@ -249,24 +253,26 @@ my $opt_tab = $notebook->add("optional",
 
 
 # Create frame with alternate URL location.
-$types = [
+$filetypes = [
   ['compressed tar files', '.tar.gz']
 ];
+
 my $url_frame =
   create_fileSelectFrame($opt_tab, "Alternate URL", 'URL', 
-                         \$config{url}, 'NOEDIT', $types);
+                         \$config{url}, 'NOEDIT', $filetypes);
 
 $balloon->attach($url_frame, -statusmsg => $help{url});
 
 
 # Create frame with variable file.
-$types = [
+$filetypes = [
   ['Snort files', ['.conf', '.config', '.rules']],
   ['All files',    '*'                           ]
 ];
+
 my $varfile_frame =
   create_fileSelectFrame($opt_tab, "Variable file", 'WRFILE', 
-                         \$config{varfile}, 'EDIT', $types);
+                         \$config{varfile}, 'EDIT', $filetypes);
 
 $balloon->attach($varfile_frame, -statusmsg => $help{varfile});
 
@@ -417,6 +423,11 @@ $balloon->attach(
 );
 
 $balloon->attach(
+  create_actionbutton($left_frame, "Save output messages", \&save_messages),
+  -statusmsg => $help{save}
+);
+
+$balloon->attach(
   create_actionbutton($left_frame, "Exit", \&exit),
   -statusmsg => $help{exit}
 );
@@ -468,16 +479,21 @@ sub fileDialog($ $ $ $)
 
     if ($type eq 'WRDIR') {
         if ($use_fileop) {
-            $dirname = Win32::FileOp::BrowseForFolder ("$title");
+            $dirname = Win32::FileOp::BrowseForFolder("$title");
         } else {
             my $fs = $main->FileSelect();
             $fs->configure(-verify => ['-d', '-w'], -title => $title);
             $dirname = $fs->Show;
         }
         $$var_ref = $dirname if ($dirname);
-    } else {
+    } elsif ($type eq 'EXECFILE' || $type eq 'ROFILE' || $type eq 'WRFILE') {
         my $filename = $main->getOpenFile(-title => $title, -filetypes => $filetypes);
         $$var_ref = $filename if ($filename);
+    } elsif ($type eq 'SAVEFILE') {
+        my $filename = $main->getSaveFile(-title => $title, -filetypes => $filetypes);
+        $$var_ref = $filename if ($filename);
+    } else {
+        logmsg("Unknown type ($type)\n", 'ERROR');
     }
 }
 
@@ -814,6 +830,39 @@ sub clear_messages()
 
 
 
+sub save_messages()
+{
+    my $text  = $out_frame->get('1.0', 'end');
+    my $title = 'Save Output Messages';
+    my $filename;
+
+    my $filetypes = [
+      ['Log files', ['.log', '.txt']],
+      ['All files',    '*'                           ]
+    ];
+
+
+    if (length($text) > 1) {
+        fileDialog(\$filename, $title, 'SAVEFILE', $filetypes);
+        if (defined($filename)) {
+
+            unless (open(LOG, ">", "$filename")) {
+                logmsg("Could not open $filename for writing: $!\n\n", 'ERROR');
+                return;
+            }
+
+            print LOG $text;
+            close(LOG);
+            logmsg("Successfully saved Output Messages to $filename\n\n", 'MISC');
+        }
+
+    } else {
+        logmsg("Nothing to save.\n\n", 'ERROR');
+    }
+}
+
+
+
 sub update_rules()
 {
     my @cmd;
@@ -906,8 +955,8 @@ sub load_config()
         return;
     }
 
-    unless (open(RC, "<$gui_config_file")) {
-        logmsg("Could not open $gui_config_file for reading: $!\n", 'ERROR');
+    unless (open(RC, "<", "$gui_config_file")) {
+        logmsg("Could not open $gui_config_file for reading: $!\n\n", 'ERROR');
         return;
     }
 
@@ -930,8 +979,8 @@ sub save_config()
         return;
     }
 
-    unless (open(RC, ">$gui_config_file")) {
-        logmsg("Could not open $gui_config_file for writing: $!\n", 'ERROR');
+    unless (open(RC, ">", "$gui_config_file")) {
+        logmsg("Could not open $gui_config_file for writing: $!\n\n", 'ERROR');
         return;
     }
 
