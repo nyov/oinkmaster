@@ -25,6 +25,9 @@ Q10: Can Oinkmaster be used to update rules from www.whitehats.com?
 Q11: Will Oinkmaster fail when new keywords are introduced in the rules?
 Q12: What license are the official Snort rules reeased under, and
      can I modify them without violating it?
+Q13: Is there a GUI for Oinkmaster?
+Q14: Oinkmaster says the file in URL does not exist (or it exists but
+     doesn't work with Snort).
 
 
 
@@ -295,3 +298,39 @@ A12: The Snort people have answered this a few times on the Snort lists,
      part of Snort and are therefore also released under GPL.
      You can modify them locally as much as you want, but if
      distributing them, they need to be GPL-licensed as well.
+
+
+
+Q13: Is there a GUI for Oinkmaster?
+
+A13: Yes, check out README.gui and contrib/oinkgui.pl.
+     This is just a primitive front-end for Oinkmaster though.
+     Oinkmaster was designed to be simple and also easy to use in scripts,
+     so if you want a more advanced graphical interface for maintaining
+     Snort rules, you should probably be looking at another tool instead.
+
+
+
+Q14: Oinkmaster says the file in URL does not exist (or it exists but
+     doesn't work with Snort).
+
+A14: Check the "url = ..." line in oinkmaster.conf (or argument to "-u"
+     if you specify it on command line). The URL you should use depends on
+     the version of Snort you run. This means that the default URL does
+     not work for everone! So, you must make sure you really use the one
+     that is right for you. Visit http://www.snort.org/dl/rules/, read the
+     instructions there, and pick the right URL. As the official
+     Snort rules archives now have version information in the filenames
+     (as of 200402), you must rememer to update the URL info when
+     upgrading to a new major version of Snort. And keep in mind that the
+     Snort people can change the download layout again at any time, so if
+     you experience problems, go to the Snort web site and see if anything
+     is mentioned there.
+
+     If you are absolute sure you use the right rules for your version of
+     Snort but still have problems, you may need to read the Snort manual
+     because it is likely that your local configuration is broken. But of
+     course there can be times when the rules archive actually is broken
+     somehow (remember that auto-update of the rules with automatic Snort
+     restart is bad unless you are careful). These issues are often
+     mentioned on the Snort mailing lists.
