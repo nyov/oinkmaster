@@ -8,6 +8,11 @@ o Put oinkmaster.pl in some suitable directory, for example /usr/local/bin/.
   for it by default). If you want to have oinkmaster.conf in some other
   directory, you must run oinkmaster with the -C argument.
 
+o Make sure that the ownership/permission on the above files are suitable for
+  your environment. You must run Oinkmaster as a regular user that has read/write
+  access in your rules directory. Make sure that only authorized users can edit
+  oinkmaster.conf.
+
 o Edit oinkmaster.conf. There are some options you may want to change before
   running Oinkmaster. Here you will then also tell Oinkmaster which SIDs or 
   files you want to disable or ignore. As you will see, a few things are
@@ -22,9 +27,6 @@ o Decide in which directory you want to put the new rules. Since you probably
   /snort/snort.org-rules/ you can now update those by running:
 
   oinkmaster.pl -o /snort/snort.org-rules/
-
-  You can not run Oinkmaster as root. You must run it as a regular user 
-  (that has read/write access in your rules directory).
 
   You REALLY should check out the entire README before doing anything though.
   You may also run oinkmaster.pl -h for more usage information and options.
