@@ -9,11 +9,17 @@ o Slightly improved modifysid/template documentation and examples.
   Russell Fulton for this suggestion.
 o Suppress warnings about non-matching modifysid expressions when
   running in super quiet mode (-Q).
+o Permit .tgz suffix for rules archive.
 o As requested by a few poeple, permit filename as argument to
   modifysid (and use_template) to apply a substitution expression on all
   rules in the specified files(s).
 o Many updates to the FAQ, especially regarding how to update rules 
   from multiple sources.
+o Also added info to the FAQ (Q28) on how to use Oinkmaster after 
+  Sourcefire changed the license of the rules.
+o Because of the license change, no url is activated in the default
+  oinkmaster.conf. You will have to follow the instructions in there
+  and activate the requested URL(s).
 o modifysid/use_template statements of all types will now be processed
   in the exact order as specified in the config file. Previously, all
   the wildcards were processed last.
