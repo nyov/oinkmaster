@@ -6,17 +6,7 @@ use strict;
 
 
 sub get_next_entry($ $ $ $);
-sub get_highest_sid($);
-
-
-my $USAGE = "usage: $0 <rulesdir>\n";
-
-# Regexp to match a snort rule line. SID must not be required in this one.
-my $SINGLELINE_RULE_REGEXP = '^\s*#*\s*(?:alert|drop|log|pass|reject|sdrop) '.
-                             '.+msg\s*:\s*"(.+?)"\s*;.*\)\s*$'; # ';
-
-# Regexp to match the start (the first line) of a possible multi-line rule.
-my $MULTILINE_RULE_REGEXP = '^\s*(?:alert|drop|log|pass|reject|sdrop)\s.*\\\\\s*\n$'; # ';
+sub get_highest_sid(@);
 
 
 # Set this to the default classtype you want to add, if missing.
@@ -27,11 +17,21 @@ my $CLASSTYPE = "misc-attack";
 # Set to 0 if you don't want to add it.
 my $ADD_REV = 1;
 
-
 # Minimum SID to add. Normally, the next available SID will be used,
 # unless it's below this value. Only SIDs >= 1000000 are reserved for
 # personal use.
 my $MIN_SID = 1000001;
+
+# Regexp to match a snort rule line. SID must not be required in this one.
+my $SINGLELINE_RULE_REGEXP = '^\s*#*\s*(?:alert|drop|log|pass|reject|sdrop) '.
+                             '.+msg\s*:\s*"(.+?)"\s*;.*\)\s*$'; # ';
+
+# Regexp to match the start (the first line) of a possible multi-line rule.
+my $MULTILINE_RULE_REGEXP = '^\s*#*\s*(?:alert|drop|log|pass|reject|sdrop)\s.*\\\\\s*\n$'; # ';
+
+
+my $USAGE = "usage: $0 <rulesdir> [rulesdir2, ...]\n";
+
 
 # Start in verbose mode.
 my $verbose = 1;
@@ -39,11 +39,13 @@ my $verbose = 1;
 
 my %allsids;
 
-my $rulesdir = shift || die("$USAGE");
+my @rulesdirs = @ARGV;
+
+die($USAGE) unless ($#rulesdirs > -1);
 
 
 # Find out the next available SID.
-my $sid = get_highest_sid($rulesdir);
+my $sid = get_highest_sid(@rulesdirs);
 
 # If it's below MIN_SID, use MIN_SID instead.
 $sid = $MIN_SID if ($sid < $MIN_SID);
@@ -51,93 +53,95 @@ $sid = $MIN_SID if ($sid < $MIN_SID);
 # Avoid seeing possible warnings about broken rules twice.
 $verbose = 0;
 
-opendir(RULESDIR, "$rulesdir") or die("could not open $rulesdir: $!\n");
-
-while (my $file = readdir(RULESDIR)) {
-    next unless ($file =~ /\.rules$/);
-
-    open(OLDFILE, "$rulesdir/$file")
-      or die("could not open $rulesdir/$file: $!\n");
-    print STDERR "Processing $file\n";
-    my @file = <OLDFILE>;
-    close(OLDFILE);
-
-    open(NEWFILE, ">$rulesdir/$file")
-      or die("could not open $rulesdir/$file for writing: $!\n");
-
-    my ($single, $multi, $nonrule);
-    while (get_next_entry(\@file, \$single, \$multi, \$nonrule)) {
-
-        if (defined($nonrule)) {
-	    print NEWFILE "$nonrule";
-	    next;
-        }
-
-      # Grab msg.
-        $single =~ /$SINGLELINE_RULE_REGEXP/oi;
-        my $msg = $1;
-
-        $multi = $single unless (defined($multi));
-
-      # Don't care about inactive rules.
-        if ($single =~ /^\s*#/) {
-	    print NEWFILE "$multi";
-	    next;
-        }
-
-      # Add SID.
-        if ($single !~ /sid\s*:\s*\d+\s*;/) {
-            print "Adding SID $sid to rule \"$msg\"\n";
-            $multi =~ s/\)\s*\n/sid:$sid;)\n/;
-            $sid++;
-        }
-
-      # Add revision.
-        if ($ADD_REV && $single !~ /rev\s*:\s*\d+\s*;/) {
-            $multi =~ s/\)\s*\n/rev:1;)\n/;
-        }
-
-      # Add classtype.
-        if ($CLASSTYPE && $single !~ /classtype\s*:\s*.+\s*;/) {
-            $multi =~ s/\)\s*\n/classtype:$CLASSTYPE;)\n/;
-        }
-
-        print NEWFILE "$multi";
-    }
-
-    close(NEWFILE);
-
-}
-closedir(RULESDIR);
-
-
-
-# Read in *.rules in given directory and return highest SID.
-sub
-get_highest_sid($)
-{
-    my $dir = shift;
-
+foreach my $dir (@rulesdirs) {
     opendir(RULESDIR, "$dir") or die("could not open $dir: $!\n");
 
-  # Only care about *.rules.
     while (my $file = readdir(RULESDIR)) {
         next unless ($file =~ /\.rules$/);
 
-        open(OLDFILE, "<$dir/$file") or die("could not open $dir/$file: $!\n");
+        open(OLDFILE, "$dir/$file")
+          or die("could not open $dir/$file: $!\n");
+        print STDERR "Processing $file\n";
         my @file = <OLDFILE>;
         close(OLDFILE);
 
+        open(NEWFILE, ">$dir/$file")
+          or die("could not open $dir/$file for writing: $!\n");
+
         my ($single, $multi, $nonrule);
-
         while (get_next_entry(\@file, \$single, \$multi, \$nonrule)) {
-            if (defined($single) && $single =~ /sid\s*:(\d+)\s*;/) {
-	        my $tmpsid = $1;
 
-                print STDERR "WARNING: duplicate sid: $tmpsid\n"
-	          if (exists($allsids{$tmpsid}));
+            if (defined($nonrule)) {
+   	        print NEWFILE "$nonrule";
+	        next;
+            }
 
-	        $allsids{$tmpsid}++;
+          # Grab msg.
+            $single =~ /$SINGLELINE_RULE_REGEXP/oi;
+            my $msg = $1;
+
+            $multi = $single unless (defined($multi));
+
+          # Don't care about inactive rules.
+            if ($single =~ /^\s*#/) {
+	        print NEWFILE "$multi";
+	        next;
+            }
+
+          # Add SID.
+            if ($single !~ /sid\s*:\s*\d+\s*;/) {
+                print "Adding SID $sid to rule \"$msg\"\n";
+                $multi =~ s/\)\s*\n/sid:$sid;)\n/;
+                $sid++;
+            }
+
+          # Add revision.
+            if ($ADD_REV && $single !~ /rev\s*:\s*\d+\s*;/) {
+                $multi =~ s/\)\s*\n/rev:1;)\n/;
+            }
+
+          # Add classtype.
+            if ($CLASSTYPE && $single !~ /classtype\s*:\s*.+\s*;/) {
+                $multi =~ s/\)\s*\n/classtype:$CLASSTYPE;)\n/;
+            }
+
+            print NEWFILE "$multi";
+        }
+
+        close(NEWFILE);
+    }
+
+    closedir(RULESDIR);
+}
+
+
+# Read in *.rules in given directory and return highest SID.
+sub get_highest_sid(@)
+{
+    my @dirs = @_;
+
+    foreach my $dir (@dirs) {
+        opendir(RULESDIR, "$dir") or die("could not open $dir: $!\n");
+
+      # Only care about *.rules.
+        while (my $file = readdir(RULESDIR)) {
+            next unless ($file =~ /\.rules$/);
+
+            open(OLDFILE, "<$dir/$file") or die("could not open $dir/$file: $!\n");
+            my @file = <OLDFILE>;
+            close(OLDFILE);
+
+            my ($single, $multi, $nonrule);
+
+            while (get_next_entry(\@file, \$single, \$multi, \$nonrule)) {
+                if (defined($single) && $single =~ /sid\s*:(\d+)\s*;/) {
+	            my $tmpsid = $1;
+
+                    print STDERR "WARNING: duplicate SID: $tmpsid\n"
+	              if (exists($allsids{$tmpsid}));
+
+   	            $allsids{$tmpsid}++;
+                }
             }
         }
     }
@@ -145,8 +149,12 @@ get_highest_sid($)
   # Sort sids and use highest one + 1, unless it's below MIN_SID.
     @_ = sort {$a <=> $b} keys(%allsids);
     my $sid = pop(@_);
-    $sid = $MIN_SID unless(defined($sid));
-    $sid++;
+
+    if (!defined($sid)) {
+        $sid = $MIN_SID 
+    } else {
+        $sid++;
+    }
 
     return ($sid)
 }
@@ -155,10 +163,10 @@ get_highest_sid($)
 
 sub get_next_entry($ $ $ $)
 {
-    my $arr_ref        = shift;
-    my $single_ref     = shift;
-    my $multi_ref      = shift;
-    my $nonrule_ref    = shift;
+    my $arr_ref     = shift;
+    my $single_ref  = shift;
+    my $multi_ref   = shift;
+    my $nonrule_ref = shift;
 
     undef($$single_ref);
     undef($$multi_ref);
