@@ -29,21 +29,6 @@
 
 
 --------------------------------------------------------------------------------
-* oinkmaster_pl.systrace by Andreas Östling <andreaso@it.su.se>
-
-  A sample systrace policy for Oinkmaster. It may be too permissive for 
-  you, but it may be a good start. Only tested on OpenBSD.
-  Before using it, you MUST edit it and update the very first line to 
-  point to your oinkmaster.pl, and you probably want to review the rest of 
-  it as well. You use it by running:
-
-  systrace -a -i -f /path/to/oinkmaster_pl.systrace <normal oinkmaster command line>
-
---------------------------------------------------------------------------------
-
-
-
---------------------------------------------------------------------------------
 * makesidex.pl by Jerry Applebaum <JApplebaum@APTEGRITY.com>:
 
   It basicall reads all of your snort rules, strips out the sids from 
