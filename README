@@ -169,9 +169,12 @@ It's nice to combine -c with -q and run as a cron job to silently
 check for updates (perhaps you just want to use this script to check for
 updates but still want to do the actual rules updating manually).
 To silently check for updates as a cron job and not sending any e-mail unless
-there were updates available, you could use something like this:
+there were updates available, you could use something like this
+(wrapped for readability):
 
-30 2 * * * TMP=`mktemp /tmp/oinkmaster.XXXXXX` && (oinkmaster.pl -o /snort/snort.org-rules/ -q -c > $TMP 2>&1; if [ -s $TMP ]; then mail -s "subject" you@somewhere.foo < $TMP; fi; rm $TMP)
+30 2 * * * TMP=`mktemp /tmp/oinkmaster.XXXXXX` && 
+(oinkmaster.pl -o /snort/snort.org-rules/ -q -c > $TMP 2>&1; 
+if [ -s $TMP ]; then mail -s "subject" you@somewhere.foo < $TMP; fi; rm $TMP)
 
 This example only works on systems with the mktemp command but could easily be
 rewritten for others. You get the point. The important thing here is to use the
