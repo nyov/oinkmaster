@@ -505,7 +505,7 @@ sub disable_and_modify_rules($ $ $)
     warn("WARNING: all rules that are disabled by default will be re-enabled\n")
       if (!$preserve_comments && !$quiet);
 
-    print STDERR "Disabling rules according to $config_file... "
+    print STDERR "Disabling rules... "
       unless ($quiet);
     print STDERR "\n"
       if ($verbose);
@@ -608,7 +608,7 @@ sub disable_and_modify_rules($ $ $)
 sub setup_rules_hash($)
 {
     my $new_files_ref = shift;
-    my %rh;
+    my (%rh, %allsids);
 
     foreach my $file (keys(%$new_files_ref)) {
         warn("WARNING: downloaded rules file $file is empty (maybe correct, maybe not)\n")
@@ -627,10 +627,12 @@ sub setup_rules_hash($)
 	    if (defined($single)) {
 	        $single =~ /$SINGLELINE_RULE_REGEXP/oi;
 	        my $sid = $2;
-		warn("WARNING: duplicate SID in downloaded rules archive in file ".
-                     "$file: SID $sid\n")
-		  if (exists($rh{new}{rules}{"$file"}{"$sid"}));
+
+		warn("WARNING: duplicate SID in downloaded rules archive, SID=$sid\n")
+		  if (exists($allsids{new}{"$sid"}));
+
 		$rh{new}{rules}{"$file"}{"$sid"} = $single;
+		$allsids{new}{"$sid"}++ unless ($single =~ /^#/);
 	    } else {                                 # add non-rule line to hash
 	        push(@{$rh{new}{other}{"$file"}}, $nonrule);
 	    }
@@ -648,10 +650,12 @@ sub setup_rules_hash($)
 	        if (defined($single)) {
 	            $single =~ /$SINGLELINE_RULE_REGEXP/oi;
 		    my $sid = $2;
-		    warn("WARNING: duplicate SID in your local rules in file ".
-                         "$file: SID $sid\n")
-	  	      if (exists($rh{old}{rules}{"$file"}{"$sid"}));
+
+		    warn("WARNING: duplicate SID in local rules, SID=$sid\n")
+		      if (exists($allsids{old}{"$sid"}));
+
 	  	    $rh{old}{rules}{"$file"}{"$sid"} = $single;
+	  	    $allsids{old}{"$sid"}++ unless ($single =~ /^#/);
                 } else {                     # add non-rule line to hash
 	            push(@{$rh{old}{other}{"$file"}}, $nonrule);
                 }
