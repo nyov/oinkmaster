@@ -5,7 +5,7 @@
 use strict;
 use Tk;
 use Tk::NoteBook;
-
+use Tk::ROText;
 
 sub test_config();
 sub show_version();
@@ -100,7 +100,7 @@ my $main = MainWindow->new(
 );
 
 
-my $out_frame = $main->Scrolled('Text',
+my $out_frame = $main->Scrolled('ROText',
   -setgrid    => 'true',
   -scrollbars => 'e',
   -background => 'black',
