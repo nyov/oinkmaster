@@ -199,7 +199,7 @@ if ($something_changed) {
           if ($make_backup && (!$quiet));
     } else {
         if ($interactive) {
-            print_changes(\%changes, \%rh) ;
+            print_changes(\%changes, \%rh);
             $printed = 1;
         }
 
@@ -707,7 +707,7 @@ sub unpack_rules_archive($)
     clean_exit("failed to untar $archive.")
       if system("tar","xf","$archive");
 
-    clean_exit("no \"rules/\" directory found in tar file.")
+    clean_exit("no \"rules\" directory found in tar file.")
       unless (-d "$dir/rules");
 
     chdir($old_dir)
