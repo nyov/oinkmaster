@@ -505,20 +505,15 @@ sub disable_and_modify_rules($ $ @)
           # We've got a valid snort rule. Grab msg and sid.
    	    my ($msg, $sid) = ($1, $2);
 
-          # Remove leading/trailing whitespaces and whitespaces next to the leading #.
-	    $line =~ s/^\s*//;
-	    $line =~ s/\s*\n$/\n/;
-	    $line =~ s/^#+\s*/#/;
-
           # Some rules may be commented out by default. Enable them if -e is specified.
-	    if ($line =~ /^#/) {
+	    if ($line =~ /^\s*#/) {
 		if ($preserve_comments) {
 		    print STDERR "Preserving disabled rule (sid $sid): $msg\n"
 		      if ($verbose);
 		} else {
 		    print STDERR "Enabling disabled rule (sid $sid): $msg\n"
 		      if ($verbose);
-		    $line =~ s/^#*//;
+		    $line =~ s/^\s*#*//;
 		}
 	    }
 
@@ -537,11 +532,11 @@ sub disable_and_modify_rules($ $ @)
             if (exists($$disable_sid_ref{"$sid"})) {
                 print STDERR "Disabling sid $sid: $msg\n"
                   if ($verbose);
-                $line = "#$line" unless ($line =~ /^#/);
+                $line = "#$line" unless ($line =~ /^\s*#/);
                 $num_disabled++;
 	    }
 
-	  # Make sure the rule ends with a \n. 
+	  # Make sure the rule ends with a \n.
           # (User may have screwed up with a modifysid.)
 	    chomp($line);
 	    $line .= "\n";
