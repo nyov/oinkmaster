@@ -362,8 +362,9 @@ sub read_config($ $)
       # Skip blank lines.
         next unless (/\S/);
 
-      # modifysid <SID[,SID, ...]> "substthis" | "withthis"
-       if (/^modifysids*\s+(\d+.*)\s+"(.+)"\s+\|\s+"(.*)"\s*$/i) {
+
+       # modifysid <SID[,SID, ...]> "substthis" | "withthis"
+       if (/^modifysids*\s+(\d+.*|\*)\s+"(.+)"\s+\|\s+"(.*)"\s*$/i) {
             my ($sid_list, $subst, $repl) = ($1, $2, $3);
             warn("WARNING: line $linenum in $config_file is invalid, ignoring\n")
               unless(parse_mod_expr(\%{$$cfg_ref{sid_modify_list}}, 
@@ -725,13 +726,18 @@ sub process_rules($ $ $ $)
     my $disable_sid_ref = shift;
     my $enable_sid_ref  = shift;
     my $newfiles_ref    = shift;
-    my $num_disabled    = 0;
     my %sids;
+
+    my %stats = (
+        disabled => 0,
+        enabled  => 0,
+        modified => 0,
+    );
 
     warn("WARNING: all rules that are disabled by default will be re-enabled\n")
       if ($enable_all && !$quiet);
 
-    print STDERR "Disabling rules... "
+    print STDERR "Processing downloaded rules... "
       unless ($quiet);
 
     print STDERR "\n"
@@ -782,45 +788,50 @@ sub process_rules($ $ $ $)
                 $multi =~ s/\n#*/\n/g;
 	    }
 
-          # Modify rule if requested.
-            foreach my $mod_expr (@{$$modify_sid_ref{$sid}}) {
-                my ($subst, $repl) = ($mod_expr->[0], $mod_expr->[1]);
+            my @all_mod = @{$$modify_sid_ref{'*'}}
+              if (exists($$modify_sid_ref{'*'}));
 
-		if ($multi =~ /$subst/) {
+            my @sid_mod = @{$$modify_sid_ref{$sid}}
+              if (exists($$modify_sid_ref{$sid}));
+
+          # Modify rule if requested.
+            foreach my $mod_expr (@sid_mod, @all_mod) {
+
+                my ($subst, $repl) = ($mod_expr->[0], $mod_expr->[1]);
+		if ($multi =~ /$subst/s) {
   	            print STDERR "Modifying SID $sid, subst=$subst, ".
                                  "repl=$repl\nBefore: $multi\n"
 		      if ($verbose);
 
-                    $multi =~ s/$subst/$repl/ee;
+                    $multi =~ s/$subst/$repl/see;
 
   	  	    print STDERR "After:  $multi\n"
                       if ($verbose);
+
+                    $stats{modified}++;
 		} else {
                     print STDERR "\nWARNING: SID $sid does not match ".
-                                 "modifysid expression \"$subst\", skipping\n";
+                                 "modifysid expression \"$subst\", skipping\n"
+                      unless (exists($$modify_sid_ref{'*'}));
                 }
 	    }
 
-          # Disable rule if requested.
-            if (exists($$disable_sid_ref{$sid})) {
+          # Disable rule if requested and it's not already disabled.
+            if (exists($$disable_sid_ref{$sid}) && $multi !~ /^\s*#/) {
                 print STDERR "Disabling SID $sid: $msg\n"
                   if ($verbose);
-
-                unless ($multi =~ /^\s*#/) {
-                    $multi = "#$multi";
-                    $multi =~ s/\n(.+)/\n#$1/g;
-	        }
-
-                $num_disabled++;
+                $multi = "#$multi";
+                $multi =~ s/\n(.+)/\n#$1/g;
+                $stats{disabled}++;
 	    }
 
-          # Enable rule if requested.
-            if (exists($$enable_sid_ref{$sid})) {
+          # Enable rule if requested and it's not already enabled.
+            if (exists($$enable_sid_ref{$sid}) && $multi =~ /^\s*#/) {
                 print STDERR "Enabling SID $sid: $msg\n"
                   if ($verbose);
-
                 $multi =~ s/^#+//;
                 $multi =~ s/\n#+(.+)/\n$1/g;
+                $stats{enabled}++;
 	    }
 
           # Write rule back to the same rules file.
@@ -830,12 +841,14 @@ sub process_rules($ $ $ $)
         close(OUTFILE);
     }
 
-    print STDERR "$num_disabled out of " . keys(%sids) . " rules disabled.\n"
+    print STDERR "disabled=$stats{disabled}, enabled=$stats{enabled}, ".
+                 "modified=$stats{modified}, total=" . keys(%sids) . ".\n"
       unless ($quiet);
 
   # Warn on attempt at processing non-existent sids.
     unless ($quiet) {
         foreach my $sid (keys(%$modify_sid_ref)) {
+            next unless ($sid =~ /^\d+$/);    # don't warn on wildcard match
             warn("WARNING: attempt to modify non-existent SID $sid\n")
               unless (exists($sids{$sid}));
         }
@@ -1605,7 +1618,7 @@ sub parse_mod_expr($ $ $ $)
     $sid_list =~ s/\s+$//;
 
     foreach my $sid (split(/\s*,\s*/, $sid_list)) {
-        return (0) unless ($sid =~ /^\d+$/);
+        return (0) unless ($sid =~ /^\d+$/ || $sid eq "*");
 
       # Make sure the regexps don't generate invalid code.
         my $repl_qq = "qq/$repl/";

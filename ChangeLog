@@ -36,6 +36,11 @@ o wget is now always run in verbose mode, although the output is not displayed
   no more need to re-run in verbose mode just to get decent error messages).
 o deleted.rules is now ignored (with a "skipfile delete.rules") in the 
   default oinkmaster.conf.
+o You can now specify a wildcard ('*') to the modifysid keyword, like 
+  modifysid * "foo" | "bar", to apply the regexp to all matching rules.
+  This enables you to do stuff like convert all rules of a certain classtype
+  to 'drop' rules, or replace all 'flow' keywords with "flags: A+;", and so on.
+  See oinkmaster.conf for examples.
 o Many other minor improvements.
 
 
