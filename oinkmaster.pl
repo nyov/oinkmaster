@@ -2,7 +2,7 @@
 
 # $Id$ #
 
-# Copyright (C) 2001-2004 Andreas Östling <andreaso@it.su.se>
+# Copyright (C) 2002-2004 Andreas Östling <andreaso@it.su.se>
 
 use 5.006001;
 
