@@ -510,6 +510,14 @@ sub sanity_check()
     clean_exit("update_files ($config{update_files}) is not a valid regexp: $@")
       if ($@);
 
+  # Make sure $config{rule_actions} is a valid regexp.
+    eval {
+        "foo" =~ /$config{rule_actions}/;
+    };
+
+    clean_exit("rule_actions ($config{rule_actions}) is not a valid regexp: $@")
+      if ($@);
+
   # If a variable file (probably local snort.conf) has been specified,
   # it must exist. It must also be writable unless we're in careful mode.
     if ($config{update_vars}) {
