@@ -10,8 +10,39 @@ There are three known ways to run Oinkmaster under Windows:
 - Cygwin but not from within a Cygwin shell
 
 Which method you choose is mostly a matter of taste.
-You can find installation instructions for each one of these below, 
-followed by a few general useful notes about Oinkmaster/Windows.
+You can find installation instructions for each one of these below,
+but first a few general useful notes about Oinkmaster/Windows.
+
+
+
+A few useful notes regarding Oinkmaster and Windows
+---------------------------------------------------
+
+o It's best to start Oinkmaster by calling the Perl interpreter
+  with oinkmaster.pl and it's options as argument. 
+  Depending on your setup, it may also work by simply calling oinkmaster.pl
+  directly though.
+
+o You must always specify the -C argument and point to your oinkmaster.conf 
+  file since it's looked for in a UNIX directory by default.
+
+o When using Cygwin (standalone or from within a Cygwin shell) you should
+  be able to use both msdos style paths (i.e. c:\foo) or Cygwin style
+  paths (i.e. /cygdrive/c/foo) everywhere, but remember that backslashes
+  needs to be quoted ("c:\foo") or escaped (c:\\foo) when starting from a 
+  Cygwin shell. 
+
+o Remember that filenames/directories with spaces specified on the 
+  command line needs to be quoted, e.g. -C "c:\some directory\oinkmaster.conf"
+
+o You may want to download EagleX from Engage Security
+  (http://www.engagesecurity.com/products/eaglex/)
+  which among many other things contains Oinkmaster (ready to run as a 
+  standalone Cygwin program without requiring a full Cygwin installation) 
+  and a graphical interface to it. 
+
+o Oinkmaster is not as well tested on Windows as on UNIX, so please report 
+  any issues you may find.
 
 
 
@@ -36,7 +67,6 @@ ActivePerl
   The path should be specified as regular msdos style, so comment out the 
   UNIX style path (which is active by default) and add something like this:
 
-/usr/local/bin/oinkmaster.pl -C /etc/snort/oinkmaster.conf -o "c:\snort\rules"
   path = c:\oink\gnu-bin\
 
   But of course change it to point to whatever your directory is called.
@@ -70,7 +100,7 @@ For example:
 
 /usr/local/bin/oinkmaster.pl -C /etc/snort/oinkmaster.conf -o /etc/snort/rules
 
-Or if you need to specify a path that is not inside the Cygwin directory
+If you need to specify a path that is not inside the Cygwin directory
 structure, just use something like:
 
 /usr/local/bin/oinkmaster.pl -C /etc/snort/oinkmaster.conf -o "c:\snort\rules"
@@ -93,17 +123,14 @@ without first starting a Cygwin shell.
   Make sure to include the packages gzip, Perl, tar and wget.
 
 - Make sure the 'path' option in oinkmaster.conf includes the
-  directory/directories containing the required Cygwin binaries.
+  directory/directories containing the required Cygwin libraries/binaries.
   You can specify the path as either msdos style or Cygwin style, e.g.:
 
-  path = c:\cygwin\bin;d:\somedir\bin
+  path = c:\cygwin;c:\cygwin\bin
 
   or the same but as Cygwin style:
 
-  path = /cygdrive/c/cygwin/bin:/cygdrive/d/somedir/bin
-
-  (You usually only need to specify the path to Cygwin's "bin" directory,
-   e.g. "path = c:\cygwin\bin".)
+  path = /cygdrive/c/cygwin:/cygdrive/c/cygwin/bin
 
 - Done!
 
@@ -114,34 +141,3 @@ For example, if Cygwin is installed in c:\cygwin and Oinkmaster and the
 rules directory is in c:\oink\, you can run:
 
 c:\cygwin\bin\perl c:\oink\oinkmaster.pl -C c:\oink\oinkmaster.conf -o c:\oink\rules
-
-
-
-A few useful notes regarding Oinkmaster and Win32
--------------------------------------------------
-
-o It's best to start Oinkmaster by calling the Perl interpreter
-  with oinkmaster.pl and it's options as argument. 
-  Depending on your setup, it may also work by simply calling oinkmaster.pl
-  directly though.
-
-o You must always specify the -C argument and point to your oinkmaster.conf 
-  file since it's looked for in a UNIX directory by default.
-
-o When using Cygwin (standalone or from within a Cygwin shell) you should
-  be able to use both msdos style paths (i.e. c:\foo) or Cygdrive style
-  paths (i.e. /cygdrive/c/foo) for everything, but remember that backslashes
-  needs to be quoted ("c:\foo") or escaped (c:\\foo) when starting from a 
-  Cygwin shell.
-
-o You will probably need an editor that can handle UNIX style
-  newlines (i.e. \n and not \r\n) to edit the Oinkmaster-related files.
-
-o You may want to download EagleX from Engage Security
-  (http://www.engagesecurity.com/products/eaglex/)
-  which among many other things contains Oinkmaster (ready to run as a 
-  standalone Cygwin program without requiring a full Cygwin installation) 
-  and a graphical interface to it. 
-
-o Oinkmaster is not as well tested on Windows as on UNIX, so please report 
-  any issues you may find.
