@@ -179,12 +179,15 @@ Q5:  In which order will the localsid/modifysid/disablesid/enablesid
 
 A5:  For each rule, the following is performed:
  
-     1) If there is a matching localsid statement, skip further processing
-     2) If -e was specified, enable the rule
+     1) If there is a matching localsid statement (no matter where in the 
+        configuration file it is), skip further processing
+     2) If -e was specified on the command line, enable the rule
      3) Process all matching modifysid and use_template statements in 
         the same order as they appeared in the configuration file
-     4) Disable the rule if there is a matching disablesid statement
-     5) Enable the rule if there is a matching enablesid statement
+     4) Disable the rule if there is a matching disablesid statement (no 
+        matter where in the configuration file it is)
+     5) Enable the rule if there is a matching enablesid statement (no
+        matter where in the configuration file it is)
 
      Usually you don't have to worry about this as it only matters if you
      have multiple types of processing directives for the same rule 
