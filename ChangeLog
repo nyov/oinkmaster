@@ -19,6 +19,8 @@ o All modifysid substitutions on multi-line rules (including when using
   don't have to care about where the trailing backslashes and newlines are.
 o When running in super quiet mode (-Q), possible warnings about
   duplicate SIDs in the downloaded rules are suppressed.
+o Print warning when attempting to enable/disable/modify non-existent SID
+  when in non-quiet mode instead of only when in verbose mode.
 o The manual page (oinkmaster.1) has been updated.
 
 
