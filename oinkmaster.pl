@@ -675,13 +675,13 @@ sub print_changes($ $)
 	    # Print old and new if the rule was modified.
 	        if ($type =~ /modified/i) {
 	            print "     old: $rh{old}{rules}{$file}{$sid}";
-	            print "     new: $rh{new}{rules}{$file}{$sid}"
+	            print "     new: $rh{new}{rules}{$file}{$sid}";
 	    # print only the new one if the rule was added, enabled or disabled.
 	        } elsif ($type =~ /added/i || $type =~ /enabled/i || $type =~ /disabled/i) {
-	            print "     $rh{new}{rules}{$file}{$sid}"
+	            print "     $rh{new}{rules}{$file}{$sid}";
 	    # print only the old one if the rule was removed.
 		} elsif ($type =~ /removed/i) {
-	            print "     $rh{old}{rules}{$file}{$sid}"
+	            print "     $rh{old}{rules}{$file}{$sid}";
 		}
   	    }
         }
