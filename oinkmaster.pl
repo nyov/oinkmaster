@@ -18,7 +18,7 @@ sub download_rules($ $);
 sub unpack_rules_archive($);
 sub process_rules($ $ $ $);
 sub setup_rules_hash($);
-sub find_line($ $);
+sub get_first_only($ $ $);
 sub print_changes($ $);
 sub print_changetype($ $ $ $);
 sub make_backup($ $);
@@ -902,23 +902,25 @@ sub setup_rules_hash($)
 
 
 
-# Try to find a given string in a given array. Return 1 if found, or 0 if not.
-# Some things will always be considered as found (lines that we don't care if
-# they were added/removed). It's extremely slow and braindead, but who cares.
-sub find_line($ $)
+# Return lines that exist only in first array but not in second one.
+sub get_first_only($ $ $)
 {
-    my $line    = shift;   # line to look for
-    my $arr_ref = shift;   # reference to array to look in
+    my $first_only_ref = shift;
+    my $first_arr_ref  = shift;
+    my $second_arr_ref = shift;
+    my %arr_hash;
 
-  # Skip blank lines and CVS Id tags.
-    return (1) unless ($line =~ /\S/);
-    return (1) if     ($line =~ /^\s*#+\s*\$I\S:.+Exp\s*\$/);
+    @arr_hash{@$second_arr_ref} = ();   
 
-    foreach $_ (@$arr_ref) {
-        return (1) if ($_ eq $line);
+    foreach my $line (@$first_arr_ref) {
+
+      # Skip blank lines and CVS Id tags.
+        next unless ($line =~ /\S/);
+        next if     ($line =~ /^\s*#+\s*\$I\S:.+Exp\s*\$/);
+
+        push(@$first_only_ref, $line)
+          unless(exists($arr_hash{$line}));
     }
-
-    return (0);
 }
 
 
@@ -1250,25 +1252,29 @@ sub get_changes($ $)
             }
         }
 
-      # Check for added/removed non-rule lines.
-        foreach my $other_added (@{$$rh_ref{new}{other}{$file}}) {
-            unless (find_line($other_added, \@{$$rh_ref{old}{other}{"$file"}})) {
-                $changes{modified_files}{$file_w_path}++;
-                push(@{$changes{other}{added}{$file}}, $other_added);
-            }
+      # Check for added non-rule lines.
+        get_first_only(\my @added, 
+                       \@{$$rh_ref{new}{other}{$file}}, 
+                       \@{$$rh_ref{old}{other}{$file}});
+
+        if (scalar(@added)) {
+            @{$changes{other}{added}{$file}} = @added;
+            $changes{modified_files}{$file_w_path}++;
         }
 
-        foreach my $other_removed (@{$$rh_ref{old}{other}{$file}}) {
-            unless (find_line($other_removed, \@{$$rh_ref{new}{other}{"$file"}})) {
-                $changes{modified_files}{$file_w_path}++;
-                push(@{$changes{other}{removed}{$file}}, $other_removed);
-            }
+      # Check for removed non-rule lines.
+        get_first_only(\my @removed,
+                       \@{$$rh_ref{old}{other}{$file}}, 
+                       \@{$$rh_ref{new}{other}{$file}});
+
+        if (scalar(@removed)) {
+            @{$changes{other}{removed}{$file}} = @removed;
+            $changes{modified_files}{$file_w_path}++;
         }
 
     } # foreach new file
 
-    print STDERR "done.\n" 
-      unless ($quiet);
+    print STDERR "done.\n" unless ($quiet);
 
     return (%changes);
 }
