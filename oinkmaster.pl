@@ -38,7 +38,7 @@ my $snort_rule_regexp = '^\s*#*\s*(?:alert|log|pass) .+msg\s*:\s*"(.+?)"\s*;.+si
 
 use vars qw
    (
-      $opt_b $opt_c $opt_C $opt_e $opt_h $opt_o $opt_q $opt_p $opt_r $opt_u $opt_v
+      $opt_b $opt_c $opt_C $opt_e $opt_h $opt_o $opt_q $opt_r $opt_u $opt_v
    );
 
 my (
@@ -372,12 +372,6 @@ sub parse_cmdline
         show_usage;
     }
 
-  # Print warning if -p is used (obsolete).
-  # (But keep it valid for a while though, so we don't screw up people's cron jobs)
-    if (defined($opt_p)) {
-        print STDERR "Warning: the -p switch is obsolete\n";
-    }
-
   # Remove possible trailing slash (just for cosmetic reasons).
     $output_dir =~ s/\/+$//;
     $backup_dir =~ s/\/+$// if (defined($backup_dir));
@@ -552,7 +546,7 @@ sub disable_rules
 
     $num_disabled = 0;
 
-    unless ($preserve_comments) {
+    if (!$preserve_comments && !$quiet) {
         print STDERR "Warning: all rules that are disabled by default will be re-enabled\n";
     }
 

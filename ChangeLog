@@ -1,3 +1,10 @@
+v0.7 - 2002XXXX
+~~~~~~~~~~~~~~~
+o Don't print warning when using "-e" in quiet mode.
+o "-p" is now not just obsolete, but invalid.
+
+
+
 v0.6 - 20020706
 ~~~~~~~~~~~~~~~
 o Rules that are disabled by default in the rules distribution
