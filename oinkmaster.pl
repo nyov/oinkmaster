@@ -14,8 +14,8 @@ sub read_config($ $);
 sub sanity_check();
 sub download_rules($ $);
 sub unpack_rules_archive($);
-sub disable_and_modify_rules($ $ @);
-sub setup_rules_hash($ @);
+sub disable_and_modify_rules($ $ $);
+sub setup_rules_hash($ $);
 sub find_line($ $);
 sub print_changes($ $);
 sub print_changetype($ $ $);
@@ -112,13 +112,13 @@ if (get_new_filenames(\%new_files, "$TMPDIR/rules/") < 1) {
 # Will open each file listed in %new_files, make modifications, and
 # write back to the same file.
 disable_and_modify_rules(\%{$config{sid_disable_list}},
-                         \%{$config{sid_modify_list}}, keys(%new_files));
+                         \%{$config{sid_modify_list}}, \%new_files);
 
 # Setup rules hash.
-my %rh = setup_rules_hash($config{output_dir}, keys(%new_files));
+my %rh = setup_rules_hash($config{output_dir}, \%new_files);
 
 # Compare the new rules to the old ones.
-my %changes = get_changes(\%rh, keys(%new_files));
+my %changes = get_changes(\%rh, \%new_files);
 
 # Get list of modified files (with full path to the new file).
 my @modified_files = get_modified_files(\%changes, \%new_files);
@@ -483,11 +483,11 @@ sub unpack_rules_archive($)
 # Open all rules files in the temporary directory and disable (#comment out)
 # all rules in listed in the disable list and then write back to the same files.
 # Also clean unwanted whitespaces from them.
-sub disable_and_modify_rules($ $ @)
+sub disable_and_modify_rules($ $ $)
 {
     my $disable_sid_ref = shift;
     my $modify_sid_ref  = shift;
-    my @newfiles        = @_;
+    my $newfiles_ref    = shift;
     my $num_disabled    = 0;
 
     if (!$preserve_comments && !$quiet) {
@@ -499,7 +499,7 @@ sub disable_and_modify_rules($ $ @)
     print STDERR "\n"
       if ($verbose);
 
-    foreach my $file (@newfiles) {
+    foreach my $file (keys(%$newfiles_ref)) {
         open(INFILE, "<$file")
           or clean_exit("could not open $file for reading: $!");
 	@_ = <INFILE>;
@@ -598,13 +598,13 @@ sub disable_and_modify_rules($ $ @)
 # Format for rules will be:     rh{old|new}{rules{filename}{sid} = rule
 # Format for non-rules will be: rh{old|new}{other}{filename}     = array of lines
 # List of added files will be stored as rh{added_files}{filename}
-sub setup_rules_hash($ @)
+sub setup_rules_hash($ $)
 {
-    my $old_dir   = shift;
-    my @new_files = shift;
+    my $old_dir       = shift;
+    my $new_files_ref = shift;
     my %rh;
 
-    foreach my $file (keys(%new_files)) {
+    foreach my $file (keys(%$new_files_ref)) {
         warn("WARNING: downloaded rules file $file is empty (maybe correct, maybe not)\n")
           if (!-s "$file" && $verbose);
 
@@ -895,22 +895,22 @@ sub get_modified_files($ $)
         $file =~ s/.*\///;    # remove path
 
       # Check if there were any rules changes in this file.
-        foreach my $type (keys(%{$changes{rules}})) {
+        foreach my $type (keys(%{$$changes_ref{rules}})) {
 	     $modified_files{"$file_w_path"}++
-               if (exists($changes{rules}{"$type"}{"$file"}));
+               if (exists($$changes_ref{rules}{"$type"}{"$file"}));
         }
 
       # Check if there were any non-rule changes in this file.
-        foreach my $type (keys(%{$changes{other}})) {
+        foreach my $type (keys(%{$$changes_ref{other}})) {
             $modified_files{"$file_w_path"}++
-              if (exists($changes{other}{"$type"}{"$file"}));
+              if (exists($$changes_ref{other}{"$type"}{"$file"}));
         }
 
       # Added files are also regarded as modified
       # since we want to update (add) those as well.
       # We only have a list of added files without the full path,
       # so that's why we have to do the special check below.
-        foreach my $added_file (keys(%{$rh{added_files}})) {
+        foreach my $added_file (keys(%{$$changes_ref{added_files}})) {
             $modified_files{"$file_w_path"}++
               if ($added_file eq $file);
         }
@@ -927,14 +927,16 @@ sub get_modified_files($ $)
 # but if it doesn't, it must have been added.
 sub get_changes($ $)
 {
+    my $rh_ref        = shift;
+    my $new_files_ref = shift;
     my %changes;
 
     print STDERR "Comparing new files to the old ones... "
       unless ($quiet);
 
-  # We have the list of added files in $rh{added_files}, but we'd rather
+  # We have the list of added files in $rh_ref{added_files}, but we'd rather
   # want to have it in $changes{added_files} now.
-    $changes{added_files} = $rh{added_files};
+    $changes{added_files} = $$rh_ref{added_files};
 
   # Add list of possibly removed files into $removed_files, if requested.
     if ($check_removed) {
@@ -951,18 +953,18 @@ sub get_changes($ $)
     }
 
   # Compare the rules.
-    FILELOOP:foreach my $file_w_path (keys(%new_files)) {       # for each new file
+    FILELOOP:foreach my $file_w_path (keys(%$new_files_ref)) {    # for each new file
         my $file = $file_w_path;
-        $file =~ s/.*\///;                                      # remove path
-        next FILELOOP if (exists($rh{added_files}{$file}));     # skip diff if it's an added file
+        $file =~ s/.*\///;                                        # remove path
+        next FILELOOP if (exists($$rh_ref{added_files}{$file}));  # skip diff if it's an added file
 
-        foreach my $sid (keys(%{$rh{new}{rules}{$file}})) {     # for each sid in the new file
-            my $new_rule = $rh{new}{rules}{$file}{$sid};
+        foreach my $sid (keys(%{$$rh_ref{new}{rules}{$file}})) {  # for each sid in the new file
+            my $new_rule = $$rh_ref{new}{rules}{$file}{$sid};
 
-                if (exists($rh{old}{rules}{$file}{$sid})) {     # also exists in the old file?
-                    my $old_rule = $rh{old}{rules}{$file}{$sid};
+                if (exists($$rh_ref{old}{rules}{$file}{$sid})) {  # also exists in the old file?
+                    my $old_rule = $$rh_ref{old}{rules}{$file}{$sid};
 
-		    unless ($new_rule eq $old_rule) {           # are they identical?
+		    unless ($new_rule eq $old_rule) {                             # are they identical?
                         if ("#$old_rule" eq $new_rule) {                          # rule disabled?
  	                    $changes{rules}{dis}{$file}{$sid}++;
                         } elsif ($old_rule eq "#$new_rule") {                     # rule enabled?
@@ -984,22 +986,22 @@ sub get_changes($ $)
         } # foreach sid
 
       # Check for removed rules, i.e. sids that exist in the old file but not in the new one.
-        foreach my $sid (keys(%{$rh{old}{rules}{$file}})) {
-            unless (exists($rh{new}{rules}{$file}{$sid})) {
+        foreach my $sid (keys(%{$$rh_ref{old}{rules}{$file}})) {
+            unless (exists($$rh_ref{new}{rules}{$file}{$sid})) {
 	        $changes{rules}{removed}{$file}{$sid}++;
             }
         }
 
       # Check for added non-rule lines.
-        foreach my $other_added (@{$rh{new}{other}{$file}}) {
-            unless (find_line($other_added, \@{$rh{old}{other}{"$file"}})) {
+        foreach my $other_added (@{$$rh_ref{new}{other}{$file}}) {
+            unless (find_line($other_added, \@{$$rh_ref{old}{other}{"$file"}})) {
 	        push(@{$changes{other}{added}{$file}}, $other_added);
             }
         }
 
       # Check for removed non-rule lines.
-        foreach my $other_removed (@{$rh{old}{other}{$file}}) {
-            unless (find_line($other_removed, \@{$rh{new}{other}{"$file"}})) {
+        foreach my $other_removed (@{$$rh_ref{old}{other}{$file}}) {
+            unless (find_line($other_removed, \@{$$rh_ref{new}{other}{"$file"}})) {
 	        push(@{$changes{other}{removed}{$file}}, $other_removed);
             }
         }
