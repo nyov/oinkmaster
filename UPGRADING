@@ -14,7 +14,7 @@ require some attention.
 You can now run without external binaries if you set use_external_bins 
 to 0 in oinkmaster.conf and have the required Perl modules. It's set to 0 
 by default on Win32 (since ActivePerl comes with the required Perl 
-modules) and 1 by default on other system (i.e. keep old behaviour).
+modules) and 1 by default on other system (i.e. keep old behavior).
 Add "use_external_bins = 0" or "use_external_bins = 1" to override the 
 default. See the new default oinkmaster.conf for more information.
 
