@@ -77,7 +77,7 @@ sub catch_sigint();
 sub clean_exit($);
 
 
-my $VERSION            = 'Oinkmaster v1.0 by Andreas Östling <andreaso@it.su.se>';
+my $VERSION            = 'Oinkmaster v1.1-devel by Andreas Östling <andreaso@it.su.se>';
 my $OUTFILE            = 'snortrules.tar.gz';
 my $RULES_DIR          = 'rules';
 my $DIST_SNORT_CONF    = "$RULES_DIR/snort.conf";
@@ -326,7 +326,7 @@ Options:
 -h         Show this usage information
 -i         Interactive mode - you will be asked to approve the changes (if any)
 -q         Quiet mode - no output unless changes were found
--Q         super-quiet mode (like -q but even more quiet when printing results)
+-Q         super-quiet mode - like -q but even more quiet
 -r         Check for rules files that exist in the output directory
            but not in the downloaded rules archive
 -T         Test configuration and then exit
@@ -400,6 +400,8 @@ sub read_config($ $)
     my $config_file = shift;
     my $cfg_ref     = shift;
     my $linenum     = 0;
+    my $multi;
+    my %templates;
 
     clean_exit("configuration file \"$config_file\" does not exist.\n")
       unless (-e "$config_file");
@@ -419,23 +421,87 @@ sub read_config($ $)
     my @conf = <CONF>;
     close(CONF);
 
-    while ($_ = shift(@conf)) {
+    LINE:while ($_ = shift(@conf)) {
         $linenum++;
 
-      # Remove comments unless it's a modifysid line
-      # (the "#" may be part of the modifysid expression).
-        s/\s*\#.*// unless (/^\s*modifysid/i);
-
-      # Remove leading/traling whitespaces.
+      # Leading whitespaces and comment-only lines are removed.
 	s/^\s*//;
+        s/^#.*//;
+        next unless /\S/;
+
+      # Multi-line start/continuation?
+        if (/\\\s*\n$/) {
+            s/\\\s*\n$//;
+            $multi .= $_;
+            next LINE;
+        }
+
+      # Last line of multi-line directive?
+        if (defined($multi)) {
+            $multi .= $_;
+            $_ = $multi;
+            undef($multi);
+        }
+
+      # Remove traling whitespaces (*after* a possible multi-line is rebuilt).
 	s/\s*$//;
+
+      # Remove comments unless it's a modifysid/define_template line
+      # (the "#" may be part of the modifysid expression).
+        s/\s*\#.*// unless (/^modifysid/i || /^define_template/i);
 
       # Skip blank lines.
         next unless (/\S/);
 
+      # Use a template and make $_ a "modifysid" line.
+        if (/^use_template\s+(\S+)\s+([\d\s,\*]+)\s*(".*")*(?:#.*)*/i) {
+            my ($template_name, $sid, $args) = ($1, $2, $3);
 
-       # modifysid <SID[,SID, ...]> "substthis" | "withthis"
-       if (/^modifysids*\s+(\d+.*|\*)\s+"(.+)"\s+\|\s+"(.*)"\s*(?:#.*)*$/i) {
+            if (exists($templates{$template_name})) {
+               my $template = $templates{$template_name};  # so we don't substitute %ARGx% globally
+
+              # Evaluate each "%ARGx%" in the template to the corresponding value.
+                if (defined($args)) {
+                    my @args = split(/"\s+\|\s+"/, $args);
+                    foreach my $i (1 .. @args) {
+                        $args[$i - 1] =~ s/^"//;
+                        $args[$i - 1] =~ s/"$//;
+                        $template =~ s/%ARG$i%/$args[$i - 1]/g;
+                    }
+
+                  # There should be no %ARGx% stuff left now.
+                    if ($template =~ /%ARG\d%/) {
+                        warn("WARNING: too few arguments for template \"$template_name\"\n");
+                        $_ = "error";  # so it will be reported as an invalid line later
+                    }
+                }
+
+                unless ($_ eq "error") {
+                    $_ = "modifysid $sid $template\n";
+                    print STDERR "Template \"$template_name\" expanded to: $_"
+                      if ($config{verbose});
+                }
+
+            } else {
+                warn("WARNING: template \"$template_name\" has not been defined\n");
+            }
+        }
+
+      # new template definition.
+        if (/^define_template\s+(\S+)\s+(".+"\s+\|\s+".*")\s*(?:#.*)*$/i) {
+            my ($template_name, $template) = ($1, $2);
+
+            if (exists($templates{$template_name})) {
+                warn("WARNING: line $linenum in $config_file: ".
+                     "template \"$template_name\" already defined, keeping old\n");
+            } else {
+                print STDERR "Setting template \"$template_name\": $template\n"
+                  if ($config{verbose});
+                $templates{$template_name} = $template;
+            }
+
+      # modifysid <SID[,SID, ...]> "substthis" | "withthis"
+        } elsif (/^modifysids*\s+(\d+.*|\*)\s+"(.+)"\s+\|\s+"(.*)"\s*(?:#.*)*$/i) {
             my ($sid_list, $subst, $repl) = ($1, $2, $3);
             warn("WARNING: line $linenum in $config_file is invalid, ignoring\n")
               unless(parse_mod_expr(\%{$$cfg_ref{sid_modify_list}},
@@ -718,8 +784,8 @@ sub download_file($ $)
 
         my $ua = LWP::UserAgent->new();
         $ua->env_proxy;
-        my $request = HTTP::Request->new(GET => $url);
-        my $response = $ua->request($request, $localfile);
+	my $request = HTTP::Request->new(GET => $url);
+	my $response = $ua->request($request, $localfile);
 
         clean_exit("could not download file: " . $response->status_line)
           unless $response->is_success;
@@ -948,9 +1014,12 @@ sub process_rules($ $ $ $)
 
           # We've got a valid rule. If we have already seen this sid, discard this rule.
             if (exists($sids{$sid})) {
-                warn("\nWARNING: duplicate SID in downloaded archive, SID $sid in ".
+                warn("\n") unless ($config{quiet});
+                warn("WARNING: duplicate SID in downloaded archive, SID $sid in ".
                      basename($file) . " has already been seen in " .
-                     basename($sids{$sid}). ", discarding rule \"$msg\"\n");
+                     basename($sids{$sid}). ", discarding rule \"$msg\"\n")
+                  unless($config{super_quiet});
+
                 next RULELOOP;
             }
 
@@ -968,7 +1037,11 @@ sub process_rules($ $ $ $)
                 $multi =~ s/\n#*/\n/g;
 	    }
 
-          # Modify rule if requested.
+          # Modify rule if requested. For disablesid/enablesid we work
+          # on the multi-line version of the rule (if exists). For
+          # modifysid that's no good since we don't know where in the
+          # rule the trailing backslashes and newlines are going to be
+          # and we don't want them to affect the regexp.
             my @all_mod = @{$$modify_sid_ref{'*'}}
               if (exists($$modify_sid_ref{'*'}));
 
@@ -978,14 +1051,18 @@ sub process_rules($ $ $ $)
             foreach my $mod_expr (@sid_mod, @all_mod) {
 
                 my ($subst, $repl) = ($mod_expr->[0], $mod_expr->[1]);
-		if ($multi =~ /$subst/s) {
+		if ($single =~ /$subst/s) {
   	            print STDERR "Modifying SID $sid, subst=$subst, ".
-                                 "repl=$repl\nBefore: $multi\n"
+                                 "repl=$repl\nBefore: $single\n"
 		      if ($config{verbose});
 
-                    $multi =~ s/$subst/$repl/see;
+                  # Replace rule with its single-line version in case it's
+                  # a multi-line rule. This makes substitutions more logical
+                  # so we don't have to care about where the \n\\ are.
+                    $single =~ s/$subst/$repl/ee;
+                    $multi = $single;
 
-  	  	    print STDERR "After:  $multi\n"
+  	  	    print STDERR "After:  $single\n"
                       if ($config{verbose});
 
                     $stats{modified}++;
