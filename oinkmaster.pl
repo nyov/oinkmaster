@@ -362,7 +362,7 @@ sub read_config($ $)
     clean_exit("configuration file \"$config_file\" does not exist.\n")
       unless (-e "$config_file");
 
-    print STDERR "Loading $config_file.\n"
+    print STDERR "Loading " . File::Spec->rel2abs($config_file) . "\n"
       unless ($config{quiet});
 
     my ($dev, $ino) = (stat($config_file))[0,1]
