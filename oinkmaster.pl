@@ -65,8 +65,11 @@ my $MULTILINE_RULE_REGEXP = '^\s*#*\s*(?:alert|log|pass)\s.*\\\\\s*\n$'; # ';
 
 # Default temporary base directory.
 my $tmp_basedir;
+
 if (exists($ENV{tmp})) {
     $tmp_basedir = $ENV{tmp};
+} elsif (exists($ENV{TMP})) {
+    $tmp_basedir = $ENV{TMP};
 } else {
     $tmp_basedir = "/tmp";
 }
@@ -412,7 +415,7 @@ sub sanity_check()
   # Make sure all required binaries can be found.
   # (Wget is not required if user specifies file:// as url. That check is done below.)
     foreach my $binary (@req_binaries) {
-        clean_exit("\"$binary\" could not be found in PATH ($ENV{PATH})")
+        clean_exit("\"$binary\" could not be found in PATH ($ENV{PATH}).")
           unless (is_in_path($binary));
     }
 
@@ -422,7 +425,7 @@ sub sanity_check()
         $config{'url'}  =~ /^(?:http|ftp|file):\/\/\S+.*\.tar\.gz$/);
 
   # Wget must be found if url is http:// or ftp://.
-    clean_exit("\"wget\" not found in PATH.")
+    clean_exit("\"wget\" not found in PATH ($ENV{PATH}).")
       if ($config{'url'} =~ /^(http|ftp):/ && !is_in_path("wget"));
 
   # Make sure the output directory exists and is readable.
