@@ -143,10 +143,14 @@ if ($#modified_files > -1) {
 }
 
 # Print changes.
-if (($#modified_files > -1 || exists($changes{removed_files})) || !$quiet) {
-    print "\nNote: Oinkmaster is running in careful mode - not updating/adding anything.\n"
-      if ($careful); # XXX && something changed
+my $something_changed = 0;
 
+$something_changed = 1
+  if ($#modified_files > -1 || exists($changes{removed_files}));
+
+if ($something_changed || !$quiet) {
+    print "\nNote: Oinkmaster is running in careful mode - not updating/adding anything.\n"
+      if ($careful && $something_changed);
     print_changes(\%changes, \%rh);
 }
 
@@ -650,58 +654,54 @@ sub make_backup($ $)
 # FIX ME PLEASE
 sub print_changes($ $)
 {
-    print "changes: FIXME\n";
-# Time to print the results.
-
-foreach my $type (keys(%{$changes{other}})) {
-    print "type: $type\n";
-    foreach my $file (keys(%{$changes{other}{"$type"}})) {
-        print "  file -> $file\n";
-        foreach my $line (@{$changes{other}{"$type"}{"$file"}}) {
-	    print "line: $line";
-	}
+    foreach my $type (keys(%{$changes{other}})) {
+        print "type: $type\n";
+        foreach my $file (keys(%{$changes{other}{"$type"}})) {
+            print "  file -> $file\n";
+            foreach my $line (@{$changes{other}{"$type"}{"$file"}}) {
+	        print "line: $line";
+	    }
+        }
     }
-}
 
-foreach my $type (keys(%{$changes{rules}})) {
-    print "type: $type\n";
-    foreach my $file (keys(%{$changes{rules}{"$type"}})) {
-        print "  file -> $file\n";
-        foreach my $sid (keys(%{$changes{rules}{"$type"}{"$file"}})) {
-	    print "          old: $rh{old}{rules}{$file}{$sid}\n"
-              if (exists($rh{old}{rules}{"$file"}{"$sid"}));
-	    print "          new: $rh{new}{rules}{$file}{$sid}\n"
-              if (exists($rh{new}{rules}{"$file"}{"$sid"}));
-	}
+    foreach my $type (keys(%{$changes{rules}})) {
+        print "type: $type\n";
+        foreach my $file (keys(%{$changes{rules}{"$type"}})) {
+            print "  file -> $file\n";
+            foreach my $sid (keys(%{$changes{rules}{"$type"}{"$file"}})) {
+	        print "          old: $rh{old}{rules}{$file}{$sid}\n"
+                  if (exists($rh{old}{rules}{"$file"}{"$sid"}));
+	        print "          new: $rh{new}{rules}{$file}{$sid}\n"
+                  if (exists($rh{new}{rules}{"$file"}{"$sid"}));
+  	    }
+        }
     }
-}
 
-# Print list of added files.
-print "\n[*] Added files (consider updating your snort.conf to include them): [*]\n";
-if (keys(%{$changes{added_files}}) > 0) {
-    foreach $_ (keys(%{$changes{added_files}})) {
-        print "added -> $_\n";
-    }
-} else {
-     print "\n[*] Added files: [*]\n" .
-           "    None.\n";
-}
-
-# Print list of possibly removed files.
-if ($check_removed) {
-    print "\n[*] Possibly removed files: [*]\n";
-    if (keys(%{$changes{removed_files}}) > 0) {
-        foreach $_ (keys(%{$changes{removed_files}})) {
-            print "removed -> $_\n";
-	}
+  # Print list of added files.
+    if (keys(%{$changes{added_files}}) > 0) {
+        print "\n[*] Added files (consider updating your snort.conf to include them): [*]\n";
+        foreach my $added_file (keys(%{$changes{added_files}})) {
+            print "    -> $added_file\n";
+        }
     } else {
-         print "\n[*] Removed files: [*]\n" .
+         print "\n[*] Added files: [*]\n" .
                "    None.\n";
     }
-}
 
-print "\n";
+  # Print list of possibly removed files, if requested.
+    if ($check_removed) {
+        if (keys(%{$changes{removed_files}}) > 0) {
+            print "\n[*] Possibly removed files (consider removing them from your snort.conf): [*]\n";
+            foreach my $removed_file (keys(%{$changes{removed_files}})) {
+                print "    -> $removed_file\n";
+	    }
+        } else {
+             print "\n[*] Removed files: [*]\n" .
+                   "    None.\n";
+        }
+    }
 
+    print "\n";
 }
 
 
@@ -757,17 +757,18 @@ sub get_changes($ $)
   # want to have it in $changes{added_files} now.
     $changes{added_files} = $rh{added_files};
 
-  # Add list of possibly removed files into $removed_files.
-  # (will only get printed if user specifies so).
-    opendir(OLDRULES, "$output_dir")
-      or clean_exit("Error: could not open directory $output_dir: $!");
+  # Add list of possibly removed files into $removed_files, if requested.
+    if ($check_removed) {
+        opendir(OLDRULES, "$output_dir")
+          or clean_exit("Error: could not open directory $output_dir: $!");
 
-    while ($_ = readdir(OLDRULES)) {
-        $changes{removed_files}{"$_"}++
-          if ($check_removed && /$config{update_files}/ &&
-              !exists($config{file_ignore_list}{$_}) && !-e "$TMPDIR/rules/$_");
+        while ($_ = readdir(OLDRULES)) {
+            $changes{removed_files}{"$_"}++
+              if (/$config{update_files}/ && !exists($config{file_ignore_list}{$_}) && 
+                  !-e "$TMPDIR/rules/$_");
+        }
+        closedir(OLDRULES);
     }
-    closedir(OLDRULES);
 
   # Compare the rules.
     FILELOOP:foreach my $file_w_path (keys(%new_files)) {       # for each new file
