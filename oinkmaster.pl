@@ -189,10 +189,10 @@ if ($something_changed) {
         make_backup($config{output_dir}, $config{backup_dir})
           if ($make_backup);
 
-        update_rules($config{output_dir}, keys(%{$changes{modified_files}}));
-
         add_new_vars(\%changes, $config{varfile})
           if ($update_vars);
+
+        update_rules($config{output_dir}, keys(%{$changes{modified_files}}));
     }
 } else {
     print STDERR "No files modified - no need to backup old files, skipping.\n"
@@ -580,6 +580,12 @@ sub unpack_rules_archive($)
 
   # Suffix has now changed from .tar.gz to .tar.
     $archive =~ s/\.gz$//;
+
+  # Make sure the .tar file now exists.
+  # (Gzip may not return an error if it was not a gzipped file...)
+    clean_exit("failed to unpack gzip file (file transfer failed or ".
+               "file in URL not in gzip format?).")
+      unless (-e  "$archive");
 
   # Read output from "tar tf $archive" into @tar_test, unless we're on win32.
     my @tar_test;
