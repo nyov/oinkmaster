@@ -483,7 +483,7 @@ sub read_config($ $)
 sub sanity_check()
 {
    my @req_params   = qw(path update_files);  # required parameters in conf
-   my @req_binaries = qw(gzip tar);           # always required binaries
+   my @req_binaries = qw(gzip tar);           # required binaries (unless we use modules)
 
   # Can't use both -q and -v.
     clean_exit("quiet mode and verbose mode at the same time doesn't make sense.")
@@ -539,7 +539,8 @@ sub sanity_check()
           if (!$config{careful} && !-w "$config{varfile}");
     }
 
-  # Make sure all required binaries can be found.
+  # Make sure all required binaries can be found, unless
+  # we're used to use Perl modules instead.
   # Wget is only required if url is http[s] or ftp.
     if ($config{use_external_bins}) {
         foreach my $binary (@req_binaries) {
@@ -579,6 +580,32 @@ sub sanity_check()
   # Make sure the output directory is writable unless running in careful mode.
     clean_exit("the output directory \"$config{output_dir}\" isn't writable by you.")
       if (!$config{careful} && !-w "$config{output_dir}");
+
+  # Make sure we have read permission on all rules files in the output dir,
+  # and also write permission unless we're in careful mode.
+  # This is to avoid bailing out in the middle of an execution if a copy
+  # fails because of permission problem.
+    opendir(OUTDIR, "$config{output_dir}")
+      or clean_exit("could not open directory $config{output_dir}: $!");
+
+    while ($_ = readdir(OUTDIR)) {
+
+        next if (/^\.\.?$/ || exists($config{file_ignore_list}{$_}));
+
+        if (/$config{update_files}/) {
+            clean_exit("no read permission on \"$config{output_dir}/$_\"\n".
+                       "(Read permission is required on all rules files ".
+                       "inside the output directory.)\n")
+              unless (-r "$config{output_dir}/$_");
+
+            clean_exit("no write permission on \"$config{output_dir}/$_\"\n".
+                       "(Write permission is required on all rules files ".
+                       "inside the output directory.)\n")
+              if (!$config{careful} && !-w "$config{output_dir}/$_");
+	}
+    }
+
+    closedir(OUTDIR);
 
   # Make sure the backup directory exists and is writable if running with -b.
     if ($config{make_backup}) {
