@@ -15,10 +15,10 @@ o Put oinkmaster.pl in some suitable directory, for example
 o Edit oinkmaster.conf, or at least have a look at it to make sure 
   everything looks ok. There are some options you may want to change 
   before running Oinkmaster, although the defaults should work for most 
-  people. One particular option you should make sure is correctly set is 
+  people. One particular option you must make sure is correctly set is 
   "url", which specifies the location of the rules archive. What URL to 
   use depends on which version of Snort you run (see comments inside
-  oinkmaster.conf for more information).
+  oinkmaster.conf or the FAQ for more information).
 
   In oinkmaster.conf.conf you will then also tell Oinkmaster which SIDs 
   or files you want to disable/enable/modify/ignore. If you already have 
