@@ -642,7 +642,6 @@ sub setup_rules_hash($ @)
               or clean_exit("could not open $config{output_dir}/$file for reading: $!");
 
 	    while (<OLDFILE>) {
-
 	        s/\s*\n$/\n/;                # remove trailing whitespaces (for rules and non-rules)
 
                 if (/$SNORT_RULE_REGEXP/) {  # add rule line to hash
