@@ -91,8 +91,7 @@ remember that a SID statement can be written as
 As use_template statements are simply translated into modifysid 
 statements, you can use multiple use_template for the same SID. They 
 will be processed in order of appearance in the config file, just like 
-regular modifysid statements. Also remember that they apply both on
-active and inactive (disabled) rules. 
+regular modifysid statements.
 
 
 
