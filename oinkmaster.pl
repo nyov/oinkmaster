@@ -1087,7 +1087,7 @@ sub clean_exit($)
     } else {
         $_ = $_[0];
 	chomp;
-        die("\n$0: Error: $_\nOink, oink. Exiting...\n");
+        die("\n$0: Error: $_\n\nOink, oink. Exiting...\n");
     }
 }
 
