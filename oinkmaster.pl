@@ -494,7 +494,7 @@ sub sanity_check()
     }
 
   # Make sure all required binaries can be found.
-  # Wget is not required if user specifies file:// as url. 
+  # Wget is only required if url is http[s] or ftp.
     foreach my $binary (@req_binaries) {
         clean_exit("$binary not found in PATH ($ENV{PATH}).")
           unless (is_in_path($binary));
@@ -552,7 +552,7 @@ sub sanity_check()
     $tmp_basedir = untaint_path($tmp_basedir);
 
   # Make sure stdin and stdout are ttys if we're running in interactive mode.
-    clean_exit("you can not run in interactive mode if STDIN/STDOUT is not a TTY.")
+    clean_exit("you can not run in interactive mode when STDIN/STDOUT is not a TTY.")
       if ($interactive && !(-t STDIN && -t STDOUT));
 }
 
@@ -762,27 +762,24 @@ sub process_rules($ $ $ $)
 
           # We've got a valid rule. If we have already seen this sid, discard this rule.
             if (exists($sids{$sid})) {
-                $_ = basename($file);
-                warn("\nWARNING: duplicate SID in downloaded file $_, ".
-                     "SID=$sid, which has already been seen in $sids{$sid}, ".
-                     "discarding rule \"$msg\"\n");
+                warn("\nWARNING: duplicate SID in downloaded archive, SID $sid in ".
+                     basename($file) . " has already been seen in " . 
+                     basename($sids{$sid}). ", discarding rule \"$msg\"\n");
                 next RULELOOP;
             }
 
-            $sids{$sid} = basename($file);
+            $sids{$sid} = $file;
 
           # Even if it was a single-line rule, we want a copy in $multi.
 	    $multi = $single unless (defined($multi));
 
           # Some rules may be commented out by default. 
           # Enable them if -e is specified.
-	    if ($multi =~ /^#/) {
-	        if ($enable_all) {
-		    print STDERR "Enabling disabled rule (SID $sid): $msg\n"
-		      if ($verbose);
-                    $multi =~ s/^#*//;
-                    $multi =~ s/\n#*/\n/g;
-		}
+	    if ($multi =~ /^#/ && $enable_all) {
+  	        print STDERR "Enabling disabled rule (SID $sid): $msg\n"
+	          if ($verbose);
+                $multi =~ s/^#*//;
+                $multi =~ s/\n#*/\n/g;
 	    }
 
           # Modify rule if requested.
@@ -805,7 +802,7 @@ sub process_rules($ $ $ $)
 	    }
 
           # Disable rule if requested.
-            if (exists($$disable_sid_ref{"$sid"})) {
+            if (exists($$disable_sid_ref{$sid})) {
                 print STDERR "Disabling SID $sid: $msg\n"
                   if ($verbose);
 
@@ -818,7 +815,7 @@ sub process_rules($ $ $ $)
 	    }
 
           # Enable rule if requested.
-            if (exists($$enable_sid_ref{"$sid"})) {
+            if (exists($$enable_sid_ref{$sid})) {
                 print STDERR "Enabling SID $sid: $msg\n"
                   if ($verbose);
 
@@ -836,6 +833,22 @@ sub process_rules($ $ $ $)
     print STDERR "$num_disabled out of " . keys(%sids) . " rules disabled.\n"
       unless ($quiet);
 
+  # Warn on attempt at processing non-existent sids.
+    unless ($quiet) {
+        foreach my $sid (keys(%$modify_sid_ref)) {
+            warn("WARNING: attempt to modify non-existent SID $sid\n")
+              unless (exists($sids{$sid}));
+        }
+        foreach my $sid (keys(%$enable_sid_ref)) {
+            warn("WARNING: attempt to enable non-existent SID $sid\n")
+              unless (exists($sids{$sid}));
+        }
+        foreach my $sid (keys(%$disable_sid_ref)) {
+            warn("WARNING: attempt to disable non-existent SID $sid\n")
+              unless (exists($sids{$sid}));
+        }
+    }
+
   # Return total number of valid rules.
     return (keys(%sids));
 }
@@ -849,7 +862,7 @@ sub process_rules($ $ $ $)
 sub setup_rules_hash($)
 {
     my $new_files_ref = shift;
-    my (%rh, %allsids);
+    my (%rh, %old_sids);
 
     print STDERR "Setting up rules structures... "
       unless ($quiet);
@@ -871,7 +884,6 @@ sub setup_rules_hash($)
 	while (get_next_entry(\@newfile, \$single, \$multi, \$nonrule, \$msg, \$sid)) {
 	    if (defined($single)) {
 		$rh{new}{rules}{"$file"}{"$sid"} = $single;
-		$allsids{new}{"$sid"}++;
 	    } else {                                 # add non-rule line to hash
 	        push(@{$rh{new}{other}{"$file"}}, $nonrule);
 	    }
@@ -887,12 +899,12 @@ sub setup_rules_hash($)
 
 	    while (get_next_entry(\@oldfile, \$single, \$multi, \$nonrule, undef, \$sid)) {
 	        if (defined($single)) {
-		    warn("WARNING: duplicate SID in your local rules, SID ".
+		    warn("\nWARNING: duplicate SID in your local rules, SID ".
                          "$sid exists multiple times, please fix this manually!\n")
-		      if (exists($allsids{old}{"$sid"}));
+		      if (exists($old_sids{$sid}));
 
 	  	    $rh{old}{rules}{"$file"}{"$sid"} = $single;
-	  	    $allsids{old}{"$sid"}++;
+	  	    $old_sids{$sid}++;
                 } else {                     # add non-rule line
 	            push(@{$rh{old}{other}{"$file"}}, $nonrule);
                 }
@@ -961,7 +973,7 @@ sub make_backup($ $)
         if (/$config{update_files}/) {
 	    my $src_file = untaint_path("$src_dir/$_");
             copy("$src_file", "$backup_tmp_dir/")
-              or warn("WARNING: error copying $src_file to $backup_tmp_dir/: $!");
+              or warn("WARNING: could not copy $src_file to $backup_tmp_dir/: $!");
 	}
     }
 
@@ -970,7 +982,7 @@ sub make_backup($ $)
   # Also backup the -U <file> (as "variable-file.conf") if specified.
     if ($update_vars) {
         copy("$config{varfile}", "$backup_tmp_dir/variable-file.conf")
-          or warn("WARNING: error copying $config{varfile} to $backup_tmp_dir: $!")
+          or warn("WARNING: could not copy $config{varfile} to $backup_tmp_dir: $!")
     }
 
     my $old_dir = untaint_path(File::Spec->rel2abs(File::Spec->curdir()));
@@ -1464,7 +1476,7 @@ sub get_next_entry($ $ $ $ $ $)
 
       # Do extra check and warn if it *might* be a rule anyway, 
       # but that we just couldn't parse for some reason.
-        warn("WARNING: line may be a rule but it could not be parsed: $line\n")
+        warn("WARNING: line may be a rule but it could not be parsed (missing sid or msg?): $line\n")
           if ($verbose && $line =~ /^\s*alert .+msg\s*:\s*".+"\s*;/);
 
         $$nonrule_ref = $line;
@@ -1599,7 +1611,9 @@ sub parse_mod_expr($ $ $ $)
         my $repl_qq = "qq/$repl/";
         my $dummy   = "foo";
 
-        eval '$dummy =~ s/$subst/$repl/ee';
+        eval {
+            $dummy =~ s/$subst/$repl_qq/ee;
+        };
 
         if ($@) {
             warn("Invalid regexp: $@");
@@ -1656,13 +1670,13 @@ sub parse_singleline_rule($ $ $)
 
     if ($line =~ /$SINGLELINE_RULE_REGEXP/oi) {
 
-        if ($line =~ /msg\s*:\s*"(.+?)"\s*;/oi) {
+        if ($line =~ /msg\s*:\s*"(.+?)"\s*;/i) {
             $$msg_ref = $1;
         } else {
             return (0);
         }
 
-        if ($line =~ /sid\s*:\s*(\d+)\s*;/oi) {
+        if ($line =~ /sid\s*:\s*(\d+)\s*;/i) {
             $$sid_ref = $1;
         } else {
             return (0);
