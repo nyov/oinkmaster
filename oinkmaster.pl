@@ -104,7 +104,7 @@ $SIG{INT} = \&catch_sigint;
 my $start_date = scalar(localtime);
 
 # Assume the required Perl modules are available if we're on Windows.
-$config{use_external_bins} = 0 if ($^O eq "MSWin32" || $^O =~ /^Windows/);
+$config{use_external_bins} = 0 if ($^O eq "MSWin32");
 
 # Parse command line arguments and add at least %config{output_dir}.
 # Will exit if something is wrong. May set global @config_files.
