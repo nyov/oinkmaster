@@ -227,7 +227,7 @@ my $filetypes = [
 ];
 
 my $oinkscript_frame =
-  create_fileSelectFrame($req_tab, "oinkmaster.pl", 'EXECFILE', 
+  create_fileSelectFrame($req_tab, "oinkmaster.pl", 'EXECFILE',
                          \$config{oinkmaster}, 'NOEDIT', $filetypes);
 
 $balloon->attach($oinkscript_frame, -statusmsg => $help{oinkscript});
@@ -306,7 +306,7 @@ $notebook->pack(
 
 # Create the frame to the left.
 my $left_frame = $main->Frame(
-  -background => "$color{label}", 
+  -background => "$color{label}",
   -border     => '2'
 )->pack(
   -side       => 'left',
@@ -788,7 +788,7 @@ sub show_version()
     }
 
     unless ($config{oinkmaster} && (-x "$config{oinkmaster}" || $^O eq 'MSWin32')) {
-        logmsg("Location to oinkmaster.pl is not set correctly!\n\n", 'ERROR');
+        logmsg("Location of oinkmaster.pl is not set correctly!\n\n", 'ERROR');
         return;
     }
 
@@ -814,7 +814,7 @@ sub show_help()
     }
 
     unless ($config{oinkmaster} && (-x "$config{oinkmaster}" || $^O eq 'MSWin32')) {
-        logmsg("Location to oinkmaster.pl is not set correctly!\n\n", 'ERROR');
+        logmsg("Location of oinkmaster.pl is not set correctly!\n\n", 'ERROR');
         return;
     }
 
@@ -951,14 +951,11 @@ sub create_cmdline($)
     $outdir    = File::Spec->canonpath("$outdir");
     $backupdir = File::Spec->canonpath("$backupdir");
 
-  # Clean leading/trailing whitespaces, also add leading/trailing "" if win32.
+  # Clean leading/trailing whitespaces.
     foreach my $var_ref (\$oinkmaster, \$oinkmaster_conf, \$outdir,
                          \$varfile, \$url, \$backupdir) {
         $$var_ref =~ s/^\s+//;
         $$var_ref =~ s/\s+$//;
-        if ($^O eq 'MSWin32' && $$var_ref) {
-            $$var_ref = "\"$$var_ref\"";
-        }
     }
 
     unless ($perl) {
@@ -967,18 +964,26 @@ sub create_cmdline($)
     }
 
     unless ($oinkmaster && (-x "$oinkmaster" || $^O eq 'MSWin32')) {
-        logmsg("Location to oinkmaster.pl is not set correctly!\n\n", 'ERROR');
+        logmsg("Location of oinkmaster.pl is not set correctly!\n\n", 'ERROR');
         return (0);
     }
 
-    unless ($oinkmaster_conf && -e $oinkmaster_conf) {
-        logmsg("Location to configuration file is not set correctly!\n\n", 'ERROR');
+    unless ($oinkmaster_conf && -f "$oinkmaster_conf") {
+        logmsg("Location of configuration file is not set correctlyy!\n\n", 'ERROR');
         return (0);
     }
 
     unless ($outdir && -d "$outdir") {
         logmsg("Output directory is not set correctly!\n\n", 'ERROR');
         return (0);
+    }
+
+  # Add leading/trailing "" if win32.
+    foreach my $var_ref (\$oinkmaster, \$oinkmaster_conf, \$outdir,
+                         \$varfile, \$url, \$backupdir) {
+        if ($^O eq 'MSWin32' && $$var_ref) {
+            $$var_ref = "\"$$var_ref\"";
+        }
     }
 
     push(@$cmd_ref,
