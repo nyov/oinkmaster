@@ -24,6 +24,7 @@ sub get_changes($ $);
 sub get_new_filenames($ $);
 sub update_rules($ @);
 sub is_in_path($);
+sub get_next_entry($ $ $ $);
 sub clean_exit($);
 
 
@@ -517,66 +518,43 @@ sub disable_and_modify_rules($ $ $)
         clean_exit("$file is not a regular file.")
           unless (-f "$file" && ! -l "$file");
 
-        open(INFILE, "<$file")
-          or clean_exit("could not open $file for reading: $!");
-	@_ = <INFILE>;
+        open(INFILE, "<$file") or clean_exit("could not open $file for reading: $!");
+	my @infile = <INFILE>;
         close(INFILE);
 
       # Write back to the same file.
-	open(OUTFILE, ">$file")
-          or clean_exit("could not open $file for writing: $!");
+	open(OUTFILE, ">$file") or clean_exit("could not open $file for writing: $!");
 
-        RULELOOP: while (my $line = shift(@_)) {
+        my ($single, $multi, $nonrule);
 
-          # Begin parsing multi-line rule if alert-line ends with "\".
-          # XXX should handle inactive rules without screwing up #examples etc...
-	    if ($line =~ /^\s*(?:alert|log|pass) .*\\\n$/) {
-	        my $multiline = $line;
-
-		while ($multiline =~ /\\\n$/) {
-                    $multiline =~ s/\\\n//;
-		    $multiline .= shift(@_);       # XXX || last?
-		}
-
-		$line = $multiline;
-            }
-
-          # Only care about snort rules we understand.
-          # (The other lines are printed right back to the file.)
-            unless ($line =~ /$SNORT_RULE_REGEXP/o) {
-
-	      # Our regexp didn't match, but make a less strict check to see if
-              # it's likely to be a Snort rule anyway. If it is, then print a warning.
-              # Only care about active rules to avoid false alarms.
-   	        if ($line =~ /^\s*(?:alert|log|pass) .*msg.*;\)\n$/) {
-		    $_ = $file;
-                    $_ =~ s/.*\///;    # remove path
-		    warn("\nWARNING: I don't understand this rule in downloaded file $_ ".
-                         "(perhaps bad syntax or missing SID etc?):\n$line");
-                }
-
-              # Write this non-rule line right back to the same file.
-	        print OUTFILE $line;
+	RULELOOP:while (get_next_entry(\@infile, \$single, \$multi, \$nonrule)) {
+	    if (defined($nonrule)) {
+	        print OUTFILE "$nonrule";
 		next RULELOOP;
 	    }
 
           # We've got a valid snort rule. Grab msg and sid.
+	    $single =~ /$SNORT_RULE_REGEXP/;
    	    my ($msg, $sid) = ($1, $2);
 
+          # Even if it was a single-line rule, we want to have a copy in $multi now.
+	    $multi = $single unless (defined($multi));
+
           # Remove unwanted whitespaces.
-            $line =~ s/^\s*//;
-            $line =~ s/\s*\n$/\n/;
-            $line =~ s/^#+\s*/#/;
+          # XXX do this stuff in get_next_entry() for all rules + non-rules?
+            $multi =~ s/^\s*//;
+            $multi =~ s/\s*\n$/\n/;
+            $multi =~ s/^#+\s*/#/;
 
           # Some rules may be commented out by default. Enable them if -e is specified.
-	    if ($line =~ /^#/) {
+	    if ($multi =~ /^#/) {
 		if ($preserve_comments) {
 		    print STDERR "Preserving disabled rule (SID $sid): $msg\n"
 		      if ($verbose);
 		} else {
 		    print STDERR "Enabling disabled rule (SID $sid): $msg\n"
 		      if ($verbose);
-		    $line =~ s/^#*//;
+		    $multi =~ s/^#*//;
 		}
 	    }
 
@@ -588,14 +566,14 @@ sub disable_and_modify_rules($ $ $)
                 $mod =~ s/"$//;
 
                 my ($sub, $repl) = split(/"\s*\|\s*"/, $mod);
-		if ($line =~ /\Q$sub\E/) {
+		if ($multi =~ /\Q$sub\E/) {
   	            print STDERR "Modifying SID $sid with expression: $mod\n" .
-                                 "Before: $line"
+                                 "Before: $multi\n"
 		      if ($verbose);
 
-                    $line =~ s/\Q$sub\E/$repl/;
+                    $multi =~ s/\Q$sub\E/$repl/;
 
-  	  	    print STDERR "After:  $line\n"
+  	  	    print STDERR "After:  $multi\n"
                       if ($verbose);
 		} else {
                    print STDERR "\nWARNING: SID $sid does not contain modifysid-string ".
@@ -608,12 +586,12 @@ sub disable_and_modify_rules($ $ $)
             if (exists($$disable_sid_ref{"$sid"})) {
                 print STDERR "Disabling SID $sid: $msg\n"
                   if ($verbose);
-                $line = "#$line" unless ($line =~ /^\s*#/);
+                $multi = "#$multi" unless ($multi =~ /^\s*#/);
                 $num_disabled++;
 	    }
 
           # Write rule back to the same rules file.
-            print OUTFILE $line;
+            print OUTFILE $multi;
         }
 
         close(OUTFILE);
@@ -1110,6 +1088,86 @@ sub is_in_path($)
     }
 
     return (0);
+}
+
+
+# XXX document
+sub get_next_entry($ $ $ $)
+{
+    my $arr_ref     = shift;
+    my $single_ref  = shift;
+    my $multi_ref   = shift;
+    my $nonrule_ref = shift;
+
+    undef($$single_ref);
+    undef($$multi_ref);
+    undef($$nonrule_ref);
+
+    my $line = shift(@$arr_ref) || return(0);
+
+    if ($line =~ /^\s*#*\s*(?:alert|log|pass) .*\\\s*\n$/) {    # start multi-line rule?
+        $$single_ref = $line;
+        $$multi_ref  = $line;
+
+      # Keep on reading as long as line ends with "\".
+        while ($line =~ /\\\s*\n$/) {
+            $$single_ref =~ s/\s*\\\s*\n//;    # remove "\" for single-line version
+
+          # If there are no more lines, this can not be a valid multi-line rule.
+            if (!($line = shift(@$arr_ref)) || $line =~ /^\s*#/) {
+
+                $$multi_ref .= $line if (defined($line));
+
+                @_ = split(/\n/, $$multi_ref);
+
+                undef($$multi_ref);
+                undef($$single_ref);
+
+              # First line of broken multi-line rule will be returned as a non-rule line.
+                $$nonrule_ref = shift(@_) . "\n";
+
+              # The rest is put back to the array again.
+                foreach $_ (reverse((@_))) {
+                    unshift(@$arr_ref, "$_\n");
+                }
+
+                return (1);
+            }
+
+            $$single_ref .= $line;
+            $$multi_ref  .= $line;
+        }
+
+      # Single-line version should now be a valid rule.
+      # If not, it wasn't a valid multi-line rule after all.
+        if ($$single_ref =~ /$SNORT_RULE_REGEXP/) {
+            return (1);
+        } else {
+            print "invalid multi:\n$$single_ref";             # XXX debug
+
+            @_ = split(/\n/, $$multi_ref);
+
+            undef($$multi_ref);
+            undef($$single_ref);
+
+          # First line of broken multi-line rule will be returned as a non-rule line.
+            $$nonrule_ref = shift(@_) . "\n";
+
+          # The rest is put back to the array again.
+            foreach $_ (reverse((@_))) {
+                unshift(@$arr_ref, "$_\n");
+            }
+
+            return (1);
+        }
+
+    } elsif ($line =~ /$SNORT_RULE_REGEXP/) {                   # single-line rule?
+        $$single_ref = $line;
+        return (1);
+    } else {                                                    # non-rule line?
+        $$nonrule_ref = $line;
+        return (1);
+    }
 }
 
 
