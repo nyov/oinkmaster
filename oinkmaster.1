@@ -62,7 +62,24 @@ any) before updating anything.
 Minimize and simplify diff when printing result by removing common leading
 and trailing parts of the old and new rule, so it's easier to see the
 actual change. A few characters to the left and to the right of the change
-is also printed so you get some context.
+are also printed so you get some context. Normally when a rule has changed
+the entire old and new versions are printed, but the actual change
+between them can be hard to see if the rules are long, complex and many.
+The normal output could look something like this:
+.PP
+.nf
+       Old: alert tcp any any -> any 22 (msg: "foo"; flow:established,to_server;)
+       New: alert tcp any any -> any 123 (msg: "foo"; flow:established,to_server;)
+.fi
+.PP
+       When using
+.B -m
+it would instead look something like:
+.PP
+.nf
+       Old: ... any any -> any 22 (msg: "foo";...
+       New: ... any any -> any 123 (msg: "foo";...
+.fi
 .IP "\fB-q
 Run in quiet mode. Nothing is printed unless there are changes in the 
 rules or if there are errors or warnings.
