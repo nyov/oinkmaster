@@ -32,6 +32,7 @@ o oinkmaster.conf will be searched for in /etc/ and /usr/local/etc/ by default.
 o Make contrib/create-sidmap.pl and contrib/addsid.pl take an arbtitrary number
   of directories as argument.
 o Added a FAQ.
+o Ctrl-C will now do a clean exit.
 o Use ISO 8601 format for date string in backup filename.
 
 

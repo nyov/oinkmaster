@@ -35,6 +35,7 @@ sub parse_mod_expr($ $ $ $);
 sub untaint_path($);
 sub approve_changes();
 sub parse_singleline_rule($ $ $);
+sub catch_sigint();
 sub clean_exit($);
 
 
@@ -95,6 +96,8 @@ select(STDERR);
 $| = 1;
 select(STDOUT);
 $| = 1;
+
+$SIG{INT} = \&catch_sigint;
 
 my $start_date = scalar(localtime);
 
@@ -1665,6 +1668,16 @@ sub parse_singleline_rule($ $ $)
 
 
 
+# Catch SIGINT.
+sub catch_sigint()
+{
+    $SIG{INT} = 'IGNORE';
+    print STDERR "\nInterrupted, cleaning up and exiting.\n";
+    clean_exit("");
+}
+
+
+
 # Remove temporary directory and exit.
 # If a non-empty string is given as argument, it will be regarded
 # as an error message and we will use die() with the message instead
@@ -1674,6 +1687,7 @@ sub clean_exit($)
     if (defined($tmpdir)) {
         chdir(File::Spec->rootdir());
         rmtree("$tmpdir", 0, 1);
+        undef($tmpdir);
     }
 
     if ($_[0] eq "") {
