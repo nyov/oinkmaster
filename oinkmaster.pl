@@ -401,7 +401,7 @@ sub sanity_check()
 
   # If a variable file (probably local snort.conf) has been specified,
   # it must exist. It must also be writable unless we're in careful mode.
-    if (exists($config{varfile})) {
+    if ($update_vars) {
         clean_exit("file $config{varfile} does not exist.")
           unless (-e "$config{varfile}");
 
