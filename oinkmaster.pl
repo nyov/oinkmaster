@@ -160,14 +160,15 @@ unless ($config{use_external_bins}) {
 # A new PATH will be set.
 sanity_check();
 
+# Create temporary dir.
+$tmpdir = tempdir("oinkmaster.XXXXXXXXXX", DIR => File::Spec->rel2abs($config{tmp_basedir}))
+  or clean_exit("could not create temporary directory in $config{tmp_basedir}: $!");
+
 # If we're in config test mode and have come this far, we're done.
 if ($config{config_test_mode}) {
     print "No fatal errors in configuration.\n";
     clean_exit("");
 }
-
-$tmpdir = tempdir("oinkmaster.XXXXXXXXXX", DIR => $config{tmp_basedir})
-  or clean_exit("could not create temporary directory in $config{tmp_basedir}: $!");
 
 umask($config{umask}) if exists($config{umask});
 
@@ -293,7 +294,7 @@ Options:
            but not in the downloaded rules archive
 -T         Test configuration and then exit
 -u <url>   Download from this URL instead of the one in the configuration file
-           (must be http://, https://, ftp://, file:// or scp:// ... .tar.gz) 
+           (must be http://, https://, ftp://, file:// or scp:// ... .tar.gz)
 -U <file>  Merge new variables from downloaded snort.conf into <file>
 -v         Verbose mode
 -V         Show version and exit
@@ -517,7 +518,7 @@ sub sanity_check()
         "foo" =~ /$config{update_files}/;
     };
 
-    clean_exit("update_files ($config{update_files}) is not a valid regexp: $@")
+    clean_exit("update_files (\"$config{update_files}\") is not a valid regexp: $@")
       if ($@);
 
   # Make sure $config{rule_actions} is a valid regexp.
@@ -525,7 +526,7 @@ sub sanity_check()
         "foo" =~ /$config{rule_actions}/;
     };
 
-    clean_exit("rule_actions ($config{rule_actions}) is not a valid regexp: $@")
+    clean_exit("rule_actions (\"$config{rule_actions}\") is not a valid regexp: $@")
       if ($@);
 
   # If a variable file (probably local snort.conf) has been specified,
@@ -533,10 +534,10 @@ sub sanity_check()
     if ($config{update_vars}) {
 	$config{varfile} = untaint_path($config{varfile});
 
-        clean_exit("variable file $config{varfile} does not exist.")
+        clean_exit("variable file \"$config{varfile}\" does not exist.")
           unless (-e "$config{varfile}");
 
-        clean_exit("variable file $config{varfile} is not writable by you.")
+        clean_exit("variable file \"$config{varfile}\" is not writable by you.")
           if (!$config{careful} && !-w "$config{varfile}");
     }
 
@@ -566,7 +567,7 @@ sub sanity_check()
       if ($config{'url'} =~ /^scp:/ && !is_in_path("scp"));
 
   # ssh key must exist if specified and url is scp://...
-    clean_exit("ssh key $config{scp_key} does not exist.")
+    clean_exit("ssh key \"$config{scp_key}\" does not exist.")
       if ($config{'url'} =~ /^scp:/ && exists($config{scp_key})
         && !-e $config{scp_key});
 
@@ -623,7 +624,7 @@ sub sanity_check()
     }
 
   # Make sure temporary directory exists.
-    clean_exit("the temporary directory $config{tmp_basedir} does not ".
+    clean_exit("the temporary directory \"$config{tmp_basedir}\" does not ".
                "exist or isn't writable by you.")
       if (!-d "$config{tmp_basedir}" || !-w "$config{tmp_basedir}");
 
