@@ -1,5 +1,13 @@
 v0.9 - 200xxxxx
 ~~~~~~~~~~~~~~~
+o Permit https://... in url specification. Only useful if your wget is 
+  SSL-enabled and you download from an SSL-enabled site.
+o Permit scp://user@remotehost:/file.tar.gz in url specification.
+  The rules archive will be copied from remotehost using scp (only 
+  tested with OpenSSH). You can specify a private key with scp_key = ... 
+  in oinkmaster.conf (or set it in ~/.ssh/config).
+o You can now specify "-i" for interactive mode. You will be asked
+  to approve the changes before Oinkmaster modifies anything.
 
 
 
