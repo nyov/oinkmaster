@@ -346,9 +346,9 @@ Options:
           but not in the downloaded rules archive
 -s        Leave out details in rules results, just print SID, msg and filename
 -T        Config test - just check configuration file(s) for errors/warnings
--u <url>  Download from this URL instead of the one in the configuration file
+-u <url>  Download from this URL instead of URL(s) in the configuration file
           (must be http://, https://, ftp://, file:// or scp:// ... .tar.gz)
-          May be specified multiple times to grab multiple rules archives.
+          May be specified multiple times to grab multiple rules archives
 -U <file> Merge new variables from downloaded snort.conf into <file>
 -v        Verbose mode (debug)
 -V        Show version and exit
