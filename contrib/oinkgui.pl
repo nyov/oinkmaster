@@ -70,7 +70,7 @@ sub execute_oinkmaster(@);
 sub logmsg($ $);
 
 
-my $version = 'Oinkmaster GUI v1.0';
+my $version = 'Oinkmaster GUI v1.1';
 
 my @oinkmaster_conf = qw(
     /etc/oinkmaster.conf
@@ -106,6 +106,7 @@ my %config = (
     enable_all       => 0,
     check_removed    => 0,
     mode             => 'normal',
+    perl             => $^X,
     oinkmaster       => "",
     oinkmaster_conf  => "",
     outdir           => "",
@@ -154,7 +155,6 @@ my %help = (
 
 
 my $gui_config_file = "";
-my $perl            = "";
 my $use_fileop      = 0;
 
 
@@ -188,15 +188,6 @@ foreach my $file (@oinkmaster_conf) {
     if (-e "$file") {
         $config{oinkmaster_conf} = $file;
         last;
-    }
-}
-
-# Look for Perl binary.
-PERL:foreach my $dir (File::Spec->path()) {
-    my $file = File::Spec->catfile("$dir", 'perl');
-    if ((-f "$file" && -x "$file") || (-f "$file.exe" && -x "$file.exe")) {
-        $perl = $file;
-        last PERL;
     }
 }
 
@@ -841,18 +832,13 @@ sub show_version()
     $config{oinkmaster} =~ s/^\s+//;
     $config{oinkmaster} =~ s/\s+$//;
 
-    unless ($perl) {
-        logmsg("Perl binary not found in PATH!\n\n", 'ERROR');
-        return;
-    }
-
     unless ($config{oinkmaster} && -f "$config{oinkmaster}" &&
      (-x "$config{oinkmaster}" || $^O eq 'MSWin32')) {
         logmsg("Location of oinkmaster.pl is not set correctly!\n\n", 'ERROR');
         return;
     }
 
-    my $cmd = "$perl $config{oinkmaster} -V";
+    my $cmd = "$config{perl} $config{oinkmaster} -V";
     logmsg("$cmd:\n", 'EXEC');
     $main->Busy(-recurse => 1);
     my $output = `$cmd 2>&1` || "Could not execute $config{oinkmaster}: $!\n";
@@ -868,18 +854,13 @@ sub show_help()
     $config{oinkmaster} =~ s/^\s+//;
     $config{oinkmaster} =~ s/\s+$//;
 
-    unless ($perl) {
-        logmsg("Perl binary not found in PATH!\n\n", 'ERROR');
-        return;
-    }
-
     unless ($config{oinkmaster} && -f "$config{oinkmaster}" &&
      (-x "$config{oinkmaster}" || $^O eq 'MSWin32')) {
         logmsg("Location of oinkmaster.pl is not set correctly!\n\n", 'ERROR');
         return;
     }
 
-    my $cmd = "$perl $config{oinkmaster} -h";
+    my $cmd = "$config{perl} $config{oinkmaster} -h";
     logmsg("$cmd:\n", 'EXEC');
     $main->Busy(-recurse => 1);
     my $output = `$cmd 2>&1` || "Could not execute $config{oinkmaster}: $!\n";
@@ -934,11 +915,6 @@ sub execute_oinkmaster(@)
 sub test_config()
 {
     my @cmd;
-
-    unless ($perl) {
-        logmsg("Perl binary not found in PATH!\n\n", 'ERROR');
-        return;
-    }
 
     create_cmdline(\@cmd) || return;
 
@@ -1029,11 +1005,6 @@ sub create_cmdline($)
         $$var_ref =~ s/\s+$//;
     }
 
-    unless ($perl) {
-        logmsg("Perl binary not found in PATH!\n\n", 'ERROR');
-        return (0);
-    }
-
     unless ($config{oinkmaster} && -f "$config{oinkmaster}" &&
      (-x "$config{oinkmaster}" || $^O eq 'MSWin32')) {
         logmsg("Location of oinkmaster.pl is not set correctly!\n\n", 'ERROR');
@@ -1059,7 +1030,7 @@ sub create_cmdline($)
     }
 
     push(@$cmd_ref,
-      "$perl", "$oinkmaster",
+      "$config{perl}", "$oinkmaster",
       "-C", "$oinkmaster_conf",
       "-o", "$outdir");
 
