@@ -405,7 +405,7 @@ sub read_config($ $)
 sub sanity_check()
 {
    my @req_params   = qw (path update_files);  # required parameters in conf
-   my @req_binaries = qw (gzip rm tar);        # always required binaries
+   my @req_binaries = qw (gzip tar);           # always required binaries
 
   # Can't use both -q and -v.
     clean_exit("quiet mode and verbose mode at the same time doesn't make sense.")
