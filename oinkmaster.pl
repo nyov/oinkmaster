@@ -793,7 +793,7 @@ sub print_changes($ $)
   # Print added non-rule lines.
      if (exists($$ch_ref{other}{added})) {
         print "\n[+++]      Added non-rule lines:     [+++]\n";
-        foreach my $file (keys(%{$$ch_ref{other}{added}})) {
+        foreach my $file (sort({uc($a) cmp uc($b)} keys(%{$$ch_ref{other}{added}}))) {
             print "\n     -> File $file:\n";
             foreach my $line (@{$$ch_ref{other}{added}{$file}}) {
                 print "        $line";
@@ -850,7 +850,7 @@ sub print_changetype($ $ $)
     my $ch_ref = shift;
     my $rh_ref = shift;
 
-    foreach my $file (keys(%$ch_ref)) {
+    foreach my $file (sort({uc($a) cmp uc($b)} keys(%$ch_ref))) {
         print "\n     -> File $file:\n";
         foreach my $sid (keys(%{$$ch_ref{$file}})) {
 	    if ($type == $PRINT_OLD) {
