@@ -1090,12 +1090,12 @@ sub get_next_entry($ $ $ $)
 
       # Keep on reading as long as line ends with "\".
         while ($line =~ /\\\s*\n$/) {
-            $$single_ref =~ s/\\\s*\n//;    # remove "\" for single-line version
+            $$single_ref =~ s/\\\s*\n//;    # remove trailing "\" for single-line version
 
           # If there are no more lines, this can not be a valid multi-line rule.
-            if (!($line = shift(@$arr_ref)) || $line =~ /^\s*#/) {
+            if (!($line = shift(@$arr_ref))) {
 
-                $$multi_ref .= $line if (defined($line));
+                $$multi_ref .= $line;
 
                 @_ = split(/\n/, $$multi_ref);
 
@@ -1114,17 +1114,18 @@ sub get_next_entry($ $ $ $)
                 return (1);   # return non-rule
             }
 
-            $$single_ref .= $line;
             $$multi_ref  .= $line;
+            $line =~ s/^\s*#*//;                  # In single-line version, remove leading #'s first
+            $$single_ref .= $line;
         }
 
       # Single-line version should now be a valid rule.
       # If not, it wasn't a valid multi-line rule after all.
         if ($$single_ref =~ /$SNORT_RULE_REGEXP/) {
 
-            $$single_ref =~ s/^\s*//;                # remove leading whitespaces
-	    $$single_ref =~ s/^#+\s*/#/;             # remove whitespaces next to the leading #
-	    $$single_ref =~ s/\s*\n$/\n/;            # remove trailing whitespaces
+            $$single_ref =~ s/^\s*//;             # remove leading whitespaces
+	    $$single_ref =~ s/^#+\s*/#/;          # remove whitespaces next to the leading #
+	    $$single_ref =~ s/\s*\n$/\n/;         # remove trailing whitespaces
 
             $$multi_ref  =~ s/^\s*//;
             $$multi_ref  =~ s/\s*\n$/\n/;
@@ -1133,8 +1134,6 @@ sub get_next_entry($ $ $ $)
             return (1);   # return multi
 
         } else {
-            print "invalid multi:\n$$single_ref";    # XXX debug
-
             @_ = split(/\n/, $$multi_ref);
 
             undef($$multi_ref);
