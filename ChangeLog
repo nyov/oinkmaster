@@ -27,6 +27,9 @@ o Default URL is now
 o In verbose mode, print warning if a file in the downloaded archive is empty.
 o Don't require write permission in the output directory when running with -c.
   Pointed out by arjones@simultan.dyndns.org.
+o Don't care about trailing whitespaces for non-rule lines (to avoid getting
+  a diff where the same line appears to have been both added and removed when
+  only a traling whitespace has been removed etc).
 o Many internal cleanups and minor bug fixes.
 
 

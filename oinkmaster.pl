@@ -579,8 +579,13 @@ sub setup_rules_hash($ $ @)
 	$file =~ s/.*\///;
 
 	while (<NEWFILE>) {
+            s/\s*\n$/\n/;         # remove trailing whitespaces (for both rules and non-rules)
+
 	    if (/$SNORT_RULE_REGEXP/) {        # add rule line to hash
 	        my $sid = $2;
+  	        s/^\s*//;         # remove leading whitespaces
+		s/^#+\s*/#/;      # remove whitespaces next to the leading #
+
 		warn("WARNING: duplicate SID in downloaded rules archive in file ".
                      "$file: SID $sid\n")
 		  if (exists($$rh_ref{new}{rules}{"$file"}{"$sid"}));
@@ -598,17 +603,19 @@ sub setup_rules_hash($ $ @)
               or clean_exit("could not open $output_dir/$file for reading: $!");
 
 	    while (<OLDFILE>) {
-                if (/$SNORT_RULE_REGEXP/) {
+
+	        s/\s*\n$/\n/;         # remove trailing whitespaces (for both rules and non-rules)
+
+                if (/$SNORT_RULE_REGEXP/) {        # add rule line to hash
 		    my $sid = $2;
 		    s/^\s*//;         # remove leading whitespaces
-		    s/\s*\n$/\n/;     # remove trailing whitespaces
 		    s/^#+\s*/#/;      # remove whitespaces next to the leading #
 
 		    warn("WARNING: duplicate SID in your local rules in file ".
                          "$file: SID $sid\n")
 	  	      if (exists($$rh_ref{old}{rules}{"$file"}{"$sid"}));
 	  	    $$rh_ref{old}{rules}{"$file"}{"$sid"} = $_;
-                } else {
+                } else {                           # add non-rule line to hash
 	            push(@{$$rh_ref{old}{other}{"$file"}}, $_);
                 }
             }
