@@ -20,9 +20,10 @@ sub find_line;
 sub do_backup;
 sub clean_exit;
 
-my $version           = 'Oinkmaster v0.7 by Andreas Östling <andreaso@it.su.se>';
+my $VERSION           = 'Oinkmaster v0.7 by Andreas Östling <andreaso@it.su.se>';
+my $TMPDIR            = "/tmp/oinkmaster.$$";
+
 my $config_file       = "./oinkmaster.conf";
-my $tmpdir            = "/tmp/oinkmaster.$$";
 my $outfile           = "snortrules.tar.gz";
 my $verbose           = 0;
 my $careful           = 0;
@@ -34,8 +35,10 @@ my $check_removed     = 0;
 my $preserve_comments = 1;
 
 # Regexp to match a snort rule line.
-# The msg string will go into $1 and the sid will go into $2.
-my $snort_rule_regexp = '^\s*#*\s*(?:alert|log|pass) .+msg\s*:\s*"(.+?)"\s*;.+sid\s*:\s*(\d+)\s*;';
+# Multiline rules are currently not handled, but at this time,
+# all of the official rules are one rule per line.
+# The msg string will go into $1 and the sid will go into $2 if the regexp matches.
+my $SNORT_RULE_REGEXP = '^\s*#*\s*(?:alert|log|pass) .+msg\s*:\s*"(.+?)"\s*;.+sid\s*:\s*(\d+)\s*;';
 
 use vars qw
    (
@@ -44,7 +47,7 @@ use vars qw
 
 my (
       $output_dir, $sid, $old_rule, $new_rule, $file, $backup_dir,
-      $start_date, $added_files, $removed_files, $url, $skip_diff_files
+      $start_date, $added_files, $removed_files, $url
    );
 
 my (
@@ -75,12 +78,12 @@ read_config;
 # A new PATH will be set.
 sanity_check;
 
-# Create empty temporary directory.
-mkdir("$tmpdir", 0700)
-  or die("Could not create temporary directory $tmpdir: $!\nExiting");
+# Create empty temporary directory. Die if we can't create unique filename.
+mkdir("$TMPDIR", 0700)
+  or die("Could not create temporary directory $TMPDIR: $!\nExiting");
 
 # Download the rules archive.
-# This will leave us with the file $tmpdir/$outfile (/tmp/oinkmaster.$$/snortrules.tar.gz).
+# This will leave us with the file $TMPDIR/$outfile (/tmp/oinkmaster.$$/snortrules.tar.gz).
 download_rules;
 
 # Verify and unpack archive. This will leave us with a directory
@@ -89,8 +92,8 @@ unpack_rules_archive;
 
 # Add filenames to update from the downloaded archive to the list of new
 # files, unless filename exists in %file_ignore_list.
-opendir(NEWRULES, "$tmpdir/rules")
-  or clean_exit("Could not open directory $tmpdir/rules: $!");
+opendir(NEWRULES, "$TMPDIR/rules")
+  or clean_exit("Could not open directory $TMPDIR/rules: $!");
 while ($_ = readdir(NEWRULES)) {
     $new_files{$_}++
       if (/$config{update_files}/ && !exists($file_ignore_list{$_}));
@@ -111,7 +114,7 @@ setup_rule_hashes;
 
 # Time to compare the new rules to the old ones.
 # For each rule in the new file, check if the rule also exists
-# in the old file.  If it does then check if it has been modified,
+# in the old file. If it does then check if it has been modified,
 # but if it doesn't, it must have been added.
 
 print STDERR "Comparing new files to the old ones... "
@@ -120,22 +123,13 @@ print STDERR "Comparing new files to the old ones... "
 FILELOOP:foreach $file (keys(%new_files)) {                  # for each new file
     next FILELOOP if (exists($added_files{$file}));          # skip diff if it's an added file
 
-  # Skip diff if file maches skip_diff regexp. Not documented and perhaps not even working?
-    if (exists($config{skip_diff}) && $file =~ /$config{skip_diff}/) {
-	$skip_diff_files .= "\n    -> $file";
-	$skip_diff_files .= " (local copy updated)" unless ($careful);
-	$skip_diff_files .= "\n";
-	$modified_files{$file}++;
-        next FILELOOP;
-    }
-
   # This one will tell us if the filename info has been printed or not.
     undef(%printed);
 
     foreach $sid (keys(%{$new_rules{$file}})) {         # for each sid in the new file
         $new_rule = $new_rules{$file}{$sid};            # save the rule in $new_rule for easier access
             if (exists($old_rules{$file}{$sid})) {      # does this sid also exist in the old rules file?
-                $old_rule = $old_rules{$file}{$sid};    # yes, put old rule in $old_rule
+                $old_rule = $old_rules{$file}{$sid};    # yes, put old rule in $old_rule for easier access
 
 		unless ($new_rule eq $old_rule) {                             # are they identical?
 		    $rules_changed = 1;
@@ -212,10 +206,10 @@ if ($check_removed) {
 
 print STDERR "done.\n" unless ($quiet);
 
-# Update files listed in %modified_files (move the new files from the temporary
-# directory into our -o <dir>, unless we're running in careful mode.
+# Update files listed in %modified_files (move these new files from the temporary
+# directory into our -o <dir>) unless we're running in careful mode.
 # Also create backup first if running with -b.
-if ($rules_changed || $other_changed || defined($skip_diff_files)) {
+if ($rules_changed || $other_changed) {
     if ($careful) {
         print STDERR "No need to backup old files (running in careful mode), skipping.\n"
           if (defined($backup_dir) && (!$quiet));
@@ -224,8 +218,8 @@ if ($rules_changed || $other_changed || defined($skip_diff_files)) {
 
       # Move each modified file from the temporary directory to the output directory.
         foreach $_ (keys(%modified_files)) {
-            move("$tmpdir/rules/$_", "$output_dir/$_")
-              or clean_exit("Could not move $tmpdir/rules/$_ to $output_dir/$_: $!")
+            move("$TMPDIR/rules/$_", "$output_dir/$_")
+              or clean_exit("Could not move $TMPDIR/rules/$_ to $output_dir/$_: $!")
         }
     }
 } else {
@@ -236,16 +230,16 @@ if ($rules_changed || $other_changed || defined($skip_diff_files)) {
 # Move files listed in %added_files into our output directory unless careful mode.
 unless ($careful) {
     foreach $_ (keys(%added_files)) {
-        move("$tmpdir/rules/$_", "$output_dir/$_")
-          or clean_exit("Could not move $tmpdir/rules/$_ to $output_dir/$_: $!")
+        move("$TMPDIR/rules/$_", "$output_dir/$_")
+          or clean_exit("Could not move $TMPDIR/rules/$_ to $output_dir/$_: $!")
     }
 }
 
 # Time to print the results.
 
 $something_changed = 1
-  if ($rules_changed || $other_changed
-      || keys(%added_files) > 0 || defined($removed_files));
+  if ($rules_changed || $other_changed ||
+    keys(%added_files) > 0 || defined($removed_files));
 
 if ($something_changed || !$quiet) {
     print "\nNote: Oinkmaster is running in careful mode - not updating/adding anything.\n"
@@ -308,12 +302,6 @@ if ($something_changed || !$quiet) {
         }
     }
 
-  # Print list of possibly modified files that matched config{skip_diff}
-    if (defined($skip_diff_files)) {
-        print "\n[*] Possibly modified files where diff excluded by request: [*]\n".
-              "$skip_diff_files";
-    }
-
     print "\n";
 }
 
@@ -325,7 +313,7 @@ clean_exit;
 
 sub show_usage
 {
-    print STDERR "$version\n\n".
+    print STDERR "$VERSION\n\n".
                  "Usage: $0 -o <dir> [options]\n\n".
 		 "<dir> is where to put the new files.\n".
 	         "This should be the directory where you store your snort.org rules.\n".
@@ -487,19 +475,19 @@ sub download_rules
         if ($quiet) {
             clean_exit("Unable to download rules.\n".
                        "Consider running in non-quiet mode if the problem persists.")
-              if (system("wget","-q","-nv","-O","$tmpdir/$outfile","$url"));   # quiet mode
+              if (system("wget","-q","-nv","-O","$TMPDIR/$outfile","$url"));   # quiet mode
         } elsif ($verbose) {
             clean_exit("Unable to download rules.")
-              if (system("wget","-v","-O","$tmpdir/$outfile","$url"));         # verbose mode
+              if (system("wget","-v","-O","$TMPDIR/$outfile","$url"));         # verbose mode
         } else {
             clean_exit("Unable to download rules.")
-              if (system("wget","-nv","-O","$tmpdir/$outfile","$url"));        # normal mode
+              if (system("wget","-nv","-O","$TMPDIR/$outfile","$url"));        # normal mode
         }
     } else {                           # Grab file from local filesystem.
         $url =~ s/^file:\/\///;        # Remove file://, the rest is the actual filename.
 	clean_exit("The file $url does not exist.\n")       unless (-e "$url");
         print STDERR "Copying rules archive from $url...\n" unless ($quiet);
-        copy("$url", "$tmpdir/$outfile") or clean_exit("Unable to copy $url to $tmpdir/$outfile: $!");
+        copy("$url", "$TMPDIR/$outfile") or clean_exit("Unable to copy $url to $TMPDIR/$outfile: $!");
     }
 }
 
@@ -515,11 +503,11 @@ sub unpack_rules_archive
     $tmpoutfile = $outfile;                # so we don't modify the global $outfile variable
 
     $old_dir = getcwd or clean_exit("Could not get current directory: $!");
-    chdir("$tmpdir")  or clean_exit("Could not change directory to $tmpdir: $!");
+    chdir("$TMPDIR")  or clean_exit("Could not change directory to $TMPDIR: $!");
 
     unless (-s "$tmpoutfile") {
         clean_exit("Failed to get rules archive: ".
-                   "$tmpdir/$tmpoutfile doesn't exist or hasn't non-zero size.");
+                   "$TMPDIR/$tmpoutfile doesn't exist or hasn't non-zero size.");
     }
 
   # Run integrity check (gzip -t) on the gzip file.
@@ -562,7 +550,7 @@ sub unpack_rules_archive
     clean_exit("No \"rules/\" directory found in tar file.")
       unless (-d "rules");
 
-    chdir("$old_dir") or clean_exit("Could not change directory back to $tmpdir: $!");
+    chdir("$old_dir") or clean_exit("Could not change directory back to $TMPDIR: $!");
 
     print STDERR "done.\n" unless ($quiet);
 }
@@ -585,14 +573,14 @@ sub disable_rules
     print STDERR "\n" if ($verbose);
 
     foreach $file (keys(%new_files)) {
-        open(INFILE, "<$tmpdir/rules/$file") or clean_exit("Could not open $tmpdir/rules/$file: $!");
+        open(INFILE, "<$TMPDIR/rules/$file") or clean_exit("Could not open $TMPDIR/rules/$file: $!");
 	@_ = <INFILE>;
         close(INFILE);
 
       # Write back to the same file.
-	open(OUTFILE, ">$tmpdir/rules/$file") or clean_exit("Could not open $tmpdir/rules/$file: $!");
+	open(OUTFILE, ">$TMPDIR/rules/$file") or clean_exit("Could not open $TMPDIR/rules/$file: $!");
 	RULELOOP:foreach $line (@_) {
-            unless ($line =~ /$snort_rule_regexp/) {    # only care about snort rules
+            unless ($line =~ /$SNORT_RULE_REGEXP/) {    # only care about snort rules
 	        print OUTFILE $line;
 		next RULELOOP;
 	    }
@@ -653,9 +641,9 @@ sub setup_rule_hashes
     my ($file, $sid);
 
     foreach $file (keys(%new_files)) {
-        open(NEWFILE, "<$tmpdir/rules/$file") or clean_exit("Could not open $tmpdir/rules/$file: $!");
+        open(NEWFILE, "<$TMPDIR/rules/$file") or clean_exit("Could not open $TMPDIR/rules/$file: $!");
 	while (<NEWFILE>) {
-	    if (/$snort_rule_regexp/) {
+	    if (/$SNORT_RULE_REGEXP/) {
 	        $sid = $2;
 		print STDERR "WARNING: duplicate SID in downloaded rules archive: SID $sid\n"
 		  if (exists($new_rules{"$file"}{"$sid"}) && !$quiet);
@@ -670,7 +658,7 @@ sub setup_rule_hashes
         if (-f "$output_dir/$file") {
             open(OLDFILE, "<$output_dir/$file") or clean_exit("Could not open $output_dir/$file: $!");
 	    while (<OLDFILE>) {
-                if (/$snort_rule_regexp/) {
+                if (/$SNORT_RULE_REGEXP/) {
 		    $sid = $2;
 		    s/^\s*//;     # remove leading whitespaces
 		    s/\s*\n$/\n/; # remove trailing whitespaces
@@ -737,7 +725,7 @@ sub do_backup
     my ($date, $tmpbackupdir, $old_dir);
 
     $date = strftime("%Y%m%d-%H%M", localtime);
-    $tmpbackupdir = "$tmpdir/rules-backup-$date";
+    $tmpbackupdir = "$TMPDIR/rules-backup-$date";
 
     print STDERR "Creating backup of old rules..." unless ($quiet);
 
@@ -752,13 +740,13 @@ sub do_backup
     }
     closedir(OLDRULES);
 
-  # Change directory to $tmpdir (so we'll be right below the directory where
+  # Change directory to $TMPDIR (so we'll be right below the directory where
   # we have our rules to be backed up).
     $old_dir = getcwd or clean_exit("Could not get current directory: $!");
-    chdir("$tmpdir")  or clean_exit("Could not change directory to $tmpdir: $!");
+    chdir("$TMPDIR")  or clean_exit("Could not change directory to $TMPDIR: $!");
 
   # Execute tar command. This will archive "rules-backup-$date/"
-  # into the file rules-backup-$date.tar, placed in $tmpdir.
+  # into the file rules-backup-$date.tar, placed in $TMPDIR.
     print STDERR "WARNING: tar command did not exit with status 0 when archiving backup files.\n"
       if (system("tar","cf","rules-backup-$date.tar","rules-backup-$date"));
 
@@ -771,8 +759,8 @@ sub do_backup
     chdir("$old_dir") or clean_exit("Could not change directory back to $old_dir: $!");
 
   # Move the archive to the backup directory.
-    move("$tmpdir/rules-backup-$date.tar.gz", "$backup_dir/")
-      or print STDERR "WARNING: unable to move $tmpdir/rules-backup-$date.tar.gz to $backup_dir/: $!\n";
+    move("$TMPDIR/rules-backup-$date.tar.gz", "$backup_dir/")
+      or print STDERR "WARNING: unable to move $TMPDIR/rules-backup-$date.tar.gz to $backup_dir/: $!\n";
 
     print STDERR " saved as $backup_dir/rules-backup-$date.tar.gz.\n"
       unless ($quiet);
@@ -784,8 +772,8 @@ sub do_backup
 # Remove temporary directory and exit.
 sub clean_exit
 {
-    system("rm","-r","-f","$tmpdir")
-      and print STDERR "WARNING: unable to remove temporary directory $tmpdir.\n";
+    system("rm","-r","-f","$TMPDIR")
+      and print STDERR "WARNING: unable to remove temporary directory $TMPDIR.\n";
 
     if (defined($_[0])) {
         $_ = $_[0];

@@ -2,8 +2,10 @@ v0.7 - 2002XXXX
 ~~~~~~~~~~~~~~~
 o Don't print warning when using "-e" in quiet mode.
 o "-p" is now not just obsolete, but invalid.
-o Support file://... in URL. File will be copied from the
-  local filesystem. Suggested by aidan.carty@entropy.ie.
+o Support file://<filename> syntax in URL specification.
+  Rules archive will be copied directly from the local filesystem
+  (which must have been put there ahead of time).
+  Suggested by aidan.carty@entropy.ie.
 o sid-msg.map will now be updated by default.
 o Warn instead of exit in case of invalid lines in the config file.
 o Added possibility to modify sids, using the "modifysid" keyword
