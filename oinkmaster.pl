@@ -909,7 +909,7 @@ sub print_changes($ $)
   # Print modified inactive rules.
     if (exists($$ch_ref{rules}{mod_ina})) {
         print "\n[///]    Modified inactive rules:    [///]\n";
-	print_changetype($PRINT_BOTH, "Modified active in",
+	print_changetype($PRINT_BOTH, "Modified inactive in",
                          \%{$$ch_ref{rules}{mod_ina}}, $rh_ref);
     }
 
