@@ -25,6 +25,7 @@ sub get_new_filenames($ $);
 sub update_rules($ @);
 sub is_in_path($);
 sub get_next_entry($ $ $ $);
+sub make_tempdir($);
 sub clean_exit($);
 
 
@@ -58,7 +59,7 @@ use vars qw
    );
 
 my (
-      $tmpdir, %config, %new_files
+      %config, %new_files
    );
 
 
@@ -81,14 +82,7 @@ parse_cmdline(\%config);
 read_config($config_file, \%config);
 
 # Create empty temporary directory.
-if (exists($config{tmpdir})) {
-    $tmpdir = "$config{tmpdir}/oinkmaster.$$";
-} else {
-    $tmpdir = "$TMP_BASEDIR/oinkmaster.$$";
-}
-
-mkdir("$tmpdir", 0700)
-  or die("Could not create temporary directory $tmpdir: $!\nExiting");
+my $tmpdir = make_tempdir(exists($config{tmpdir}) ? $config{tmpdir} : $TMP_BASEDIR);
 
 # Do some basic sanity checking and exit if something fails.
 # A new PATH will be set.
@@ -1174,6 +1168,26 @@ sub get_next_entry($ $ $ $)
 	$$nonrule_ref =~ s/\s*\n$/\n/;           # remove trailing whitespaces
         return (1);   # return non-rule
     }
+}
+
+
+
+# Create empty temporary directory inside the directory given as argument.
+# Will die if we can't create it.
+# If successful, the name of the created directory is returned.
+sub make_tempdir($)
+{
+    my $base = shift;
+
+    die("The temporary base directory $base does not exist.\nExiting...\n")
+      unless (-d "$base");
+
+    my $tmpdir = "$base/oinkmaster.$$";
+
+    mkdir("$tmpdir", 0700)
+      or die("Could not create temporary directory $tmpdir: $!\nExiting...\n");
+
+    return ($tmpdir);
 }
 
 
