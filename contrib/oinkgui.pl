@@ -107,6 +107,7 @@ my %color = (
 my %config = (
     animate          => 1,
     careful          => 0,
+    minimize_diff    => 0,
     enable_all       => 0,
     check_removed    => 0,
     mode             => 'normal',
@@ -121,25 +122,27 @@ my %config = (
 my %help = (
 
   # File locations.
-    oinkscript   => 'Location of the executable Oinkmaster script (oinkmaster.pl).',
-    oinkconf     => 'The Oinkmaster configuration file to use.',
-    outdir       => 'Where to put the new rules. This should be the directory where you '.
-                    'store your current rules.',
+    oinkscript    => 'Location of the executable Oinkmaster script (oinkmaster.pl).',
+    oinkconf      => 'The Oinkmaster configuration file to use.',
+    outdir        => 'Where to put the new rules. This should be the directory where you '.
+                     'store your current rules.',
 
-    url          => 'Alternate location of rules archive to download/copy. '.
-                    'Leave empty to use the location set in oinkmaster.conf.',
-    varfile      => 'Variables that exist in downloaded snort.conf but not in '.
-                    'this file will be added to it. Leave empty to skip.',
-    backupdir    => 'Directory to put tarball of old rules before overwriting them. '.
-                    'Leave empty to skip backup.',
+    url           => 'Alternate location of rules archive to download/copy. '.
+                     'Leave empty to use the location set in oinkmaster.conf.',
+    varfile       => 'Variables that exist in downloaded snort.conf but not in '.
+                     'this file will be added to it. Leave empty to skip.',
+    backupdir     => 'Directory to put tarball of old rules before overwriting them. '.
+                     'Leave empty to skip backup.',
 
   # Checkbuttons.
-    careful      => 'In careful mode, Oinkmaster will just check for changes, '.
-                    'not update anything.',
-    enable       => 'Some rules may be commented out by default (for a reason!). '.
-                    'This option will make Oinkmaster enable those.',
-    removed      => 'Check for rules files that exist in the output directory but not '.
-                    'in the downloaded rules archive.',
+    careful       => 'In careful mode, Oinkmaster will just check for changes, '.
+                     'not update anything.',
+    minimize_diff => 'Simplify the result by removing common leading and trailing '.
+                     'parts in modified rules before printing them.',
+    enable        => 'Some rules may be commented out by default (for a reason!). '.
+                     'This option will make Oinkmaster enable those.',
+    removed       => 'Check for rules files that exist in the output directory but not '.
+                     'in the downloaded rules archive.',
 
   # Action buttons.
     clear        => 'Clear current output messages.',
@@ -387,6 +390,11 @@ $left_frame->Label(
 $balloon->attach(
   create_checkbutton($left_frame, "Careful mode", \$config{careful}),
   -statusmsg => $help{careful}
+);
+
+$balloon->attach(
+  create_checkbutton($left_frame, "Minimize diff", \$config{minimize_diff}),
+  -statusmsg => $help{minimize_diff}
 );
 
 $balloon->attach(
@@ -1058,6 +1066,7 @@ sub create_cmdline($)
       "-o", "$outdir");
 
     push(@$cmd_ref, "-c")               if ($config{careful});
+    push(@$cmd_ref, "-m")               if ($config{minimize_diff});
     push(@$cmd_ref, "-e")               if ($config{enable_all});
     push(@$cmd_ref, "-r")               if ($config{check_removed});
     push(@$cmd_ref, "-q")               if ($config{mode} eq "quiet");
