@@ -1191,9 +1191,9 @@ sub process_rules($ $ $ $ $ $)
                  "modified $stats{modified}, total=$stats{total}\n"
       unless ($config{quiet});
 
-  # Warn on attempt at processing non-existent sids/files, unless quiet mode.
+  # Print warnings on attempt at enablesid/disablesid/localsid on non-existent
+  # rule if we're in verbose mode.
     if ($config{verbose}) {
-
         foreach my $sid (keys(%$enable_sid_ref)) {
             warn("WARNING: attempt to use \"enablesid\" on non-existent SID $sid\n")
               unless (exists($sids{$sid}));
@@ -1208,8 +1208,11 @@ sub process_rules($ $ $ $ $ $)
             warn("WARNING: attempt to use \"localsid\" on non-existent SID $sid\n")
               unless (exists($sids{$sid}));
         }
+    }
 
-
+  # Print warnings on attempt at modifysid'ing non-existent stuff in all modes 
+  # except super quiet, as they are usually more important.
+    unless ($config{super_quiet}) {
         my %new_files;
         foreach my $file (sort(keys(%$newfiles_ref))) {
             $new_files{basename($file)} = 1;
@@ -1220,7 +1223,6 @@ sub process_rules($ $ $ $ $ $)
             my ($type, $arg) = ($mod_expr->[2], $mod_expr->[3]);
             $mod_tmp{$type}{$arg} = 1;
         }
-
 
         foreach my $sid (keys(%{$mod_tmp{sid}})) {
             warn("WARNING: attempt to use \"modifysid\" on non-existent SID $sid\n")
@@ -1295,8 +1297,7 @@ sub process_rule($ $ $ $ $ $ $ $)
             } else {
                 if (!$config{super_quiet} && $print_messages && $type eq "sid") {
                     print STDERR "WARNING: SID $sid does not match ".
-                                 "modifysid expression \"$subst\", skipping.\n".
-                                 "SID $sid: $single\n";
+                                 "modifysid expression \"$subst\", skipping.\n";
                 }
             }
         }
