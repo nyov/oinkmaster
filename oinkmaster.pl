@@ -1507,7 +1507,9 @@ sub is_in_path($)
 # - multi-line rule (put in 3rd ref)
 # - non-rule line (put in 4th ref)
 # If the entry is a multi-line rule, its single-line version is also
-# returned (put in the 2nd ref).
+# returned (put in the 2nd ref). If there is a #comment line in the
+# middle of an active multi-line rule, all those lines will be
+# returned as non-rule lines.
 sub get_next_entry($ $ $ $ $ $)
 {
     my $arr_ref     = shift;
@@ -1524,14 +1526,18 @@ sub get_next_entry($ $ $ $ $ $)
     undef($$sid_ref);
 
     my $line = shift(@$arr_ref) || return(0);
+    my $disabled = 0;
+    my $broken   = 0;
 
   # Possible beginning of multi-line rule?
     if ($line =~ /$MULTILINE_RULE_REGEXP/oi) {
         $$single_ref = $line;
         $$multi_ref  = $line;
 
+        $disabled = 1 if ($line =~ /\s*#/);
+
       # Keep on reading as long as line ends with "\".
-        while ($line =~ /\\\s*\n$/) {
+        while (!$broken && $line =~ /\\\s*\n$/) {
 
           # Remove trailing "\" and newline for single-line version.
             $$single_ref =~ s/\\\s*\n//;
@@ -1560,6 +1566,11 @@ sub get_next_entry($ $ $ $ $ $)
             }
 
           # Multi-line continuation.
+
+          # If beginning of rule was active, the rest must be active.
+          # If beginning was disabled, the rest must be disabled.
+            $broken = 1 if ($line =~ /\s*#/ != $disabled);
+
             $$multi_ref .= $line;
             $line =~ s/^\s*#*\s*//;  # remove leading # in single-line version
             $$single_ref .= $line;
@@ -1568,7 +1579,7 @@ sub get_next_entry($ $ $ $ $ $)
 
       # Single-line version should now be a valid rule.
       # If not, it wasn't a valid multi-line rule after all.
-        if (parse_singleline_rule($$single_ref, $msg_ref, $sid_ref)) {
+        if (!$broken && parse_singleline_rule($$single_ref, $msg_ref, $sid_ref)) {
 
             $$single_ref =~ s/^\s*//;     # remove leading whitespaces
             $$single_ref =~ s/^#+\s*/#/;  # remove whitespaces next to leading #

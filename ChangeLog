@@ -21,6 +21,7 @@ o A fully featured graphical multi-platform front-end to Oinkmaster
   written in Perl/Tk is included in the contrib directory (oinkgui.pl). 
   See README.gui for more information. Screenshots are available on
   Oinkmaster's homepage.
+o Slightly improved multi-line rule parsing.
 o Major documentation updates.
 
 
