@@ -6,5 +6,6 @@ Usually just overwrite the old oinkmaster.pl file with the new one.
   is now used for configuration. It's probably easiest to start with the
   default one and append your old customization to it.
   The "file" and "sid" keywords have been renamed to "skipfile" and
-  "disablesid". Also, a few command line switches were removed since
-  they're not needed anymore. Please read the new documentation.
+  "disablesid" respectively. Also, a few command line switches were
+  removed since they're not needed anymore.
+  Please read the new documentation.

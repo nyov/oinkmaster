@@ -3,19 +3,21 @@
 Installation instructions for Oinkmaster v0.4
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-o Untar/unpack the distribution file into some suitable directory, for 
-  example /usr/local. This will create a directory called oinkmaster-version.
+o Put oinkmaster.pl and oinkmaster.conf in some suitable directory. 
+  It doesn't really matter where.
 
 o Edit the file oinkmaster.conf. There are some options you may want to
-  change. Here you will also tell Oinkmaster which SIDs or files you want to
-  disable or ignore. As you will see, a few things are skipped by default.
-  See the README file and the notes in oinkmaster.conf for more information.
+  change before even starting. Here you will then also tell Oinkmaster which
+  SIDs or files you want to disable or ignore. As you will see, a few things
+  are disabled/ignored by default.
 
-  If you already have several rules commented out (or removed) from your current
-  rules, you need to add those SIDs to oinkmaster.conf manually, or they will be
-  enabled after the first update. Note that Oinkmaster will enable all rules by
-  default, even those that are commented out by default in the rules archive, 
-  unless -p is specified.
+  If you already have several rules commented out (or removed) in your current
+  rules, you need to add those SIDs to oinkmaster.conf manually, or they  
+  will be re-enabled after the first update. Note that Oinkmaster will enable 
+  all rules by default. Even those that are commented out by default in 
+  the rules archive will be enabled, unless -p is specified.
+
+  See the README file and the notes in oinkmaster.conf for more information.
 
 o Decide in which directory you want to put the new rules. Since you
   probably already have Snort up and running, you should use your existing
