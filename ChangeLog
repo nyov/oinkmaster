@@ -3,15 +3,17 @@
 Oinkmaster v1.2 - 200xxxxx
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 o Slightly improved modifysid/template documentation and examples.
-  For example, added a new template to disable a SID but only if
-  it has a specific revision number, so you can disable a rule
-  temporarily and automatically start using it again if it becomes
-  updated. Thanks to Russell Fulton for this suggestion.
+  For example, added a new template to disable a SID but only if it has 
+  a specific revision number, so you can disable a rule temporarily and 
+  automatically start using it again if it becomes updated. Thanks to 
+  Russell Fulton for this suggestion.
 o Suppress warnings about non-matching modifysid expressions when
   running in super quiet mode (-Q).
 o As requested by a few poeple, permit filename as argument to
-  modifysid (and use_template) to apply a substitution expression
-  on a per-file basis.
+  modifysid (and use_template) to apply a substitution expression on a 
+  per-file basis.
+o The FAQ has been updated with Q23 on how to update the rules from 
+  multiple sources and how to handle the sid-msg.map file.
 
 
 
