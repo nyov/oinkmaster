@@ -9,6 +9,14 @@ Here are a few notes about issues between specific versions that might
 require some attention. 
 
 
+1.0 -> 1.1
+----------
+Oinkmaster now supports template-based modifysid expressions, which
+you may want to have a look at if you use the modifysid feature a lot.
+See README.templates and template-examples.conf.
+
+
+
 0.9 -> 1.0
 ----------
 You can now run without external binaries if you set use_external_bins 
