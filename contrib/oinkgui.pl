@@ -130,7 +130,8 @@ my %help = (
                      'this file will be added to it. Leave empty to skip.',
     backupdir     => 'Directory to put tarball of old rules before overwriting them. '.
                      'Leave empty to skip backup.',
-    editor        => 'The editor to execute when pressing the "edit" button',
+    editor        => 'Full path to editor to execute when pressing the "edit" button '.
+                     '(wordpad is recommended on Windows). ',
 
   # Checkbuttons.
     careful       => 'In careful mode, Oinkmaster will just check for changes, '.
