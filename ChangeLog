@@ -14,6 +14,9 @@ o As requested by a few poeple, permit filename as argument to
   per-file basis.
 o The FAQ has been updated with Q23 on how to update the rules from 
   multiple sources and how to handle the sid-msg.map file.
+o Process modifysid/use_template statements of all types in the exact
+  order as specified in the config file. Previously, all the wildcards
+  were processed last.
 
 
 
