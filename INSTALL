@@ -21,8 +21,8 @@ o Edit oinkmaster.conf, or at least have a look at it to make sure
   want to disable/enable/modify. If you already have several rules 
   commented out (or removed) in your current rules, you must add the 
   SIDs of those to oinkmaster.conf so they don't get re-enabled after each 
-  update. After switching to Oinkmaster for updating the rules, all 
-  permanent modifications to the rules must be done by editing 
+  update. Remember that after switching to Oinkmaster for updating the rules,
+  all permanent modifications to the rules must be done by editing 
   oinkmaster.conf, not by editing your rules files directly.
 
 o Decide in which directory you want to put the new rules. Since you probably
@@ -35,5 +35,4 @@ o Decide in which directory you want to put the new rules. Since you probably
 
   You should really check out the entire README before doing anything though.
   You may also run oinkmaster.pl -h for more usage information and options.
-  See wget's manual page (http://www.gnu.org/manual/) if you need to setup
-  proxy configuration etc.
+  See the FAQ if you need to setup proxy configuration.
