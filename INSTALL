@@ -31,3 +31,5 @@ o Decide in which directory you want to put the new rules. Since you probably
 
   You REALLY should check out the entire README before doing anything though.
   You may also run oinkmaster.pl -h for more usage information and options.
+  See wget's manual page (http://www.gnu.org/manual/) if you need to setup
+  proxy configuration etc.
