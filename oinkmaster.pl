@@ -1541,6 +1541,7 @@ sub is_in_path($)
 # - non-rule line (put in 4th ref)
 # If the entry is a multi-line rule, its single-line version is also
 # returned (put in the 2nd ref).
+# If it's a rule, the msg string will be put in 4th ref and sid in 5th.
 sub get_next_entry($ $ $ $ $ $)
 {
     my $arr_ref     = shift;
