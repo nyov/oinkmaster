@@ -91,8 +91,9 @@ will be re-enabled after each update. Some rules may be commented out by
 default in the rules distribution, and as of Oinkmaster 0.6 they will stay
 that way. If you want to enable them, you have to use the "-e" switch. Note that 
 those rules are commented out for a reason (they may not even work!) so be careful. 
-There may of course also be rules that are commented out by default but that you'd
-still like to use. It's probably easiest to put these in a local rules file instead.
+There may of course also be rules that are commented out by default (e.g. for
+performance reasons) but that you'd still like to use. It's probably easiest to put
+these in a local rules file instead.
 Also note that possible local modifications you've done inside the 
 official Snort rules files will be lost since the files will be overwritten by the
 new versions from the downloaded rules archive after each update.
