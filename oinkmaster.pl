@@ -1191,7 +1191,7 @@ sub process_rules($ $ $ $ $ $)
       unless ($config{quiet});
 
   # Warn on attempt at processing non-existent sids, unless quiet mode.
-    if (!$config{quiet}) {
+    if ($config{verbose}) {
 
         foreach my $sid (keys(%$modify_sid_ref)) {
             next unless ($sid =~ /^\d+$/);    # don't warn on wildcard match
@@ -1205,7 +1205,7 @@ sub process_rules($ $ $ $ $ $)
         }
 
         foreach my $sid (keys(%$disable_sid_ref)) {
-            warn("WARNING: attempt to use \"disablsid\" on non-existent SID $sid\n")
+            warn("WARNING: attempt to use \"disablesid\" on non-existent SID $sid\n")
               unless (exists($sids{$sid}));
         }
 
