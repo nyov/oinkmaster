@@ -183,7 +183,7 @@ sub get_next_entry($ $ $ $)
     } else {                                 # non-rule line?
 
       # Do extra check and warn if it *might* be a rule anyway, but that we couldn't parse.
-        warn("WARNING: line may be a rule but it could not be parsed: $line\n")
+        warn("WARNING: line may be a rule but it could not be parsed (missing sid?): $line\n")
           if ($verbose && $line =~ /^\s*alert .+msg\s*:\s*".+"\s*;/);
 
         $$nonrule_ref = $line;
