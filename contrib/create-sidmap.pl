@@ -19,7 +19,7 @@ my $USAGE = "usage: $0 <rulesdir> [rulesdir2, ...]\n";
 
 my $verbose  = 1;
 
-my %sidmap;
+my (%sidmap, %allsids);
 
 my @rulesdirs = @ARGV;
 
@@ -45,6 +45,9 @@ foreach my $rulesdir (@rulesdirs) {
                 $single =~ /$SINGLELINE_RULE_REGEXP/oi;
                 my ($msg, $sid) = ($1, $2);
 
+                warn("WARNING: duplicate SID: $sid (discarding old)\n")
+                  if (exists($sidmap{$sid}));
+
                 $sidmap{$sid} = "$sid || $msg";
 
               # Print all references. Borrowed from Brian Caswell's regen-sidmap script.
@@ -68,10 +71,10 @@ foreach my $sid (sort { $a <=> $b } keys(%sidmap)) {
 
 sub get_next_entry($ $ $ $)
 {
-    my $arr_ref        = shift;
-    my $single_ref     = shift;
-    my $multi_ref      = shift;
-    my $nonrule_ref    = shift;
+    my $arr_ref     = shift;
+    my $single_ref  = shift;
+    my $multi_ref   = shift;
+    my $nonrule_ref = shift;
 
     undef($$single_ref);
     undef($$multi_ref);
