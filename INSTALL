@@ -23,6 +23,9 @@ o Decide in which directory you want to put the new rules. Since you probably
 
   oinkmaster.pl -o /snort/snort.org-rules/
 
+  You can not run Oinkmaster as root. You must run it as a regular user 
+  (that has read/write access in your rules directory).
+
   You REALLY should check out the entire README before doing anything though.
   You may also run oinkmaster.pl -h for more usage information and options.
   See wget's manual page (http://www.gnu.org/manual/) if you need to setup
