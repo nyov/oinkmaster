@@ -9,13 +9,13 @@ use Getopt::Std;
 use POSIX qw(strftime);
 
 sub show_usage();
-sub parse_cmdline();
+sub parse_cmdline($);
 sub read_config($ $);
 sub sanity_check();
 sub download_rules($ $);
 sub unpack_rules_archive($);
 sub disable_and_modify_rules($ $ @);
-sub setup_rules_hash($ $ @);
+sub setup_rules_hash($ @);
 sub find_line($ $);
 sub print_changes($ $);
 sub make_backup($ $);
@@ -50,11 +50,7 @@ use vars qw
    );
 
 my (
-      $output_dir
-   );
-
-my (
-      %config, %new_files, %rh
+      %config, %new_files
    );
 
 
@@ -69,8 +65,9 @@ $| = 1;
 
 my $start_date = scalar(localtime);
 
-# Parse command line arguments. Will exit if something is wrong.
-parse_cmdline();
+# Parse command line arguments and add at least %config{output_dir}.
+# Will exit if something is wrong.
+parse_cmdline(\%config);
 
 # Why would anyone want to run as root?
 die("Don't run as root!") if (!$>);
@@ -111,7 +108,7 @@ disable_and_modify_rules(\%{$config{sid_disable_list}},
                          \%{$config{sid_modify_list}}, keys(%new_files));
 
 # Setup rules hash.
-setup_rules_hash(\%rh, $output_dir, keys(%new_files));
+my %rh = setup_rules_hash($config{output_dir}, keys(%new_files));
 
 # Compare the new rules to the old ones.
 my %changes = get_changes(\%rh, keys(%new_files));
@@ -127,9 +124,9 @@ if ($#modified_files > -1) {
         print STDERR "No need to backup old files (running in careful mode), skipping.\n"
           if (exists($config{backup_dir}) && (!$quiet));
     }  else {
-        make_backup($output_dir, $config{backup_dir})
+        make_backup($config{output_dir}, $config{backup_dir})
           if (exists($config{backup_dir}));
-        update_rules($output_dir, @modified_files);
+        update_rules($config{output_dir}, @modified_files);
     }
 } else {
     print STDERR "No files modified - no need to backup old files, skipping.\n"
@@ -194,26 +191,28 @@ RTFM
 
 
 # Parse the command line arguments and exit if we don't like them.
-sub parse_cmdline()
+sub parse_cmdline($)
 {
+    my $cfg_ref    = shift;
     my $cmdline_ok = getopts('b:cC:eho:pqru:vV');
 
-    $config{backup_dir} = $opt_b if (defined($opt_b));
-    $config_file        = $opt_C if (defined($opt_C));
-    $config{url}        = $opt_u if (defined($opt_u));
-    $careful            = 1      if (defined($opt_c));
-    $preserve_comments  = 0      if (defined($opt_e));
-    $quiet              = 1      if (defined($opt_q));
-    $check_removed      = 1      if (defined($opt_r));
-    $verbose            = 1      if (defined($opt_v));
-    show_usage()                 if (defined($opt_h));
-    die("$VERSION\n")            if (defined($opt_V));
+    $$cfg_ref{backup_dir} = $opt_b if (defined($opt_b));
+    $config_file          = $opt_C if (defined($opt_C));
+    $$cfg_ref{url}        = $opt_u if (defined($opt_u));
+    $careful              = 1      if (defined($opt_c));
+    $preserve_comments    = 0      if (defined($opt_e));
+    $quiet                = 1      if (defined($opt_q));
+    $check_removed        = 1      if (defined($opt_r));
+    $verbose              = 1      if (defined($opt_v));
+
+    show_usage()                   if (defined($opt_h));
+    die("$VERSION\n")              if (defined($opt_V));
 
     show_usage unless ($cmdline_ok);
 
   # -o <dir> is the only required option in normal usage.
     if (defined($opt_o)) {
-        $output_dir = $opt_o;
+        $$cfg_ref{output_dir} = $opt_o;
     } else {
         show_usage();
     }
@@ -222,8 +221,8 @@ sub parse_cmdline()
     $_ = shift(@ARGV) && show_usage();
 
   # Remove possible trailing slashes (just for cosmetic reasons).
-    $output_dir =~ s/\/+$//;
-    $config{backup_dir} =~ s/\/+$// if (exists($config{backup_dir}));
+    $$cfg_ref{output_dir} =~ s/\/+$//;
+    $$cfg_ref{backup_dir} =~ s/\/+$// if (exists($$cfg_ref{backup_dir}));
 }
 
 
@@ -232,7 +231,7 @@ sub parse_cmdline()
 sub read_config($ $)
 {
     my $config_file = shift;
-    my $cfgref      = shift;
+    my $cfg_ref     = shift;
     my $linenum     = 0;
 
     unless (-e "$config_file") {
@@ -260,30 +259,30 @@ sub read_config($ $)
 	    my $args = $1;
 	    foreach $_ (split(/\s*,\s*/, $args)) {
   	        if (/^\d+$/) {
-                    $$cfgref{sid_disable_list}{$_}++;
+                    $$cfg_ref{sid_disable_list}{$_}++;
 	        } else {
                     warn("WARNING: line $linenum in $config_file is invalid, ignoring\n");
 	        }
 	    }
         } elsif (/^modifysid\s+(\d+)\s+(.*)/i) {         # modifysid <SID> <regexp>
-            push(@{$$cfgref{sid_modify_list}{$1}}, $2);
+            push(@{$$cfg_ref{sid_modify_list}{$1}}, $2);
         } elsif (/^skipfiles*\s+(.*)/i) {                # skipfile <file[,file, ...]>
 	    my $args = $1;
 	    foreach $_ (split(/\s*,\s*/, $args)) {
 	        if (/^\S.*\S$/) {
                     $verbose && print STDERR "Adding file to ignore list: $_.\n";
-                    $$cfgref{file_ignore_list}{$_}++;
+                    $$cfg_ref{file_ignore_list}{$_}++;
 		} else {
                     warn("WARNING: line $linenum in $config_file is invalid, ignoring\n");
 		}
 	    }
 	} elsif (/^url\s*=\s*(.*)/i) {                   # URL to use
-	    $$cfgref{url} = $1
-              unless (exists($$cfgref{url}));            # may already be defined by -u <url>
+	    $$cfg_ref{url} = $1
+              unless (exists($$cfg_ref{url}));           # may already be defined by -u <url>
 	} elsif (/^path\s*=\s*(.*)/i) {                  # $PATH to be used
-	    $$cfgref{path} = $1;
+	    $$cfg_ref{path} = $1;
 	} elsif (/^update_files\s*=\s*(.*)/i) {          # regexp of files to be updated
-	    $$cfgref{update_files} = $1;
+	    $$cfg_ref{update_files} = $1;
         } else {                                         # invalid line
             warn("WARNING: line $linenum in $config_file is invalid, ignoring\n");
         }
@@ -333,12 +332,13 @@ sub sanity_check()
       if ($config{'url'} =~ /^(http|ftp):/ && system("which \"wget\" >/dev/null 2>&1"));
 
   # Make sure the output directory exists and is readable.
-    clean_exit("the output directory \"$output_dir\" doesn't exist or isn't readable by you.")
-      if (!-d "$output_dir" || !-x "$output_dir");
+    clean_exit("the output directory \"$config{output_dir}\" doesn't exist ".
+               "or isn't readable by you.")
+      if (!-d "$config{output_dir}" || !-x "$config{output_dir}");
 
   # Make sure the output directory is writable unless running in careful mode.
-    clean_exit("the output directory \"$output_dir\" isn't writable by you.")
-      if (!$careful && !-w "$output_dir");
+    clean_exit("the output directory \"$config{output_dir}\" isn't writable by you.")
+      if (!$careful && !-w "$config{output_dir}");
 
   # Make sure the backup directory exists and is writable if running with -b.
     clean_exit("the backup directory \"$config{backup_dir}\" doesn't exist or ".
@@ -371,12 +371,16 @@ sub download_rules($ $)
         }
     } elsif ($url =~ /^file/) {        # grab file from local filesystem
         $url =~ s/^file:\/\///;        # remove "file://", the rest is the actual filename
+
 	clean_exit("the file $url does not exist.")
           unless (-e "$url");
+
         print STDERR "Copying rules archive from $url... "
           unless ($quiet);
+
         copy("$url", "$localfile")
           or clean_exit("unable to copy $url to $localfile: $!");
+
         print STDERR "done.\n" unless ($quiet);
     }
 
@@ -562,11 +566,11 @@ sub disable_and_modify_rules($ $ @)
 # Format for rules will be:     rh{old|new}{rules{filename}{sid} = rule
 # Format for non-rules will be: rh{old|new}{other}{filename}     = array of lines
 # List of added files will be stored as rh{added_files}{filename}
-sub setup_rules_hash($ $ @)
+sub setup_rules_hash($ @)
 {
-    my $rh_ref    = shift;
     my $old_dir   = shift;
     my @new_files = shift;
+    my %rh;
 
     foreach my $file (keys(%new_files)) {
         warn("WARNING: downloaded rules file $file is empty (maybe correct, maybe not)\n")
@@ -588,19 +592,19 @@ sub setup_rules_hash($ $ @)
 
 		warn("WARNING: duplicate SID in downloaded rules archive in file ".
                      "$file: SID $sid\n")
-		  if (exists($$rh_ref{new}{rules}{"$file"}{"$sid"}));
-		$$rh_ref{new}{rules}{"$file"}{"$sid"} = $_;
+		  if (exists($rh{new}{rules}{"$file"}{"$sid"}));
+		$rh{new}{rules}{"$file"}{"$sid"} = $_;
 	    } else {                         # add non-rule line to hash
-	        push(@{$$rh_ref{new}{other}{"$file"}}, $_);
+	        push(@{$rh{new}{other}{"$file"}}, $_);
 	    }
 	}
 
 	close(NEWFILE);
 
 	# Also read in old file if it exists.
-        if (-f "$output_dir/$file") {
-            open(OLDFILE, "<$output_dir/$file")
-              or clean_exit("could not open $output_dir/$file for reading: $!");
+        if (-f "$config{output_dir}/$file") {
+            open(OLDFILE, "<$config{output_dir}/$file")
+              or clean_exit("could not open $config{output_dir}/$file for reading: $!");
 
 	    while (<OLDFILE>) {
 
@@ -613,18 +617,20 @@ sub setup_rules_hash($ $ @)
 
 		    warn("WARNING: duplicate SID in your local rules in file ".
                          "$file: SID $sid\n")
-	  	      if (exists($$rh_ref{old}{rules}{"$file"}{"$sid"}));
-	  	    $$rh_ref{old}{rules}{"$file"}{"$sid"} = $_;
+	  	      if (exists($rh{old}{rules}{"$file"}{"$sid"}));
+	  	    $rh{old}{rules}{"$file"}{"$sid"} = $_;
                 } else {                     # add non-rule line to hash
-	            push(@{$$rh_ref{old}{other}{"$file"}}, $_);
+	            push(@{$rh{old}{other}{"$file"}}, $_);
                 }
             }
 
             close(OLDFILE);
         } else {                             # downloaded file did not exist in old rules dir
-	    $$rh_ref{added_files}{"$file"}++;
+	    $rh{added_files}{"$file"}++;
         }
     }
+
+    return (%rh);
 }
 
 
@@ -649,7 +655,7 @@ sub find_line($ $)
 
 
 
-# Backup files in $output_dir matching $config{update_files} into the backup dir.
+# Backup files in output dir matching $config{update_files} into the backup dir.
 sub make_backup($ $)
 {
     my $src_dir  = shift;    # dir with the rules to be backed up
@@ -860,8 +866,8 @@ sub get_changes($ $)
 
   # Add list of possibly removed files into $removed_files, if requested.
     if ($check_removed) {
-        opendir(OLDRULES, "$output_dir")
-          or clean_exit("could not open directory $output_dir: $!");
+        opendir(OLDRULES, "$config{output_dir}")
+          or clean_exit("could not open directory $config{output_dir}: $!");
 
         while ($_ = readdir(OLDRULES)) {
             $changes{removed_files}{"$_"}++
@@ -966,7 +972,7 @@ sub update_rules($ @)
     foreach my $file_w_path (@files) {
         my $file = $file_w_path;
         $file =~ s/.*\///;    # remove path
-        move("$file_w_path", "$output_dir/$file")
+        move("$file_w_path", "$dst_dir/$file")
           or clean_exit("could not move $file_w_path to $file: $!");
     }
 }
