@@ -127,7 +127,8 @@ setup_rules_hash(\%rh, $output_dir, keys(%new_files));
 print STDERR "Comparing new files to the old ones... "
   unless ($quiet);
 
-FILELOOP:foreach my $file (keys(%new_files)) {                  # for each new file
+FILELOOP:foreach my $file (keys(%new_files)) {               # for each new file
+    $file =~ s/.*\///;                                       # remove path
     next FILELOOP if (exists($added_files{$file}));          # skip diff if it's an added file
 
   # This one will tell us if the filename info has been printed or not.
@@ -136,7 +137,6 @@ FILELOOP:foreach my $file (keys(%new_files)) {                  # for each new f
 #    foreach my $sid (keys(%{$new_rules{$file}})) {         # for each sid in the new file
     foreach my $sid (keys(%{$rh{new}{rules}{$file}})) {     # for each sid in the new file
         my $new_rule = $rh{new}{rules}{$file}{$sid};        # save the rule in $new_rule for easier access
-
             if (exists($rh{old}{rules}{$file}{$sid})) {     # does this sid also exist in the old rules file?
                 my $old_rule = $rh{old}{rules}{$file}{$sid};    # yes, put old rule in $old_rule for easier access
 
@@ -200,6 +200,7 @@ FILELOOP:foreach my $file (keys(%new_files)) {                  # for each new f
     }
 
 } # foreach new file
+
 
 # Add list of possibly removed files into $removed_files if -r is specified.
 if ($check_removed) {
