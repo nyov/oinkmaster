@@ -733,7 +733,6 @@ sub print_changes($ $)
         print "\n  $type\n";
 
         foreach my $file (sort({uc($a) cmp uc($b)} keys(%{$$ch_ref{rules}{"$type"}}))) {
-
             print "\n     -> File $file:\n";
             foreach my $sid (keys(%{$$ch_ref{rules}{"$type"}{"$file"}})) {
 	      # Print old and new if the rule was modified.
@@ -771,7 +770,6 @@ sub print_changes($ $)
   # Print removed non-rule lines.
     if (keys(%{$$ch_ref{other}{removed}}) > 0) {
         print "\n  [---]    Removed non-rule lines:     [---]\n";
-
         foreach my $file (sort({uc($a) cmp uc($b)} keys(%{$$ch_ref{other}{removed}}))) {
             print "\n     -> File $file:\n";
             foreach my $other (@{$$ch_ref{other}{removed}{$file}}) {
