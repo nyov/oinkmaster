@@ -26,10 +26,10 @@ o Added 'enablesid' keyword to oinkmaster.conf.
   It will do exactly what you think, i.e. enable a disabled rule.
   The order in oinkmaster.conf does not matter. All the
   'modifysid' will be processed first, then 'disablesid' and last 'enablesid'.
-o Slightly improved rules parsing.
+o Slightly improved rules parsing (order of sid and msg does not matter).
 o oinkmaster.conf will be searched for in /etc/ and /usr/local/etc/ by default.
-o Added a FAQ.
 o Make create-sidmap.pl take an arbtitrary number of directories as argument.
+o Added a FAQ.
 
 
 

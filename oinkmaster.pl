@@ -139,9 +139,8 @@ download_rules("$config{url}", "$tmpdir/$OUTFILE");
 # new rules. Will exit if something fails.
 unpack_rules_archive("$tmpdir/$OUTFILE");
 
-# Create list of new files (with full path) that we care about from the
-# downloaded archive. Filenames (with full path) will be stored as
-# %new_files{filenme}.
+# Create list of new files that we care about from the downloaded
+# Filenames (with full path) will be stored as %new_files{filenme}.
 my $num_files = get_new_filenames(\my %new_files, "$tmpdir/rules/");
 
 # Make sure the number of files is at least $min_files.
@@ -245,7 +244,7 @@ Options:
 -c         Careful mode - only check for changes and do not update anything
 -C <cfg>   Use this configuration file instead of the default
            (@default_config_files)
-           May be specified multiple times.
+           May be specified multiple times to load multiple files
 -e         Re-enable all rules that are disabled by default in the rules
            distribution (they are disabled for a reason, so use with care)
 -h         Show this usage information
@@ -626,7 +625,7 @@ sub download_rules($ $)
 # uncompress/untar it if everything looked ok.
 sub unpack_rules_archive($)
 {
-    my $archive  = shift;
+    my $archive = shift;
 
     my $old_dir = untaint_path(File::Spec->rel2abs(File::Spec->curdir()));
 
@@ -1604,8 +1603,8 @@ sub parse_mod_expr($ $ $ $)
 # Untaint a path. Die if it contains illegal chars.
 sub untaint_path($)
 {
-    my $path          = shift;
-    my $orig_path     = $path;
+    my $path      = shift;
+    my $orig_path = $path;
 
     (($path) = $path =~ /^([$OK_PATH_CHARS]+)$/)
       or clean_exit("illegal characterss in path/filename ".
