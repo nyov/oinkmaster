@@ -60,12 +60,15 @@ my %color = (
     background        => 'Bisque3',
     button            => 'Bisque2',
     label             => 'Bisque1',
-    notebook          => 'Bisque2',
+    notebook_bg       => 'Bisque2',
+    notebook_inact    => 'Bisque3',
     file_label_ok     => '#00e000',
     file_label_not_ok => 'red',
     out_frame_fg      => 'white',
     out_frame_bg      => 'black',
     entry_bg          => 'white',
+    button_active     => 'white',
+    button_bg         => 'Bisque4',
 );
 
 my %config = (
@@ -88,7 +91,7 @@ my %help = (
     oinkscript   => 'Location of the executable Oinkmaster script (oinkmaster.pl).',
     oinkconf     => 'The Oinkmaster configuration file to use.',
     outdir       => 'Where to put the new rules. This should be the directory where you '.
-                    'store your rules.',
+                    'store your current rules.',
 
     url          => 'Alternate location of rules archive to download/copy. '.
                     'Leave empty to use the location set in oinkmaster.conf.',
@@ -185,7 +188,7 @@ if ($ENV{HOME}) {
 # Create main window.
 my $main = MainWindow->new(
   -background => "$color{background}",
-  -title      => "$version"
+  -title      => "$version",
 );
 
 
@@ -200,7 +203,7 @@ my $out_frame = $main->Scrolled('ROText',
 
 my $help_label = $main->Label(
     -relief     => 'groove',
-    -background => "$color{label}"
+    -background => "$color{label}",
 );
 
 my $balloon = $main->Balloon(
@@ -210,9 +213,11 @@ my $balloon = $main->Balloon(
 
 # Create notebook.
 my $notebook = $main->NoteBook(
-  -ipadx      => 6,
-  -ipady      => 6,
-  -background => $color{notebook},
+  -ipadx              => 6,
+  -ipady              => 6,
+  -background         => $color{notebook_bg},
+  -inactivebackground => $color{notebook_inact},
+  -backpagecolor      => $color{background},
 );
 
 
@@ -221,6 +226,8 @@ my $req_tab = $notebook->add("required",
   -label     => "Required files and directories",
   -underline => 0,
 );
+
+$req_tab->configure(-bg => "$color{notebook_inact}");
 
 
 # Create frame with oinkmaster.pl location.
@@ -264,6 +271,7 @@ my $opt_tab = $notebook->add("optional",
   -underline => 0,
 );
 
+$opt_tab->configure(-bg => "$color{notebook_inact}");
 
 # Create frame with alternate URL location.
 $filetypes = [
@@ -310,20 +318,20 @@ $notebook->pack(
 # Create the frame to the left.
 my $left_frame = $main->Frame(
   -background => "$color{label}",
-  -border     => '2'
+  -border     => '2',
 )->pack(
   -side       => 'left',
-  -fill       => 'y'
+  -fill       => 'y',
 );
 
 
 # Create "GUI settings" label.
 $left_frame->Label(
   -text       => "GUI settings:",
-  -background => "$color{label}"
+  -background => "$color{label}",
 )->pack(
   -side       => 'top',
-  -fill       => 'x'
+  -fill       => 'x',
 );
 
 
@@ -334,9 +342,9 @@ create_actionbutton($left_frame, "Save current settings", \&save_config);
 # Create "options" label at the top of the left frame.
 $left_frame->Label(
   -text        => "Options:",
-  -background  => "$color{label}"
+  -background  => "$color{label}",
 )->pack(-side  => 'top',
-        -fill  => 'x'
+        -fill  => 'x',
 );
 
 
@@ -360,16 +368,16 @@ $balloon->attach(
 # Create "mode" label.
 $left_frame->Label(
   -text        => "Output mode:",
-  -background  => "$color{label}"
+  -background  => "$color{label}",
 )->pack(-side  => 'top',
-        -fill  => 'x'
+        -fill  => 'x',
 );
 
 # Create mode radiobuttons in the left frame.
-create_radiobutton($left_frame, "über-quiet", \$config{mode});
-create_radiobutton($left_frame, "quiet",      \$config{mode});
-create_radiobutton($left_frame, "normal",     \$config{mode});
-create_radiobutton($left_frame, "verbose",    \$config{mode});
+create_radiobutton($left_frame, "super-quiet", \$config{mode});
+create_radiobutton($left_frame, "quiet",       \$config{mode});
+create_radiobutton($left_frame, "normal",      \$config{mode});
+create_radiobutton($left_frame, "verbose",     \$config{mode});
 
 
 
@@ -377,10 +385,10 @@ create_radiobutton($left_frame, "verbose",    \$config{mode});
 $main->Label(
   -text       => "Output messages:",
   -width      => '110',
-  -background => "$color{label}"
+  -background => "$color{label}",
 )->pack(
   -side       => 'top',
-  -fill       => 'x'
+  -fill       => 'x',
 );
 
 
@@ -388,7 +396,7 @@ $main->Label(
 # Pack output frame.
 $out_frame->pack(
   -expand     => 'yes',
-  -fill       => 'both'
+  -fill       => 'both',
 );
 
 
@@ -401,10 +409,10 @@ $help_label->pack(
 # Create "actions" label.
 $left_frame->Label(
   -text       => "Actions:",
-  -background => "$color{label}"
+  -background => "$color{label}",
 )->pack(
   -side       => 'top',
-  -fill       => 'x'
+  -fill       => 'x',
 );
 
 
@@ -598,15 +606,17 @@ sub create_checkbutton($ $ $)
     my $var_ref = shift;
 
     my $button = $frame->Checkbutton(
-      -text       => $name,
-      -background => $color{button},
-      -variable   => $var_ref,
-      -relief     => 'raise',
-      -anchor     => 'w',
+      -text                => $name,
+      -background          => $color{button},
+      -activebackground    => $color{button_active},
+      -highlightbackground => $color{button_bg},
+      -variable            => $var_ref,
+      -relief              => 'raise',
+      -anchor              => 'w',
     )->pack(
-      -fill       => 'x',
-      -side       => 'top',
-      -pady       => '1',
+      -fill                => 'x',
+      -side                => 'top',
+      -pady                => '1',
     );
 
     return ($button);
@@ -621,14 +631,16 @@ sub create_actionbutton($ $ $)
     my $func_ref = shift;
 
     my $button = $frame->Button(
-      -text       => "$name",
-      -command    => sub {
-                            &$func_ref;
-                            $out_frame->focus;
-                         },
-      -background => "$color{button}",
+      -text                => $name,
+      -command             => sub {
+                                &$func_ref;
+                                $out_frame->focus;
+                              },
+      -background          => $color{button},
+      -activebackground    => $color{button_active},
+      -highlightbackground => $color{button_bg},
     )->pack(
-      -fill       => 'x',
+      -fill                => 'x',
     );
 
     return ($button);
@@ -643,16 +655,18 @@ sub create_radiobutton($ $ $)
     my $mode_ref = shift;
 
     my $button = $frame->Radiobutton(
-      -text       => "$name",
-      -background => "$color{button}",
-      -variable   =>  $mode_ref,
-      -relief     => 'raised',
-      -anchor     => 'w',
-      -value      => "$name",
+      -text                => $name,
+      -highlightbackground => $color{button_bg},
+      -background          => $color{button},
+      -activebackground    => $color{button_active},
+      -variable            => $mode_ref,
+      -relief              => 'raised',
+      -anchor              => 'w',
+      -value               => $name,
     )->pack(
-      -side       => 'top',
-      -pady       => '1',
-      -fill       => 'x',
+      -side                => 'top',
+      -pady                => '1',
+      -fill                => 'x',
     );
 
     return ($button);
@@ -671,7 +685,9 @@ sub create_fileSelectFrame($ $ $ $ $ $)
     my $filetypes = shift;
 
   # Create frame.
-    my $frame = $win->Frame->pack(
+    my $frame = $win->Frame(
+      -bg => $color{background},
+    )->pack(
       -padx => '2',
       -pady => '2',
       -fill => 'x'
@@ -714,7 +730,6 @@ sub create_fileSelectFrame($ $ $ $ $ $)
           -expand          => 'yes',
           -fill            => 'x'
        );
-
     }
 
   # Create edit-button if file is ediable.
@@ -748,7 +763,7 @@ sub create_fileSelectFrame($ $ $ $ $ $)
   # Create browse-button.
     my $but = $frame->Button(
       -text       => "browse ...",
-      -background => "$color{button}",
+      -background => $color{button},
       -command    => sub {
                             fileDialog($var_ref, $name, $type, $filetypes);
                          }
@@ -998,7 +1013,7 @@ sub create_cmdline($)
     push(@$cmd_ref, "-e")               if ($config{enable_all});
     push(@$cmd_ref, "-r")               if ($config{check_removed});
     push(@$cmd_ref, "-q")               if ($config{mode} eq "quiet");
-    push(@$cmd_ref, "-Q")               if ($config{mode} eq "über-quiet");
+    push(@$cmd_ref, "-Q")               if ($config{mode} eq "super-quiet");
     push(@$cmd_ref, "-v")               if ($config{mode} eq "verbose");
     push(@$cmd_ref, "-U", "$varfile")   if ($varfile);
     push(@$cmd_ref, "-b", "$backupdir") if ($backupdir);
