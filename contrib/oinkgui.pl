@@ -499,7 +499,7 @@ sub logmsg($ $)
     $out_frame->tag(qw(configure MISC   -foreground white));
     $out_frame->tag(qw(configure EXEC   -foreground bisque2));
 
-    $out_frame->insert('insert', "$text", "$type");
+    $out_frame->insert('end', "$text", "$type");
     $out_frame->see('end'); 
     $out_frame->update;
 }
