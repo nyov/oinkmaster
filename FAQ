@@ -379,3 +379,15 @@ A16: No! Permanent modifications in files that are updated by Oinkmaster
      rules archive, you would automatically get the updated version while 
      your customization would still apply (assuming your substitution 
      expression still matches the new version of the rule, of course).
+
+     If you really want to disable rules by editing the rules files 
+     directly and putting a "#" in front of unwanted rules, you can use 
+     contrib/makesidex.pl to generate "disablesid" lines for those 
+     disabled rules and feed to Oinkmaster. You can for example use 
+     something like this to update this information automatically and 
+     redirect to a file included by Oinkmaster (we don't touch the main 
+     config file):
+
+     makesidex.pl /etc/snort/rules >autodisable.conf 2>/dev/null && \
+     oinkmaster.pl -C /etc/oinkmaster.conf -C autodisable.conf \
+     -o /etc/snort/rules
