@@ -50,7 +50,7 @@ my (
 my (
       %sid_disable_list, %file_ignore_list, %config, %changes, %added_files,
       %new_files, %new_rules, %new_other, %old_rules, %old_other, %printed,
-      %modified_files
+      %modified_files, %sid_modify_list
    );
 
 
@@ -399,6 +399,8 @@ sub read_config
 		  unless (/^\d+$/);
                 $sid_disable_list{$_}++;
 	    }
+        } elsif (/^modifysid\s+(\d+)\s+(.*)/) {                    # modifysid
+	    $sid_modify_list{$1} = $2;
         } elsif (/^skipfiles*\s+(.*)/) {                           # skipfile
 	    $args = $1;
 	    foreach $_ (split(/\s*,\s*/, $args)) {
@@ -535,7 +537,7 @@ sub unpack_rules_archive
       # We don't want to unpack any "../../" junk.
         clean_exit("File in tar archive contains \"..\" in filename.\nOffending file/line:\n$_")
           if (/\.\./);
-      # Links in the tar archive are not allowed 
+      # Links in the tar archive are not allowed
       # (should be detected because of illegal chars above though).
         clean_exit("File in tar archive contains link: refuse to unpack file.\nOffending file/line:\n$_")
           if (/->/ || /=>/ || /==/);
@@ -601,6 +603,11 @@ sub disable_rules
 		      if ($verbose && !exists($sid_disable_list{$sid}));
 		    $line =~ s/^#*//;
 		}
+	    }
+
+          # Modify rule, if requested.
+	    if (exists($sid_modify_list{$sid})) {
+		eval "\$line =~ $sid_modify_list{$sid}";
 	    }
 
           # Disable rule, if requested.
