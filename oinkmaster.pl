@@ -277,9 +277,9 @@ sub show_usage()
 
 $VERSION
 
-Usage: $progname -o <output directory> [options]
+Usage: $progname -o <outdir> [options]
 
-<output directory> is where to put the new files.
+<outdir> is where to put the new files.
 This should be the directory where you store your Snort rules.
 
 Options:
