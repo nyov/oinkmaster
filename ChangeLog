@@ -1,4 +1,4 @@
-v0.4 - 200204XX
+v0.4 - 20020422
 ~~~~~~~~~~~~~~~
 o More or less rewritten from scratch.
 o The file rules.ignore has been renamed to oinkmaster.conf, which contains
