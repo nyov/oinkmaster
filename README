@@ -26,7 +26,8 @@ from www.snort.org and apply a set of modifications to them (such as
 disabling unwanted rules) before merging the changes into your local rules 
 files, but it can just as well be used to manage/distribute both official 
 and local local rules to multiple sensors with ability to fine-tune the 
-rules on each sensor or group of sensors. 
+rules on each sensor or group of sensors. It understands single-line rules
+as well as multi-line rules.
 
 Oinkmaster is based on the now extremely obsolete arachNIDS Snort rules 
 updater which was pretty much the same thing but for the arachNIDS Snort
