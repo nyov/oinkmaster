@@ -500,7 +500,7 @@ sub disable_and_modify_rules($ $ @)
 
           # Only care about snort rules we understand.
           # (The other lines are printed right back to the file.)
-            unless ($line =~ /$SNORT_RULE_REGEXP/) {
+            unless ($line =~ /$SNORT_RULE_REGEXP/o) {
 
 	      # Our regexp didn't match, but make a less strict check to see if
               # it's likely to be a Snort rule anyway. If it is, then print a warning.

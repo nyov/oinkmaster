@@ -128,8 +128,8 @@ Who knows, you might find something interesting some day.
 
 The skilled/brave/stupid people can also use the "modifysid" keyword in
 oinkmaster.conf to make arbitrary changes to certain rules after each download.
-This is an excellent way to screw up your rules, so use with care.
-See oinkmaster.conf for more information and examples.
+This is an excellent way to screw up your rules, so don't use it unless you
+REALLY have to. See oinkmaster.conf for more information and examples.
 
 
 
