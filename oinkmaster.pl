@@ -537,7 +537,9 @@ sub unpack_rules_archive($)
     my $archive  = shift;
     my $ok_chars = 'a-zA-Z0-9_\.\-/\n :';   # allowed chars for filenames in the tar archive
 
-    (my $dir) = ($archive =~ /(.*)\//);  # extract directory part of the filename
+    (my $dir)   = ($archive =~ /(.*)\//);  # extract directory part of the filename
+    my $old_dir = getcwd or clean_exit("Could not get current directory: $!");
+    chdir("$dir") or clean_exit("Could not change directory to \"$dir\": $!");
 
   # Run integrity check (gzip -t) on the gzip file.
     clean_exit("Error: integrity check on gzip file failed (file transfer failed or ".
@@ -575,9 +577,11 @@ sub unpack_rules_archive($)
     print STDERR "Archive successfully downloaded, unpacking... "
       unless ($quiet);
     clean_exit("Error: failed to untar $archive.")
-      if system("tar","xf","$archive", "-C", $dir);  # XXX does all 'tar's understand -C ?!
+      if system("tar","xf","$archive");
     clean_exit("\nError: no \"rules/\" directory found in tar file.")
       unless (-d "$dir/rules");
+
+    chdir("$old_dir") or clean_exit("Could not change directory back to $old_dir: $!");
 
     print STDERR "done.\n" unless ($quiet);
 }
