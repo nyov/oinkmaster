@@ -56,6 +56,8 @@ while ($file = readdir(RULESDIR)) {
             }
 
             print "\n";
+        } elsif (defined($single)) {
+            print STDERR "Warning: unable to parse rule: $single";
         }
     }
     close(FILE);
