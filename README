@@ -40,12 +40,11 @@ rules.
 
 
 
-
 Requirements
 ~~~~~~~~~~~~
 It should work on most UNIX/Linux systems that have Perl, tar, gzip and wget
 (ftp://ftp.gnu.org/gnu/wget/) installed.
-I've successfully tested it on OpenBSD, FreeBSD, Linux and Solaris.
+I've successfully tested it on OpenBSD, FreeBSD, NetBSD, Linux and Solaris.
 Let me know if you manage to run it on an unlisted platform.
 
 I'm NOT responsible for what it does to your Snort machine.
