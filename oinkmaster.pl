@@ -4,6 +4,7 @@
 
 use strict;
 use Cwd;
+use File::Basename;
 use File::Copy;
 use Getopt::Std;
 
@@ -42,7 +43,6 @@ my $PRINT_BOTH        = 3;
 my $min_rules         = 1;                   # default minimum number of required rules
 my $min_files         = 1;                   # default minimum number of required files
 
-my $tmp_basedir       = "/tmp";                            # default base temporary directory
 my $config_file       = "/usr/local/etc/oinkmaster.conf";  # default config file
 
 my $verbose           = 0;
@@ -50,8 +50,9 @@ my $careful           = 0;
 my $quiet             = 0;
 my $super_quiet       = 0;
 my $check_removed     = 0;
-my $preserve_comments = 1;
+my $make_backup       = 0;
 my $update_vars       = 0;
+my $preserve_comments = 1;
 
 # Regexp to match a snort rule line. The msg string will go into $1 and 
 # the sid will go into $2.
@@ -61,6 +62,13 @@ my $SINGLELINE_RULE_REGEXP = '^\s*#*\s*(?:alert|log|pass)\s.+msg\s*:\s*"(.+?)'.
 # Regexp to match the start (the first line) of a possible multi-line rule.
 my $MULTILINE_RULE_REGEXP = '^\s*#*\s*(?:alert|log|pass)\s.*\\\\\s*\n$'; # ';
 
+# Default temporary base directory.
+my $tmp_basedir;
+if (exists($ENV{tmp})) {
+    $tmp_basedir = $ENV{tmp};
+} else {
+    $tmp_basedir = "/tmp";
+}
 
 use vars qw
    (
@@ -91,12 +99,12 @@ parse_cmdline(\%config);
 # Read in $config_file. Will exit if something is wrong.
 read_config($config_file, \%config);
 
-# Create empty temporary directory.
-my $tmpdir = make_tempdir($tmp_basedir);
-
 # Do some basic sanity checking and exit if something fails.
 # A new PATH will be set.
 sanity_check();
+
+# Create empty temporary directory.
+my $tmpdir = make_tempdir($tmp_basedir);
 
 # Set new umask if one was specified in the config file.
 umask($config{umask}) if exists($config{umask});
@@ -149,7 +157,7 @@ $something_changed = 1
     if (keys(%{$changes{modified_files}}) ||
         keys(%{$changes{added_files}})    ||
         keys(%{$changes{removed_files}})  ||
-        keys(%{$changes{new_vars}}));
+        $#{$changes{new_vars}} > -1);
 
 
 # Update files listed in %changes{modified_files} (move the new files from the temporary
@@ -159,10 +167,10 @@ $something_changed = 1
 if ($something_changed) {
     if ($careful) {
         print STDERR "No need to backup old files (running in careful mode), skipping.\n"
-          if (exists($config{backup_dir}) && (!$quiet));
+          if ($make_backup && (!$quiet));
     }  else {
         make_backup($config{output_dir}, $config{backup_dir})
-          if (exists($config{backup_dir}));
+          if ($make_backup);
 
         update_rules($config{output_dir}, keys(%{$changes{modified_files}}));
 
@@ -171,7 +179,7 @@ if ($something_changed) {
     }
 } else {
     print STDERR "No files modified - no need to backup old files, skipping.\n"
-      if (exists($config{backup_dir}) && !$quiet);
+      if ($make_backup && !$quiet);
 }
 
 
@@ -234,20 +242,28 @@ sub parse_cmdline($)
     my $cfg_ref    = shift;
     my $cmdline_ok = getopts('b:cC:eho:qQru:U:vV');
 
-    $$cfg_ref{backup_dir} = $opt_b if (defined($opt_b));
     $config_file          = $opt_C if (defined($opt_C));
     $$cfg_ref{url}        = $opt_u if (defined($opt_u));
-    $$cfg_ref{varfile}    = $opt_U if (defined($opt_U));
     $careful              = 1      if (defined($opt_c));
     $preserve_comments    = 0      if (defined($opt_e));
     $quiet                = 1      if (defined($opt_q));
     $check_removed        = 1      if (defined($opt_r));
-    $update_vars          = 1      if (defined($opt_U));
     $verbose              = 1      if (defined($opt_v));
 
     if (defined($opt_Q)) {
         $quiet       = 1;
         $super_quiet = 1;
+    }
+
+    if (defined($opt_b)) {
+        $$cfg_ref{backup_dir} = $opt_b;
+        $$cfg_ref{backup_dir} =~ s/\/+$//;
+        $make_backup = 1;
+    }
+
+    if (defined($opt_U)) {
+        $$cfg_ref{varfile} = $opt_U;
+        $update_vars = 1;
     }
 
     show_usage() if (defined($opt_h));
@@ -262,16 +278,13 @@ sub parse_cmdline($)
   # -o <dir> is the only required option in normal usage.
     if (defined($opt_o)) {
         $$cfg_ref{output_dir} = $opt_o;
+        $$cfg_ref{output_dir} =~ s/\/+$//;
     } else {
         show_usage();
     }
 
   # Don't accept additional arguments, since they're invalid.
     $_ = shift(@ARGV) && show_usage();
-
-  # Remove possible trailing slashes (just for cosmetic reasons).
-    $$cfg_ref{output_dir} =~ s/\/+$//;
-    $$cfg_ref{backup_dir} =~ s/\/+$// if (exists($$cfg_ref{backup_dir}));
 }
 
 
@@ -370,7 +383,21 @@ sub sanity_check()
     }
 
   # We now know a path was defined in the config, so set it.
-    $ENV{'PATH'} = $config{path};
+  # If we're under cygwin and path was specified as msdos style, convert
+  # it to cygwin style to avoid problems.
+    if ($^O eq "cygwin" && $config{path} =~ /^[a-zA-Z]:[\/\\]/) {
+        $ENV{PATH} = "";
+        foreach my $path (split(/;/, $config{path})) {
+	    if ($path =~ /^([a-zA-Z]):[\/\\](.+)/) {
+                my ($drive, $dir) = ($1, $2);
+		$dir =~ s/\\/\//g;
+		$ENV{PATH} .= "/cygdrive/$drive/$dir:";
+	    }
+	}
+        chop($ENV{PATH});
+    } else {
+        $ENV{PATH} = $config{path};
+    }
 
   # Reset environment variables that may cause trouble.
     delete @ENV{'IFS', 'CDPATH', 'ENV', 'BASH_ENV'};
@@ -388,7 +415,7 @@ sub sanity_check()
   # Make sure all required binaries can be found.
   # (Wget is not required if user specifies file:// as url. That check is done below.)
     foreach my $binary (@req_binaries) {
-        clean_exit("\"$binary\" could not be found in PATH.")
+        clean_exit("\"$binary\" could not be found in PATH ($ENV{PATH})")
           unless (is_in_path($binary));
     }
 
@@ -413,8 +440,11 @@ sub sanity_check()
   # Make sure the backup directory exists and is writable if running with -b.
     clean_exit("the backup directory \"$config{backup_dir}\" doesn't exist or ".
                "isn't writable by you.")
-      if (exists($config{backup_dir}) &&
-        (!-d "$config{backup_dir}" || !-w "$config{backup_dir}"));
+      if ($make_backup && (!-d "$config{backup_dir}" || !-w "$config{backup_dir}"));
+
+  # Make sure temporary directory exists.
+    clean_exit("the temporary directory $tmp_basedir does not exist or isn't writable by you.")
+      if (!-d "$tmp_basedir" || !-w "$tmp_basedir");
 }
 
 
@@ -478,7 +508,7 @@ sub unpack_rules_archive($)
     my $ok_lead  = 'a-zA-Z0-9_\.';       # allowed leading char in filenames in the tar archive
     my $ok_chars = 'a-zA-Z0-9_~\.\-/';   # allowed chars in filenames in the tar archive
 
-    my ($dir) = ($archive =~ /(.*)\//);  # extract directory part of the filename
+    my $dir = dirname($archive);
 
     my $old_dir = getcwd or clean_exit("could not get current directory: $!");
     chdir("$dir") or clean_exit("could not change directory to \"$dir\": $!");
@@ -494,14 +524,17 @@ sub unpack_rules_archive($)
   # Suffix has now changed from .tar.gz to .tar.
     $archive =~ s/\.gz$//;
 
-  # Read output from "tar tf $archive" into @tar_test.
+  # Read output from "tar tf $archive" into @tar_test, unless we're on win32.
     my @tar_test;
-    if (open(TAR,"-|")) {
-        @tar_test = <TAR>;
-    } else {
-        exec("tar","tf","$archive");
+
+    unless ($^O eq "MSWin32") {
+        if (open(TAR,"-|")) {
+            @tar_test = <TAR>;
+        } else {
+            exec("tar","tf","$archive");
+        }
+        close(TAR);
     }
-    close(TAR);
 
   # For each filename in the archive, do some basic (pretty useless) sanity checks.
     foreach my $filename (@tar_test) {
@@ -585,16 +618,13 @@ sub disable_and_modify_rules($ $ $)
 
           # If we have already seen a rule with this sid, discard this one.
             if (exists($sids{$sid})) {
-                $_ = $file;
-                $_ =~ s/.*\///;
+                $_ = basename($file);
                 warn("\nWARNING: duplicate SID in downloaded file $_, SID=$sid, which has ".
                      "already been seen in $sids{$sid}, discarding rule \"$msg\"\n");
                 next RULELOOP;
             }
 
-            $_ = $file;
-            $_ =~ s/.*\///;
-            $sids{$sid} = $_;
+            $sids{$sid} = basename($sid);
 
           # Even if it was a single-line rule, we want to have a copy in $multi now.
 	    $multi = $single unless (defined($multi));
@@ -684,7 +714,7 @@ sub setup_rules_hash($)
         close(NEWFILE);
 
       # From now on we don't care about the path, so remove it.
-	$file =~ s/.*\///;
+	$file = basename($file);
 
         my ($single, $multi, $nonrule);
 
@@ -784,6 +814,12 @@ sub make_backup($ $)
 
     closedir(OLDRULES);
 
+  # Also backup the -U <file> if specified.
+    if ($update_vars) {
+        copy("$config{varfile}", "$backup_tmp_dir/variable-file.conf")
+          or warn("WARNING: error copying $config{varfile} to $backup_tmp_dir: $!")
+    }
+
   # Change directory to $tmpdir (so we'll be right below the directory where
   # we have our rules to be backed up).
     my $old_dir = getcwd or clean_exit("could not get current directory: $!");
@@ -823,10 +859,10 @@ sub print_changes($ $)
 
   # Print new variables.
     if ($update_vars) {
-       if (keys(%{$$ch_ref{new_vars}})) {
+       if ($#{$changes{new_vars}} > -1) {
             print "\n[*] New variables: [*]\n";
-            foreach my $var (sort(keys(%{$$ch_ref{new_vars}}))) {
-                print "    var $var $$ch_ref{new_vars}{$var}\n";
+            foreach my $var (@{$changes{new_vars}}) {
+                print "    $var";
             }
         } else {
             print "\n[*] New variables: [*]\n    None.\n"
@@ -1022,8 +1058,8 @@ sub get_changes($ $)
 
   # Compare the rules.
     FILELOOP:foreach my $file_w_path (sort(keys(%$new_files_ref))) {    # for each new file
-        my $file = $file_w_path;
-        $file =~ s/.*\///;                                        # remove path
+        my $file = basename($file_w_path);
+
         next FILELOOP if (exists($$rh_ref{added_files}{$file}));  # skip diff if it's an added file
 
         foreach my $sid (keys(%{$$rh_ref{new}{rules}{$file}})) {  # for each sid in the new file
@@ -1118,10 +1154,8 @@ sub update_rules($ @)
     my @modified_files = @_;
 
     foreach my $file_w_path (@modified_files) {
-        my $file = $file_w_path;
-        $file =~ s/.*\///;        # remove path
-        copy("$file_w_path", "$dst_dir/$file")
-          or clean_exit("could not copy $file_w_path to $file: $!");
+        copy("$file_w_path", "$dst_dir/")
+          or clean_exit("could not copy $file_w_path to $dst_dir: $!");
     }
 }
 
@@ -1131,9 +1165,12 @@ sub update_rules($ @)
 sub is_in_path($)
 {
     my $file = shift;
+    my $SEP  = ':';
 
-    foreach my $dir (split(/:/, $ENV{PATH})) {
-        return (1) if (-x "$dir/$file");
+    $SEP = ';' if $^O eq "MSWin32";
+
+    foreach my $dir (split(/$SEP/, $ENV{PATH})) {
+        return (1) if (-x "$dir/$file" || -x "$dir/$file.exe");
     }
 
     return (0);
@@ -1262,11 +1299,7 @@ sub get_next_entry($ $ $ $)
 # If successful, the name of the created directory is returned.
 sub make_tempdir($)
 {
-    my $base = shift;
-
-    die("The temporary directory $base does not exist.\nExiting...\n")
-      unless (-d "$base");
-
+    my $base   = shift;
     my $tmpdir = "$base/oinkmaster.$$";
 
     mkdir("$tmpdir", 0700)
@@ -1284,7 +1317,10 @@ get_new_vars($ $ $)
     my $ch_ref     = shift;
     my $local_conf = shift;
     my $dist_conf  = shift;
-    my %vars;
+    my $var_regexp = '^\s*var\s+(\S+)\s+\S+';  # match var line where var name goes into $1
+    my @new_vars;
+    my %old_vars;
+
 
     unless (-e "$dist_conf") {
         warn("WARNING: no $DIST_SNORT_CONF found in downloaded archive, ".
@@ -1295,30 +1331,33 @@ get_new_vars($ $ $)
     print STDERR "Looking for new variables... "
       unless ($quiet);
 
-    open(DIST_CONF, "<$dist_conf")
-      or clean_exit("could not open $dist_conf for reading: $!");
 
-    while ($_ = <DIST_CONF>) {
-        $vars{$1} = $2
-          if (/^\s*var\s+(\S+)\s+(\S+)/);
-    }
-
-    close(DIST_CONF);
-
+  # Read in variables from old file.
     open(LOCAL_CONF, "<$local_conf")
       or clean_exit("could not open $local_conf for reading: $!");
 
     my @local_conf = <LOCAL_CONF>;
 
     foreach $_ (@local_conf) {
-        delete($vars{$1})
-          if (/^\s*var\s+(\S+)\s+(\S+)/);
+        $old_vars{$1}++
+          if (/$var_regexp/i);
     }
 
     close(LOCAL_CONF);
 
-  # Any keys left in %vars are missing in the local config.
-    %{$$ch_ref{new_vars}} = %vars;
+
+  # Read in variables from new file.
+    open(DIST_CONF, "<$dist_conf")
+      or clean_exit("could not open $dist_conf for reading: $!");
+
+    while ($_ = <DIST_CONF>) {
+        push(@new_vars, $_)
+          if (/$var_regexp/i && !exists($old_vars{$1}));
+    }
+
+    close(DIST_CONF);
+
+    @{$$ch_ref{new_vars}} = @new_vars;
 
     print "done.\n"
       unless ($quiet);
@@ -1330,22 +1369,33 @@ get_new_vars($ $ $)
 sub
 add_new_vars($ $)
 {
-    my $ch_ref     = shift;
-    my $local_conf = shift;
+    my $ch_ref  = shift;
+    my $varfile = shift;
+    my $new_content;
 
-    return unless (keys(%{$$ch_ref{new_vars}}));
+    return unless ($#{$changes{new_vars}} > -1);
 
-    open(OLD_LOCAL_CONF, "<$local_conf")
-      or clean_exit("could not open $local_conf for reading: $!");
-    my @local_conf = <OLD_LOCAL_CONF>;
+    open(OLD_LOCAL_CONF, "<$varfile")
+      or clean_exit("could not open $varfile for reading: $!");
+    my @old_content = <OLD_LOCAL_CONF>;
     close(OLD_LOCAL_CONF);
 
-    open(NEW_LOCAL_CONF, ">$local_conf")
-      or clean_exit("could not open $local_conf for writing: $!");
-    foreach my $varname (sort(keys(%{$$ch_ref{new_vars}}))) {
-        print NEW_LOCAL_CONF "var $varname $$ch_ref{new_vars}{$varname}\n";
+    open(NEW_LOCAL_CONF, ">$varfile")
+      or clean_exit("could not open $varfile for writing: $!");
+
+    my @old_vars = grep(/^\s*var\s+\S+\s+\S+/i, @old_content);
+
+  # If any vars exist in old file, find last one before inserting new ones.
+    if ($#old_vars > -1) {
+        while ($_ = shift(@old_content)) {
+            print NEW_LOCAL_CONF $_;
+            last if ($_ eq $old_vars[$#old_vars]);
+        }
     }
-    print NEW_LOCAL_CONF @local_conf;
+
+    print NEW_LOCAL_CONF @{$changes{new_vars}};
+    print NEW_LOCAL_CONF @old_content;
+
     close(NEW_LOCAL_CONF);
 }
 
@@ -1357,10 +1407,11 @@ add_new_vars($ $)
 # of just exit(0).
 sub clean_exit($)
 {
-    chdir('/');
-
-    system("rm","-r","-f","$tmpdir")
-      and warn("WARNING: unable to remove temporary directory $tmpdir.\n");
+    if (defined($tmpdir)) {
+        chdir('/');
+        system("rm","-r","-f","$tmpdir")
+          and warn("WARNING: unable to remove temporary directory $tmpdir.\n");
+    }
 
     if ($_[0] eq "") {
         exit(0);
