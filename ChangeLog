@@ -3,6 +3,10 @@
 Oinkmaster v1.2 - 200xxxxx
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 o Slightly improved modifysid/template documentation and examples.
+  For example, added a new template to disable a SID but only if
+  it has a specific revision number, so you can disable a rule
+  temporarily and automatically start using it again if it becomes
+  updated. Thanks to Russell Fulton for this suggestion.
 
 
 
