@@ -45,8 +45,9 @@ You can specify multiple
 .B -C
 .I cfg
 to load multiple configuration files.
-They will be loaded in order of appearance on the command line, and if an 
-option is redefined, it overrides the previous value.
+They will be loaded in order of appearance on the command line. If an 
+option is redefined, it overrides the previous value (except for the "url"
+option, as you are allowed to specify multiple URLs).
 .IP "\fB-e
 Enable rules that are disabled by default in the downloaded rules archive 
 by removing all the leading "#" from them. If there are any disabled rules 

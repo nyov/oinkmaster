@@ -199,10 +199,11 @@ A6:  There are many situations where this is useful, but perhaps the most
      common usage is to be able to use one global and one sensor-specific
      configuration file. You would usually want to make sure to include 
      the sensor-specific file last since possible values that are 
-     redefined overrides the previous ones. Remember that you can also 
-     use multiple "-C" arguments when starting Oinkmaster to make it load 
-     multiple configuration files. They will be loaded in the order of
-     appearance on the command line.
+     redefined overrides the previous ones (except for the "url" option,
+     as you are allowed to specify multiple URLs). Remember that you
+     can also use multiple "-C" arguments when starting Oinkmaster to make
+     it load multiple configuration files. They will be loaded in the order
+     of appearance on the command line.
 
 
 
