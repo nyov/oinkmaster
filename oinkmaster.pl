@@ -55,7 +55,7 @@ my $make_backup       = 0;
 my $update_vars       = 0;
 my $preserve_comments = 1;
 
-# Regexp to match a snort rule line. The msg string will go into $1 and 
+# Regexp to match a snort rule line. The msg string will go into $1 and
 # the sid will go into $2.
 my $SINGLELINE_RULE_REGEXP = '^\s*#*\s*(?:alert|log|pass)\s.+msg\s*:\s*"(.+?)'.
                              '"\s*;.*sid\s*:\s*(\d+)\s*;.*\)\s*$'; # ';
@@ -634,10 +634,7 @@ sub disable_and_modify_rules($ $ $)
 
           # Some rules may be commented out by default. Enable them if -e is specified.
 	    if ($multi =~ /^#/) {
-		if ($preserve_comments) {
-		    print STDERR "Preserving disabled rule (SID $sid): $msg\n"
-		      if ($verbose);
-		} else {
+		unless ($preserve_comments) {
 		    print STDERR "Enabling disabled rule (SID $sid): $msg\n"
 		      if ($verbose);
                     $multi =~ s/^#*//;
@@ -817,7 +814,7 @@ sub make_backup($ $)
 
     closedir(OLDRULES);
 
-  # Also backup the -U <file> if specified.
+  # Also backup the -U <file> (as "variable-file.conf") if specified.
     if ($update_vars) {
         copy("$config{varfile}", "$backup_tmp_dir/variable-file.conf")
           or warn("WARNING: error copying $config{varfile} to $backup_tmp_dir: $!")
@@ -1001,7 +998,7 @@ sub print_changetype($ $ $ $)
 {
     my $type   = shift;   # $PRINT_OLD, $PRINT_NEW or $PRINT_BOTH
     my $string = shift;   # string to print before filename
-    my $ch_ref = shift;   # reference to rules changes hash
+    my $ch_ref = shift;   # reference to an entry in the rules changes hash
     my $rh_ref = shift;   # reference to rules hash
 
     foreach my $file (sort({uc($a) cmp uc($b)} keys(%$ch_ref))) {
