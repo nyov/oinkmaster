@@ -558,7 +558,7 @@ sub disable_and_modify_rules($ $ $)
     print STDERR "\n"
       if ($verbose);
 
-    foreach my $file (keys(%$newfiles_ref)) {
+    foreach my $file (sort(keys(%$newfiles_ref))) {
 
       # Make sure it's a regular file.
         clean_exit("$file is not a regular file.")
@@ -587,12 +587,14 @@ sub disable_and_modify_rules($ $ $)
             if (exists($sids{$sid})) {
                 $_ = $file;
                 $_ =~ s/.*\///;
-                warn("\nWARNING: duplicate SID in $_ (discarding rule), ".
-                     "SID=$sid, rule=\"$msg\"\n");
+                warn("\nWARNING: duplicate SID in downloaded file $_, SID=$sid, which has ".
+                     "already been seen in $sids{$sid}, discarding rule \"$msg\"\n");
                 next RULELOOP;
             }
 
-            $sids{$sid}++;
+            $_ = $file;
+            $_ =~ s/.*\///;
+            $sids{$sid} = $_;
 
           # Even if it was a single-line rule, we want to have a copy in $multi now.
 	    $multi = $single unless (defined($multi));
@@ -673,7 +675,7 @@ sub setup_rules_hash($)
     my $new_files_ref = shift;
     my (%rh, %allsids);
 
-    foreach my $file (keys(%$new_files_ref)) {
+    foreach my $file (sort(keys(%$new_files_ref))) {
         warn("WARNING: downloaded rules file $file is empty (maybe correct, maybe not)\n")
           if (!-s "$file" && $verbose);
 
