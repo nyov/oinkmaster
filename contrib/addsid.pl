@@ -39,7 +39,7 @@ my $USAGE = "usage: $0 <rulesdir> [rulesdir2, ...]\n";
 # Start in verbose mode.
 my $verbose = 1;
 
-my (%allsids, %config);
+my (%all_sids, %active_sids, %config);
 
 my @rulesdirs = @ARGV;
 
@@ -66,7 +66,7 @@ foreach my $dir (@rulesdirs) {
 
         open(OLDFILE, "$dir/$file")
           or die("could not open $dir/$file: $!\n");
-        print STDERR "Processing $file\n";
+        print "Processing $file\n";
         my @file = <OLDFILE>;
         close(OLDFILE);
 
@@ -137,16 +137,22 @@ sub get_next_available_sid(@)
 
             while (get_next_entry(\@file, \$single, \$multi, \$nonrule, \$msg, \$sid)) {
                 if (defined($single) && defined($sid)) {
-                    print STDERR "WARNING: duplicate SID: $sid\n"
-	              if (exists($allsids{$sid}));
-   	            $allsids{$sid}++;
+   	            $all_sids{$sid}++;
+
+                  # If this is an active rule add to %active_sids and
+                  # warn if it already exists.
+                    if ($single =~ /^\s*alert/) {
+                        print STDERR "WARNING: duplicate SID: $sid\n"
+    	                  if (exists($active_sids{$sid}));
+                        $active_sids{$sid}++ 
+                    }
                 }
             }
         }
     }
 
   # Sort sids and use highest one + 1, unless it's below MIN_SID.
-    @_ = sort {$a <=> $b} keys(%allsids);
+    @_ = sort {$a <=> $b} keys(%all_sids);
     my $sid = pop(@_);
 
     if (!defined($sid)) {
