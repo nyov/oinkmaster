@@ -26,6 +26,8 @@ o Added 'enablesid' keyword to oinkmaster.conf.
 o Slightly improved rules parsing.
 o Look for oinkmaster.conf in /etc/ and /usr/local/etc/ by default.
 o Added a FAQ.
+o contrib/create-sidmap.pl can now take an arbitrary number of directories
+  as argument.
 
 
 
