@@ -177,22 +177,18 @@ A4:  Yes! This can be done almost exactly like in the example above.
 Q5:  In which order will the localsid/modifysid/disablesid/enablesid 
      configuration directives be processed?
 
-A5:  localsid is processed first and if there is such a statement for a 
-     rule, no further processing of that rule is performed.
-     The order of processing for the others is:
+A5:  For each rule, the following is performed:
+ 
+     1) If there is a matching localsid statement, skip further processing
+     2) If -e was specified, enable the rule
+     3) Process all matching modifysid and use_template statements in 
+        the same order as they appeared in the configuration file
+     4) Disable the rule if there is a matching disablesid statement
+     5) Enable the rule if there is a matching enablesid statement
 
-     modifysid -> disablesid -> enablesid
-
-     The order they appear in oinkmaster.conf does not matter. So if you 
-     use both "enablesid 1" and "disablesid 1" in oinkmaster.conf (in 
-     any order), SID 1 will first be disabled and then enabled. So if 
-     SID 1 was enabled by default in the downloaded rules archive, this 
-     is a NOOP. Disabling a disabled rule is also a NOOP.
-
-     Note: If you specify "-e" on the command line (to enable all rules
-           that are disabled by default), they will be enabled before
-           the modifysid/disablesid/enablesid happens. It still has no
-           effect on localsid rules; they are always preserved.
+     Usually you don't have to worry about this as it only matters if you
+     have multiple types of processing directives for the same rule 
+     and that affects eachother.
 
 
 
