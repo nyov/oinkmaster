@@ -1,3 +1,10 @@
+v0.5 - 20020503
+~~~~~~~~~~~~~~~
+o Fixed bug where all filenames would not always be printed.
+o Document that using -p is highly recommended.
+
+
+
 v0.4 - 20020422
 ~~~~~~~~~~~~~~~
 o More or less rewritten from scratch.
