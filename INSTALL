@@ -15,10 +15,11 @@ o Edit the file oinkmaster.conf. There are some options you may want to
   rules, you need to add those SIDs to oinkmaster.conf manually, or they  
   will be re-enabled after each update. Note that Oinkmaster will enable 
   all rules by default. Even those that are commented out by default in 
-  the rules archive will be enabled, unless -p is specified. Also note that
-  possible local modifications you've done inside the official Snort rules
-  files will be lost since the files will be overwritten by the new versions
-  from the downloaded rules archive after each update.
+  the rules archive will be re-enabled, unless -p is specified. Note that
+  those rules are commented out for a reason, thus using -p is highly recommended.
+  Also note that possible local modifications you've done inside the official
+  Snort rules files will be lost since the files will be overwritten by the
+  new versions from the downloaded rules archive after each update.
 
 o Decide in which directory you want to put the new rules. Since you probably
   already have Snort up and running, you should use your existing rules

@@ -341,8 +341,9 @@ sub show_usage
                  "-r         Check for rules files that exist in the output directory\n".
                  "           but not in the downloaded rules archive (i.e. files that may\n".
                  "           have been removed from the archive).\n".
-		 "-p         Preserve disabled rules in downloaded rules (some rules may be\n".
-                 "           disabled by default, and Oinkmaster will usually enable them)\n".
+		 "-p         Preserve disabled rules in downloaded rules. Highly recommended!\n".
+                 "           Some rules may be disabled by default in the rules distribution\n".
+                 "           and Oinkmaster will re-enable them unless -p is specified.\n".
                  "-q         Quiet mode. No output unless changes were found\n".
 		 "-v         Verbose mode\n".
                  "-h         Show usage help\n\n";
