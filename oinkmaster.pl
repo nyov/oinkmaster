@@ -73,6 +73,7 @@ sub parse_mod_expr($ $ $ $);
 sub untaint_path($);
 sub approve_changes();
 sub parse_singleline_rule($ $ $);
+sub minimize_diff($ $);
 sub catch_sigint();
 sub clean_exit($);
 
@@ -325,6 +326,7 @@ Options:
 -e         Enable all rules that are disabled by default
 -h         Show this usage information
 -i         Interactive mode - you will be asked to approve the changes (if any)
+-m         Minimize diff when printing result by removing rules' common parts
 -q         Quiet mode - no output unless changes were found
 -Q         super-quiet mode - like -q but even more quiet
 -r         Check for rules files that exist in the output directory
@@ -356,6 +358,7 @@ sub parse_cmdline($)
         "e"   => \$$cfg_ref{enable_all},
         "h"   => \&show_usage,
         "i"   => \$$cfg_ref{interactive},
+        "m"   => \$$cfg_ref{minimize_diff},
         "o=s" => \$$cfg_ref{output_dir},
         "q"   => \$$cfg_ref{quiet},
         "Q"   => \$$cfg_ref{super_quiet},
@@ -1310,7 +1313,7 @@ sub make_backup($ $)
 
 
 
-# Print all changes.
+# Print the results.
 sub print_changes($ $)
 {
     my $ch_ref = shift;
@@ -1472,8 +1475,15 @@ sub print_changetype($ $ $ $)
             } elsif ($type == $PRINT_NEW) {
                 print "        $$rh_ref{new}{rules}{$file}{$sid}"
 	    } elsif ($type == $PRINT_BOTH) {
-                print "        old: $$rh_ref{old}{rules}{$file}{$sid}";
-                print "        new: $$rh_ref{new}{rules}{$file}{$sid}";
+                if ($config{minimize_diff}) {
+                    my ($old, $new) = minimize_diff($$rh_ref{old}{rules}{$file}{$sid},
+                                                    $$rh_ref{new}{rules}{$file}{$sid});
+                    print "        old sid $sid: $old";
+                    print "        new sid $sid: $new";
+                } else {
+                    print "        old: $$rh_ref{old}{rules}{$file}{$sid}";
+                    print "        new: $$rh_ref{new}{rules}{$file}{$sid}";
+                }
 	    }
         }
     }
@@ -1980,6 +1990,62 @@ sub approve_changes()
     }
 
     return ($answer =~ /^y/i);
+}
+
+
+
+# Remove common leading and trailing stuff from two rules.
+sub minimize_diff($ $)
+{
+    my $old_rule = shift;
+    my $new_rule = shift;
+
+  # Additional chars to print left and right to the diffing
+  # part, to get some context.
+    my $additional_chars = 15;
+
+  # Go forward char by char until they aren't equeal.
+    my @old = split(//, $old_rule);
+    my @new = split(//, $new_rule);
+
+    my $i = 0;
+    while ($i <= $#old && $i <= $#new && $old[$i] eq $new[$i]) {
+        $i++;
+    }
+
+  # Now same thing but backwards.
+    @old = reverse(split(//, $old_rule));
+    @new = reverse(split(//, $new_rule));
+
+    my $j = 0;
+    while ($j <= $#old && $j <= $#new && $old[$j] eq $new[$j]) {
+        $j++;
+    }
+
+  # Print additional x chars on either side, if there is room for it.
+    $i -= $additional_chars;
+    $i = 0 if ($i < 0);
+
+    $j = -$j + $additional_chars;
+    $j = -1 if ($j > -1);
+
+    my ($old, $new);
+
+  # No chars should be skipped at the end if $j is -1, 
+  # so don't use 3rd arg to substr then.
+    if ($j == -1) {
+        $old = "..." . substr($old_rule, $i);
+        $new = "..." . substr($new_rule, $i);
+    } else {
+        $old = "..." . substr($old_rule, $i, $j) . "...";
+        $new = "..." . substr($new_rule, $i, $j) . "...";
+    }
+
+    chomp($old, $new);
+    $old .= "\n";
+    $new .= "\n";
+
+    return ($old, $new);
 }
 
 
