@@ -1166,10 +1166,7 @@ sub get_next_entry($ $ $ $)
             $$single_ref =~ s/\\\s*\n//;    # remove trailing "\" for single-line version
 
           # If there are no more lines, this can not be a valid multi-line rule.
-
             if (!($line = shift(@$arr_ref))) {
-                $$multi_ref .= $line;
-
                 @_ = split(/\n/, $$multi_ref);
 
                 undef($$multi_ref);
