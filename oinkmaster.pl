@@ -100,7 +100,7 @@ unpack_rules_archive("$TMPDIR/$outfile");
 # Filenames (with full path) will be stored as %new_files{filenme}.
 # Make sure there is at least one file to be updated.
 if (get_new_filenames(\%new_files, "$TMPDIR/rules/") < 1) {
-    clean_exit("no rules files found in downloaded archive.")
+    clean_exit("no rules files found in downloaded archive.");
 }
 
 # Disable (#comment out) all sids listed in conf{sid_disable_list}
@@ -441,8 +441,10 @@ sub unpack_rules_archive($)
   # Looks good. Now we can untar it.
     print STDERR "Archive successfully downloaded, unpacking... "
       unless ($quiet);
+
     clean_exit("failed to untar $archive.")
       if system("tar","xf","$archive");
+
     clean_exit("no \"rules/\" directory found in tar file.")
       unless (-d "$dir/rules");
 
@@ -549,7 +551,7 @@ sub disable_and_modify_rules($ $ @)
         close(OUTFILE);
     }
     print STDERR "$num_disabled rules disabled.\n"
-      unless ($quiet)
+      unless ($quiet);
 }
 
 
@@ -633,14 +635,14 @@ sub find_line($ $)
     my $line    = shift;   # line to look for
     my $arr_ref = shift;   # reference to array to look in
 
-    return 1 unless ($line =~ /\S/);                         # skip blank lines
-    return 1 if     ($line =~ /^\s*#+\s*\$I\S:.+Exp\s*\$/);  # also skip CVS Id tag
+    return (1) unless ($line =~ /\S/);                         # skip blank lines
+    return (1) if     ($line =~ /^\s*#+\s*\$I\S:.+Exp\s*\$/);  # also skip CVS Id tag
 
     foreach $_ (@$arr_ref) {
-        return 1 if ($_ eq $line);                           # string found
+        return (1) if ($_ eq $line);                           # string found
     }
 
-    return 0;                                                # string not found
+    return (0);                                                # string not found
 }
 
 
@@ -692,7 +694,8 @@ sub make_backup($ $)
 
   # Move the archive to the backup directory.
     move("$TMPDIR/rules-backup-$date.tar.gz", "$backup_dir/")
-      or warn("WARNING: unable to move $TMPDIR/rules-backup-$date.tar.gz to $backup_dir/: $!\n");
+      or warn("WARNING: unable to move $TMPDIR/rules-backup-$date.tar.gz ".
+              "to $backup_dir/: $!\n");
 
     print STDERR " saved as $backup_dir/rules-backup-$date.tar.gz.\n"
       unless ($quiet);
@@ -809,7 +812,7 @@ sub get_modified_files($ $)
   # For each new rules file...
     foreach my $file_w_path (keys(%$new_files_ref)) {
         my $file = $file_w_path;
-            $file =~ s/.*\///;    # remove path
+        $file =~ s/.*\///;    # remove path
 
       # Check if there were any rules changes in this file.
         foreach my $type (keys(%{$changes{rules}})) {
@@ -833,7 +836,7 @@ sub get_modified_files($ $)
         }
     }
 
-    return(keys(%modified_files));
+    return (keys(%modified_files));
 }
 
 
@@ -860,8 +863,8 @@ sub get_changes($ $)
 
         while ($_ = readdir(OLDRULES)) {
             $changes{removed_files}{"$_"}++
-              if (/$config{update_files}/ && !exists($config{file_ignore_list}{$_}) && 
-                  !-e "$TMPDIR/rules/$_");
+              if (/$config{update_files}/ && !exists($config{file_ignore_list}{$_}) &&
+                !-e "$TMPDIR/rules/$_");
         }
 
         closedir(OLDRULES);
@@ -924,7 +927,7 @@ sub get_changes($ $)
 
     print STDERR "done.\n" unless ($quiet);
 
-    return(%changes);
+    return (%changes);
 }
 
 
@@ -947,7 +950,7 @@ sub get_new_filenames($ $)
     closedir(NEWRULES);
 
   # Return number of new interesting filenames.
-    return(keys(%$fn_ref));
+    return (keys(%$fn_ref));
 }
 
 
@@ -962,7 +965,7 @@ sub update_rules($ @)
         my $file = $file_w_path;
         $file =~ s/.*\///;    # remove path
         move("$file_w_path", "$output_dir/$file")
-          or clean_exit("could not move $file_w_path to $file: $!")
+          or clean_exit("could not move $file_w_path to $file: $!");
     }
 }
 
