@@ -321,9 +321,11 @@ sub sanity_check()
           unless (exists($config{$_}));
     }
 
-  # We now know a path was defined in the config, so set it. Also reset IFS.
-    $ENV{"PATH"} = $config{path};
-    $ENV{'IFS'}  = '';
+  # We now know a path was defined in the config, so set it.
+    $ENV{'PATH'} = $config{path};
+
+  # Reset environment variables that may cause trouble.
+    delete @ENV{'IFS', 'CDPATH', 'ENV', 'BASH_ENV'};
 
   # Make sure all required binaries can be found.
   # (Wget is not required if user specifies file:// as url. That check is done below.)
