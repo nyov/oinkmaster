@@ -19,7 +19,7 @@ opendir(RULESDIR, "$rulesdir") or die("could not open $rulesdir: $!\n");
 while ($file = readdir(RULESDIR)) {
     next unless ($file =~ /\.rules$/);
 
-    open(FILE, $file) or die("could not open $file: $!\n");
+    open(FILE, "$rulesdir/$file") or die("could not open $rulesdir/$file: $!\n");
     print STDERR "Processing $file\n";
 
     my ($multi, $single, $nonrule, $newfile);
@@ -83,7 +83,7 @@ while ($file = readdir(RULESDIR)) {
     }
     close(FILE);
 
-    open(NEWFILE, ">$file") or die("could not open $file for writing: $!\n");
+    open(NEWFILE, ">$rulesdir/$file") or die("could not open $rulesdir/$file for writing: $!\n");
     print NEWFILE $newfile;
     close(NEWFILE);
 
