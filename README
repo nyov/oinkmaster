@@ -125,6 +125,11 @@ some day.
 You are also allowed to specify comma-separated lists of SIDs or files after
 "disablesid" and "skipfile". See comments and examples in oinkmaster.conf.
 
+The skilled/brave/stupid people can use the "modifysid" keyword in
+oinkmaster.conf to make arbitrary changes to certain rules after each download.
+This is an excellent way to screw up your rules, so use with care.
+See oinkmaster.conf for more information and examples.
+
 
 
 Usage examples
