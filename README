@@ -110,6 +110,7 @@ activate additional procedures, but this is how the basic update works.)
 Usage information
 ~~~~~~~~~~~~~~~~~
 Try ./oinkmaster.pl -h for more usage information and available options.
+There are also many useful notes and examples in the default oinkmaster.conf.
 
 As a first test, you can create an empty rules directory, for example
 /tmp/rules/. Then try executing "oinkmaster.pl -o /tmp/rules". Since your 
@@ -125,10 +126,10 @@ oinkmaster.conf manually (or check out the contrib directory for a help script)
 before running Oinkmaster, or they will be re-enabled after each update. 
 
 You disable rules by adding "disablesid x" to oinkmaster.conf, where
-x is the SID of the rule in question. So if you want the rule with sid 
-12345 to be commented out after each update, you add the line "disablesid 
-12345" to oinkmaster.conf. When you update the rules the next time, this 
-rule will be commented out and Oinkmaster will notify you of that change.
+x is the SID of the rule in question. So if you want the rule with SID
+12345 to be commented out after each update, you add the line
+"disablesid 12345" to oinkmaster.conf. When you update the rules the next time,
+this rule will be commented out and Oinkmaster will notify you of that change.
 
 You can also add entire files to be totally ignored by adding 
 "skipfile filename" options to oinkmaster.conf where "filename" is a file
@@ -146,26 +147,24 @@ oinkmaster.conf to make arbitrary changes to certain rules after each download.
 This is an excellent way to screw up your rules, so don't use it unless you
 really have to. See oinkmaster.conf for more information and examples.
 
-
-This script should probably be run manually but can also be run as a cron job.
+Oinkmaster should probably be run manually but can also be run as a cron job.
 But of course, be very careful when doing the latter. Think about what you're
 doing. It usually doesn't take much for these automatic updating scripts
 to fail, so things could easily get messed up from one update to another
 because of different layout in the rules archive, typo in a rule, bugs in
 the script etc etc (at least run snort -T on the new rules before restarting
-your running Snort). And as always when updating the Snort rules, there 
-may be some changes that you really don't like (or at least want to know 
+your running Snort process!). And as always when updating the Snort rules,
+there may be some changes that you really don't like (or at least want to know 
 about before using), so you should always manually verify the new rules 
 before using them. Since Oinkmaster will print all changes in the new 
 rules to the screen (in an easy-to-read format), this becomes a fairly 
-simple task. 
-
+simple task.
 
 
 
 Usage examples
 ~~~~~~~~~~~~~~
-To automagically update the rules every night at 02:30 and make backup
+To automagically update the rules every night at 02:30 and make a backup
 of the old ones into /snort/backup/ if there were any updates, and sending
 difference notification to syslog, you could use something like this
 in your crontab (always consider adding the -c flag (careful mode) when
@@ -180,7 +179,7 @@ disabled has changed and you now decide that you want to use it again,
 just remove its SID from oinkmaster.conf and it will be reactivated in
 the next update. If you want the output to be sent to you in a mail
 instead, you could use something like:
-oinkmaster.pl ... 2>&1 | mail -s "subject" you@somewhere.foo
+oinkmaster.pl ... 2>&1 | mail -s "subject" you@example.com
 
 If you just want to check for changes in the rules but not actually update
 your existing rules, you can use the -c flag for "careful" mode.
@@ -193,14 +192,13 @@ there were updates available, you could use something like this
 
 30 2 * * * TMP=`mktemp /tmp/oinkmaster.XXXXXX` &&
 (oinkmaster.pl -o /snort/snort.org-rules/ -q -c > $TMP 2>&1;
-if [ -s $TMP ]; then mail -s "subject" you@somewhere.foo < $TMP; fi; rm $TMP)
+if [ -s $TMP ]; then mail -s "subject" you@example.com < $TMP; fi; rm $TMP)
 
 This example only works on systems with the mktemp command but could easily be
 rewritten for others. You get the point. The important thing here is to use the
 -q argument (quiet mode) so Oinkmaster doesn't give any output unless there
 were updates available or if there were warning/error messages.
-
-You should of course change directories and subject/e-mail addresses in the
+You must of course change directories and subject/e-mail addresses in the
 examples above as appropriate.
 
 
@@ -214,34 +212,35 @@ o Added:
   - New rule (the SID did not exist in the old rules file).
 
 o Enabled:
-  - The rule (with this SID) was commented out in the old rules file, but is
-    now activated (probably because the SID was removed from oinkmaster.conf).
+  - The rule was commented out in the old rules file, but is
+    now activated (perhaps because the SID was removed from oinkmaster.conf).
 
 o Enabled and modified:
-  -  The rule (with this SID) was commented out in the old rules file, but
+  -  The rule was commented out in the old rules file, but
      is now activated. The actual rule had also been modified.
 
 o Removed:
-  - The rule (with this SID) does no longer exist in the new rules file.
+  - The rule does no longer exist in the new rules file.
 
 o Disabled:
-  - The rule (with this SID) still exists but has now been commented out
-    (probably because the SID was added to oinkmaster.conf).
+  - The rule still exists but has now been commented out (perhaps because 
+    a disablesid statement with this SID was added to oinkmaster.conf).
 
 o Disabled and modified:
-  - The rule (with this SID) still exists but has now been commented out.
+  - The rule still exists but has now been commented out.
     The actual rule had also been modified.
 
 o Modified active:
-  - The rule (with this SID) has been modified and is an active rule.
+  - The rule has been modified and is an active rule.
 
 o Modified inactive:
-  - The rule (with this SID) has been modified but is currently an
-    inactive (commented out) rule.
+  - The rule has been modified but is currently an inactive (commented 
+    out) rule.
 
 
-Here comes some typical example output. We see that a rule in web-frontpage.rules
-has been disabled and that an active rule in exploit.rules has been modified.
+Here comes some typical example output. We see that an active rule in 
+exploit.rules has been modified and that a rule in web-frontpage.rules has 
+been disabled.
 
 [***] Results from Oinkmaster started Thu Dec 11 09:39:06 2003 [***]
 
@@ -269,18 +268,17 @@ rev:5;)
     None.
 
 
-
 If there were any added files (i.e. files that have not been included in
-the rules archive before and that have now been added to your output directory),
-you should probably consider including them from your Snort configuration
-file. If there were any files removed from the archive, you should probably
-consider excluding them from your Snort configuration file (you must use -r
-to check for removed files).
+the rules archive before and that have now been added to your output 
+directory), you should probably consider including them from your Snort 
+configuration file. If there were any files removed from the archive, you 
+should probably consider excluding them from your Snort configuration file 
+(you must use -r to check for removed files).
 Note that if a SID is moved from one file to another, it will be regarded
-as removed from the first one and added to the new one.
-This is good, because if a rule we like is moved from file A to file B
-and we only include file A from our snort.conf, we sure would like to be
-informed of that.
+as removed from the first one and added to the new one. This is good, 
+because if a rule we like is moved from file A to file B and we only 
+include file A from our snort.conf, we sure would like to be informed of 
+that.
 
 
 
