@@ -1,0 +1,87 @@
+$Id$ #
+
+
+General info
+------------
+A modifysid template is nothing more than an easier way to define and 
+use modifysid expressions. With a template, you only need to define the 
+(often complex) modifysid expression once, and then call the template by 
+name every time you want to use it instead of repeating the modifysid 
+expression. For more information about modifysid, see the default 
+oinkmaster.conf file. Basically, a modifysid expression is simply a 
+substitution expression that will be applied on specified rules after 
+each update, so that you can make some tweaks to the rules. Lots of 
+template examples can be found in the template-examples.conf file.
+
+
+
+Usage syntax
+------------
+First you use "define_template" to define a template, and then 
+"use_template" to use it. You must make sure the template is defined 
+before you attempt to use it. You can either define and/or use the 
+templates directly in your regular oinkmaster.conf or put them in a 
+separate file, e.g. templates.conf. When using a separate file, make 
+sure both files are loaded, i.e. either start Oinkmaster with 
+"oinkmaster.pl -C templates.conf -C oinkmaster.conf ..." or use the 
+"include" directive, e.g. "include templates.conf" inside oinkmaster.conf.
+
+The syntax to define a template is:
+define_template <name> "modifythis" | "withthis"
+
+The "modifythis" is a Perl regular expression that will match the 
+pattern you want to replace with the "withthis" expression, 
+
+The syntax to use a template is:
+use_template <name> <sid> [ "arg1" "arg2" ... ]
+
+You can also use the wildcard ("*") or a comma-separated list of SIDs 
+as <sid>, just as with a regular modifysid expression. Everything after 
+<sid> is optional, unless you require arguments in your template 
+definition (keep reading).
+
+The "modifythis" | "withthis" stuff in define_template works just like 
+in a regular modifysid, but it has one more useful feature. The 
+modifysid substitution string can contain the special variable %ARGx% 
+string, where x is a number from 1 and up. Before the substitution on 
+the signature occurs, all the %ARGx% will be replaced with the 
+corresponding arguments to use_template. So %ARG1% will be replaced 
+with the first argument, %ARG2% with the second one, and so on.
+This is useful when you for example want to add "tag" statements (or 
+thresholding/limiting or whatever) to rules using a modifysid template, 
+but where you want the number of seconds to tag is different for 
+different rules. By giving this value as argument when using the 
+template, there is no need to write a new template for each value for 
+the number of seconds. Examples of this is found in 
+template-examples.conf.
+
+
+
+Usage hints
+-----------
+When adding new stuff to rules using templates (or regular modifysid 
+expressions) it usually doesn't matter where in the rule you put it 
+(unless it affect the way Snort parses and optimizes the rules). The 
+important thing is to write the substitution expression so that it
+will continue to work even if the regular rule becomes updated somehow. 
+Imagine this rule:
+
+alert tcp any any -> any any (msg: "foo"; flow:established; sid: 123;)
+
+Now if we want to add something to it, we need to find some part of the 
+rule to match, and then replace that part with itself + the stuff we 
+want to add. A bad example to do this is to match "flow:established;" 
+and replace it with "flow:established; newstuff;", because if the rule
+is updated and the flow statement is changed to  
+"flow:established,to_server;", our substitution expression would no 
+longer match. A better approach is to match against something you know 
+isn't going to change, like the sid statement or the very end of the 
+rule. Also try not to be strict about whitespaces. For example, 
+remember that a a sid statement can be written as 
+"sid:123;", "sid: 123;", "sid : 123 ;" and so on.
+
+
+
+Example template definitions
+----------------------------
+See the template-examples.conf file!
