@@ -60,6 +60,7 @@ sub setup_rules_hash($ $);
 sub get_first_only($ $ $);
 sub print_changes($ $);
 sub print_changetype($ $ $ $);
+sub print_summary_change($ $);
 sub make_backup($ $);
 sub get_changes($ $ $);
 sub get_new_filenames($ $);
@@ -95,9 +96,11 @@ my %config = (
     enable_all         => 0,
     interactive        => 0,
     make_backup        => 0,
+    minimize_diff      => 0,
     min_files          => 1,
     min_rules          => 1,
     quiet              => 0,
+    summary_output     => 0,
     super_quiet        => 0,
     update_vars        => 0,
     use_external_bins  => 1,
@@ -337,6 +340,7 @@ Options:
 -Q         super-quiet mode - like -q but even more quiet
 -r         Check for rules files that exist in the output directory
            but not in the downloaded rules archive
+-s         Leave out details in rules results, just print SID, msg and filename
 -T         Test configuration and then exit
 -u <url>   Download from this URL instead of the one in the configuration file
            (must be http://, https://, ftp://, file:// or scp:// ... .tar.gz)
@@ -369,6 +373,7 @@ sub parse_cmdline($)
         "q"   => \$$cfg_ref{quiet},
         "Q"   => \$$cfg_ref{super_quiet},
         "r"   => \$$cfg_ref{check_removed},
+        "s"   => \$$cfg_ref{summary_output},
         "T"   => \$$cfg_ref{config_test_mode},
         "u=s" => \$$cfg_ref{url},
         "U=s" => \$$cfg_ref{varfile},
@@ -615,9 +620,13 @@ sub sanity_check()
    my @req_params   = qw(path update_files);  # required parameters in conf
    my @req_binaries = qw(gzip tar);           # required binaries (unless we use modules)
 
-  # Can't use both -q and -v.
+  # Can't use both quiet mode and verbose mode.
     clean_exit("quiet mode and verbose mode at the same time doesn't make sense.")
       if ($config{quiet} && $config{verbose});
+
+  # Can't use multiple output modes.
+    clean_exit("can't use multiple output modes at the same time.")
+      if ($config{minimize_diff} && $config{summary_output});
 
   # Make sure all required variables are defined in the config file.
     foreach my $param (@req_params) {
@@ -1504,57 +1513,90 @@ sub print_changes($ $)
   # Print added rules.
     if (exists($$ch_ref{rules}{added})) {
         print "\n[+++]          Added rules:          [+++]\n";
-	print_changetype($PRINT_NEW, "Added to",
-                         \%{$$ch_ref{rules}{added}}, $rh_ref);
+        if ($config{summary_output}) {
+            print_summary_change(\%{$$ch_ref{rules}{added}}, $rh_ref);
+        } else {
+            print_changetype($PRINT_NEW, "Added to",
+                                 \%{$$ch_ref{rules}{added}}, $rh_ref);
+        }
     }
 
   # Print enabled rules.
     if (exists($$ch_ref{rules}{ena})) {
         print "\n[+++]         Enabled rules:         [+++]\n";
-	print_changetype($PRINT_NEW, "Enabled in",
-                         \%{$$ch_ref{rules}{ena}}, $rh_ref);
+        if ($config{summary_output}) {
+            print_summary_change(\%{$$ch_ref{rules}{ena}}, $rh_ref);
+        } else {
+            print_changetype($PRINT_NEW, "Enabled in",
+                             \%{$$ch_ref{rules}{ena}}, $rh_ref);
+        }
     }
 
   # Print enabled + modified rules.
     if (exists($$ch_ref{rules}{ena_mod})) {
         print "\n[+++]  Enabled and modified rules:   [+++]\n";
-	print_changetype($PRINT_BOTH, "Enabled and modified in",
-                         \%{$$ch_ref{rules}{ena_mod}}, $rh_ref);
+        if ($config{summary_output}) {
+            print_summary_change(\%{$$ch_ref{rules}{ena_mod}}, $rh_ref);
+        } else {
+   	    print_changetype($PRINT_BOTH, "Enabled and modified in",
+                             \%{$$ch_ref{rules}{ena_mod}}, $rh_ref);
+        }
     }
 
   # Print modified active rules.
     if (exists($$ch_ref{rules}{mod_act})) {
         print "\n[///]     Modified active rules:     [///]\n";
-	print_changetype($PRINT_BOTH, "Modified active in",
-                         \%{$$ch_ref{rules}{mod_act}}, $rh_ref);
+
+        if ($config{summary_output}) {
+            print_summary_change(\%{$$ch_ref{rules}{mod_act}}, $rh_ref);
+        } else {
+            print_changetype($PRINT_BOTH, "Modified active in",
+                             \%{$$ch_ref{rules}{mod_act}}, $rh_ref);
+        }
     }
 
   # Print modified inactive rules.
     if (exists($$ch_ref{rules}{mod_ina})) {
         print "\n[///]    Modified inactive rules:    [///]\n";
-	print_changetype($PRINT_BOTH, "Modified inactive in",
-                         \%{$$ch_ref{rules}{mod_ina}}, $rh_ref);
+        if ($config{summary_output}) {
+            print_summary_change(\%{$$ch_ref{rules}{mod_ina}}, $rh_ref);
+        } else {
+            print_changetype($PRINT_BOTH, "Modified inactive in",
+                             \%{$$ch_ref{rules}{mod_ina}}, $rh_ref);
+        }
     }
 
   # Print disabled + modified rules.
     if (exists($$ch_ref{rules}{dis_mod})) {
         print "\n[---]  Disabled and modified rules:  [---]\n";
-	print_changetype($PRINT_BOTH, "Disabled and modified in",
-                         \%{$$ch_ref{rules}{dis_mod}}, $rh_ref);
+        if ($config{summary_output}) {
+            print_summary_change(\%{$$ch_ref{rules}{dis_mod}}, $rh_ref);
+        } else {
+            print_changetype($PRINT_BOTH, "Disabled and modified in",
+                             \%{$$ch_ref{rules}{dis_mod}}, $rh_ref);
+        }
     }
 
   # Print disabled rules.
     if (exists($$ch_ref{rules}{dis})) {
         print "\n[---]         Disabled rules:        [---]\n";
-	print_changetype($PRINT_NEW, "Disabled in",
-                         \%{$$ch_ref{rules}{dis}}, $rh_ref);
+        if ($config{summary_output}) {
+            print_summary_change(\%{$$ch_ref{rules}{dis}}, $rh_ref);
+        } else {
+            print_changetype($PRINT_NEW, "Disabled in",
+                             \%{$$ch_ref{rules}{dis}}, $rh_ref);
+        }
     }
 
   # Print removed rules.
     if (exists($$ch_ref{rules}{removed})) {
         print "\n[---]         Removed rules:         [---]\n";
-	print_changetype($PRINT_OLD, "Removed from",
-                         \%{$$ch_ref{rules}{removed}}, $rh_ref);
+        if ($config{summary_output}) {
+            print_summary_change(\%{$$ch_ref{rules}{removed}}, $rh_ref);
+        } else {
+            print_changetype($PRINT_OLD, "Removed from",
+                             \%{$$ch_ref{rules}{removed}}, $rh_ref);
+        }
     }
 
 
@@ -1589,13 +1631,13 @@ sub print_changes($ $)
 
   # Print list of added files.
     if (keys(%{$$ch_ref{added_files}})) {
-        print "\n[+] Added files (consider updating your snort.conf to include them): [+]\n\n";
+        print "\n[+] Added files (consider updating your snort.conf to include them if needed): [+]\n\n";
         foreach my $added_file (sort({uc($a) cmp uc($b)} keys(%{$$ch_ref{added_files}}))) {
             print "    -> $added_file\n";
         }
     } else {
         print "\n[*] Added files: [*]\n    None.\n"
-          unless ($config{super_quiet});
+          unless ($config{super_quiet} || $config{summary_output});
     }
 
 
@@ -1604,13 +1646,13 @@ sub print_changes($ $)
     if ($config{check_removed}) {
         if (keys(%{$$ch_ref{removed_files}})) {
             print "\n[-] Files possibly removed from the archive ".
-                  "(consider removing them from your snort.conf): [-]\n\n";
+                  "(consider removing them from your snort.conf if needed): [-]\n\n";
             foreach my $removed_file (sort({uc($a) cmp uc($b)} keys(%{$$ch_ref{removed_files}}))) {
                 print "    -> $removed_file\n";
 	    }
         } else {
              print "\n[*] Files possibly removed from the archive: [*]\n    None.\n"
-               unless ($config{super_quiet});
+               unless ($config{super_quiet} || $config{summary_output});
         }
     }
 
@@ -1651,6 +1693,42 @@ sub print_changetype($ $ $ $)
 	    }
         }
     }
+}
+
+
+
+# Print changes in bmc style, i.e. only sid and msg, no full details.
+sub print_summary_change($ $)
+{
+    my $ch_ref = shift;   # reference to an entry in the rules changes hash
+    my $rh_ref = shift;   # reference to rules hash
+
+    my (@sids, %sidmap);
+
+    print "\n";
+
+  # First get all the sids (may be spread across multiple files.
+    foreach my $file (keys(%$ch_ref)) {
+        foreach my $sid (keys(%{$$ch_ref{$file}})) {
+            push(@sids, $sid);
+            if (exists($$rh_ref{new}{rules}{$file}{$sid})) {
+                $sidmap{$sid}{rule} = $$rh_ref{new}{rules}{$file}{$sid};
+            } else {
+                $sidmap{$sid}{rule} = $$rh_ref{old}{rules}{$file}{$sid};
+            }
+            $sidmap{$sid}{file} = $file;
+        }
+    }
+
+  # Print rules, sorted by sid.
+    foreach my $sid (sort {$a <=> $b} (@sids)) {
+        my @rule = $sidmap{$sid}{rule};
+        my $file = $sidmap{$sid}{file};
+	get_next_entry(\@rule, undef, undef, undef, \(my $msg), undef);
+        printf("%8d - %s ($file)\n", $sid, $msg);
+    }
+
+    print "\n";
 }
 
 
