@@ -41,7 +41,8 @@ sub clean_exit($);
 
 my $VERSION            = 'Oinkmaster v1.0 by Andreas Östling <andreaso@it.su.se>';
 my $OUTFILE            = 'snortrules.tar.gz';
-my $DIST_SNORT_CONF    = 'rules/snort.conf';
+my $RULES_DIR          = 'rules';
+my $DIST_SNORT_CONF    = "$RULES_DIR/snort.conf";
 
 my $PRINT_NEW          = 1;
 my $PRINT_OLD          = 2;
@@ -164,14 +165,14 @@ umask($config{umask}) if exists($config{umask});
 # Download the rules archive. Will exit if it fails.
 download_rules("$config{url}", "$tmpdir/$OUTFILE");
 
-# Verify and unpack archive. This will leave us with a directory
-# called "rules/" in the same directory as the archive, containing the
+# Verify and unpack archive. This should will us with a directory
+# called $RULES_DIR in the same directory as the archive, containing the
 # new rules. Will exit if something fails.
 unpack_rules_archive("$tmpdir/$OUTFILE");
 
 # Create list of new files that we care about from the downloaded
 # Filenames (with full path) will be stored as %new_files{filenme}.
-my $num_files = get_new_filenames(\my %new_files, "$tmpdir/rules");
+my $num_files = get_new_filenames(\my %new_files, "$tmpdir/$RULES_DIR");
 
 # Make sure we have at least the minumum number of files.
 clean_exit("not enough rules files in downloaded archive (is it broken?)\n".
@@ -779,9 +780,9 @@ sub unpack_rules_archive($)
         clean_exit("failed to untar $archive.")
           if system("tar","xf","$archive");
     } else {
-        mkdir("rules") or clean_exit("could not create \"rules\" directory: $!\n");
+        mkdir("$RULES_DIR") or clean_exit("could not create \"$RULES_DIR\" directory: $!\n");
         foreach my $file ($tar->list_files) {
-            next unless ($file =~ /^rules\/[^\/]+$/);
+            next unless ($file =~ /^$RULES_DIR\/[^\/]+$/);
 
             my $content = $tar->get_content($file);
 
@@ -792,8 +793,8 @@ sub unpack_rules_archive($)
         }
     }
 
-    clean_exit("no \"rules\" directory found in tar file.")
-      unless (-d "$dir/rules");
+    clean_exit("no \"$RULES_DIR\" directory found in tar file.")
+      unless (-d "$dir/$RULES_DIR");
 
     chdir($old_dir)
       or clean_exit("could not change directory back to $old_dir: $!");
@@ -1325,7 +1326,7 @@ sub get_changes($ $)
   # Added files are also regarded as modified since we want to update
   # (i.e. add) those as well. Here we want them with full path.
     foreach my $file (keys(%{$changes{added_files}})) {
-        $changes{modified_files}{"$tmpdir/rules/$file"}++;
+        $changes{modified_files}{"$tmpdir/$RULES_DIR/$file"}++;
     }
 
   # Add list of possibly removed files into $removed_files if requested.
@@ -1338,7 +1339,7 @@ sub get_changes($ $)
             $changes{removed_files}{"$_"}++
               if (/$config{update_files}/ && 
                 !exists($config{file_ignore_list}{$_}) && 
-                !-e "$tmpdir/rules/$_");
+                !-e "$tmpdir/$RULES_DIR/$_");
         }
 
         closedir(OLDRULES);
