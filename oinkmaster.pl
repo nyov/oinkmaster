@@ -97,6 +97,7 @@ my @DEFAULT_CONFIG_FILES = qw(
 my (%loaded, $tmpdir);
 
 
+
 #### MAIN ####
 
 # No buffering.
@@ -105,7 +106,6 @@ $| = 1;
 select(STDOUT);
 $| = 1;
 
-$SIG{INT} = \&catch_sigint;
 
 my $start_date = scalar(localtime);
 
@@ -156,9 +156,12 @@ unless ($config{use_external_bins}) {
       if ($@);
 }
 
+
 # Do some basic sanity checking and exit if something fails.
 # A new PATH will be set.
 sanity_check();
+
+$SIG{INT} = \&catch_sigint;
 
 # Create temporary dir.
 $tmpdir = tempdir("oinkmaster.XXXXXXXXXX", DIR => File::Spec->rel2abs($config{tmp_basedir}))
@@ -591,7 +594,6 @@ sub sanity_check()
       or clean_exit("could not open directory $config{output_dir}: $!");
 
     while ($_ = readdir(OUTDIR)) {
-
         next if (/^\.\.?$/ || exists($config{file_ignore_list}{$_}));
 
         if (/$config{update_files}/) {
@@ -1887,8 +1889,9 @@ sub parse_singleline_rule($ $ $)
 sub catch_sigint()
 {
     $SIG{INT} = 'IGNORE';
-    print STDERR "\nInterrupted, cleaning up and exiting.\n";
-    clean_exit("");
+    print STDERR "\nInterrupted, cleaning up.\n";
+    sleep(1);
+    clean_exit("interrupted by signal");
 }
 
 
@@ -1899,18 +1902,21 @@ sub catch_sigint()
 # of just exit(0).
 sub clean_exit($)
 {
+    my $err_msg = shift;
+
+    $SIG{INT} = 'DEFAULT';
+
     if (defined($tmpdir) && -d "$tmpdir") {
         chdir(File::Spec->rootdir());
         rmtree("$tmpdir", 0, 1);
         undef($tmpdir);
     }
 
-    if ($_[0] eq "") {
+    if (!defined($err_msg) || $err_msg eq "") {
         exit(0);
     } else {
-        $_ = $_[0];
-	chomp;
-        die("\n$0: Error: $_\n\nOink, oink. Exiting...\n");
+	chomp($err_msg);
+        die("\n$0: Error: $err_msg\n\nOink, oink. Exiting...\n");
     }
 }
 
