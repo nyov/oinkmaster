@@ -1,28 +1,47 @@
 # $Id$ #
 
 Usually you just overwrite the old oinkmaster.pl file with the 
-new one and then run as usual.
-Here are a few notes about issues in some specific versions:
+new one and then run as usual. A good tip though is to always have
+a quick look at the new documentation and default oinkmaster.conf
+for new options and features.
+
+Here are a few notes about issues between specific versions that might 
+require some attention.
 
 
-- When upgrading to v0.8 and you're using the 'modifysid' keyword in v0.7, 
-  you should know that the arguments to 'modifysid' are now regarded as 
-  regular expressions, which may (or may not) mean that you have to adjust 
-  your arguments to reflect this.
-  There are also a few new options you may want to specify in your
-  oinkmaster.conf (see the default one for explanations and examples), 
-  although none of them are required.
-  
 
-- When upgrading to v0.7, you should know that oinkmaster.conf will now
-  be searched for in /usr/local/etc/ by default (instead of in the current
-  directory). You will have to put it there or use the -C argument.
+0.8 -> 0.9
+----------
+Perl is now started with tainting checks enabled by default.
+If you're on Windows with ActivePerl or Cygwin (without a cygwin shell) 
+you'll have to make sure you start oinkmaster by calling "perl -T 
+oinkmaster.pl ..." to avoid getting the error message 'Too late for "-T" 
+option ...'.
 
 
-- When upgrading to v0.4 or newer you should know that the file oinkmaster.conf
-  is now used for configuration. It's probably easiest to start with the
-  new default config and apply your old customization to it.
-  The "file" and "sid" keywords have been renamed to "skipfile" and
-  "disablesid" respectively. Also, a few command line switches were
-  removed since they're not needed anymore.
-  Please read the new documentation.
+
+0.7 -> 0.8
+----------
+The arguments to 'modifysid' are now regarded as regular expressions, 
+so if you're using that, it may (or may not) mean that you have to 
+adjust your arguments to reflect this. 
+ 
+
+
+0.6 -> 0.7
+----------
+
+When upgrading to 0.7, you should know that oinkmaster.conf will now
+be searched for in /usr/local/etc/ by default (instead of in the current
+directory). You will have to put it there or use the -C argument.
+
+
+
+0.3 -> 0.4
+----------
+The file oinkmaster.conf is now used for configuration. It's probably 
+easiest to start with the new default config and apply your old 
+customization to it. The "file" and "sid" keywords have been renamed to 
+"skipfile" and "disablesid" respectively. Also, a few command line 
+switches were removed since they're not needed anymore.
+Please read the new documentation.
