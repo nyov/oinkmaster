@@ -25,15 +25,21 @@ update your Snort 2.0+ rules and comment out the unwanted ones after each
 update. It also has a few other useful features regarding rules management. 
 Oinkmaster will tell you exactly what had changed since the last update, 
 giving you good control of your rules. It is most often used to 
-update the official rules from www.snort.org, but can just as well be used 
+update the official rules from www.snort.org but can just as well be used 
 for managing/distributing your homemade rules. Oinkmaster may be useful 
 in conjunction with any program that can use Snort rules, like Snort (doh!)
 or Prelude-NIDS.
 
-It's a variant of the (now extremely obsolete) arachNIDS snort rules updater
-(http://nitzer.dhs.org/arachnids_upd/) which was pretty much the same
-thing but for the arachNIDS Snort rules exports at http://www.whitehats.com/,
-which have not been maintained for a very long time.
+You could say that Oinkmaster is a documented way of applying a set of 
+modifications to the new rules (such as disabling, enabling and modifying 
+them) after each download of the updated rules tarball before overwriting 
+your local rules files. This means that all permanent modifications should  
+be done using oinkmaster.conf, not by editing your rules files directly. 
+
+Oinkmaster is based on the (now extremely obsolete) arachNIDS snort rules 
+updater which was pretty much the same thing but for the arachNIDS Snort
+rules exports at http://www.whitehats.com/, which have not been maintained
+for a very long time.
 
 Use Oinkmaster with care and at your own risk.
 Check the INSTALL file for quick installation instructions.
@@ -172,8 +178,8 @@ To silently check for updates as a cron job and not sending any e-mail unless
 there were updates available, you could use something like this
 (wrapped for readability):
 
-30 2 * * * TMP=`mktemp /tmp/oinkmaster.XXXXXX` && 
-(oinkmaster.pl -o /snort/snort.org-rules/ -q -c > $TMP 2>&1; 
+30 2 * * * TMP=`mktemp /tmp/oinkmaster.XXXXXX` &&
+(oinkmaster.pl -o /snort/snort.org-rules/ -q -c > $TMP 2>&1;
 if [ -s $TMP ]; then mail -s "subject" you@somewhere.foo < $TMP; fi; rm $TMP)
 
 This example only works on systems with the mktemp command but could easily be
