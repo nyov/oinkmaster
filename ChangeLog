@@ -18,7 +18,8 @@ o You can now run without any external binaries if you have the required
   Oinkmaster on Windows/ActivePerl.
 o A fully featured graphical multi-platform front-end to Oinkmaster 
   written in Perl/Tk is included in the contrib directory (oinkgui.pl). 
-  See README.gui for more information.
+  See README.gui for more information. Screenshots are available on
+  Oinkmaster's homepage.
 o Major documentation updates.
 
 
