@@ -58,6 +58,11 @@ Show valid command line arguments with short descriptions
 .IP "\fB-i
 Enable interactive mode. You will be asked to approve the changes (if 
 any) before updating anything.
+.IP "\fB-m
+Minimize and simplify diff when printing result by removing common leading
+and trailing parts of the old and new rule, so it's easier to see the
+actual change. A few characters to the left and to the right of the change
+is also printed so you get some context.
 .IP "\fB-q
 Run in quiet mode. Nothing is printed unless there are changes in the 
 rules or if there are errors or warnings.
