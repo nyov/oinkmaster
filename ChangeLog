@@ -40,7 +40,8 @@ o Print warning when attempting to enable/disable/modify non-existent SID
 o Allow location of editor to be set in the GUI and do not search for
   default editor in a predefined list anymore.
 o Removed 'P' flag from tar as it is incompatible together with 't' in
-  gtar, which is now used by default on FreeBSD-CURRENT (PR ports/70806).
+  gtar, which is now used by default on FreeBSD 5.2-CURRENT and later
+  (PR ports/70806). Thanks to SANETO Takanori for reporting.
 o The GUI will now always use the same Perl binary when executing 
   oinkmaster.pl as the one running the GUI itself.
 o By popular demand: support marking rules as locally modified to prevent
