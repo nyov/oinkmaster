@@ -36,7 +36,8 @@
 
 -------------------------------------------------------------------------------
 * makesidex.pl, originally by Jerry Applebaum but later rewritten by
-  Andreas Östling <andreaso@it.su.se>
+  Andreas Östling <andreaso@it.su.se> to handle multi-line rules and
+  multiple rules directories.
 
   It reads *.rules in all specified directories, looks for all disabled
   rules and prints a "disablesid <sid>  # <msg>" line for each disabled rule.
