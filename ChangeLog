@@ -16,6 +16,7 @@ o Added addmsg.pl (by myself) to contrib section.
   It's a script that will parse your oinkmaster.conf for "disablesid" lines
   and add to them their SID message.
 o Fixed bug related to deleted rules printout.
+o Default URL is now http://www.snort.org/dl/signatures/snortrules-stable.tar.gz.
 o A few minor cleanups.
 
 
