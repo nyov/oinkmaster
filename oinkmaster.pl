@@ -98,11 +98,10 @@ unpack_rules_archive("$TMPDIR/$outfile");
 
 # Create list of new files that we care about from the downloaded archive.
 # Filenames (with full path) will be stored as %new_files{filenme}.
-get_new_filenames(\%new_files, "$TMPDIR/rules/");
-
 # Make sure there is at least one file to be updated.
-clean_exit("Error: no file in archive matches the regexp \"$config{update_files}\".")
-  if (keys(%new_files) < 1);
+if (get_new_filenames(\%new_files, "$TMPDIR/rules/") < 1) {
+    clean_exit("Error: no file in archive matches the regexp \"$config{update_files}\".")
+}
 
 # Disable (#comment out) all sids listed in conf{sid_disable_list}
 # and modify sids listed in conf{sid_modify_list}.
@@ -306,7 +305,7 @@ sub sanity_check()
 
   # Make sure all required variables are defined in the config file.
     foreach $_ (@req_config) {
-        clean_exit("Error: the required parameter \"$_\" is not defined in $config_file")
+        clean_exit("Error: the required parameter \"$_\" is not defined in $config_file.")
           unless (exists($config{$_}));
     }
 
@@ -318,7 +317,7 @@ sub sanity_check()
   # (Wget is not required if user specifies file:// as url. That check is done below.)
     foreach $_ (@req_binaries) {
         clean_exit("Error: \"$_\" binary not found ".
-                   "(perhaps you must edit $config_file and change 'path')")
+                   "(perhaps you must edit $config_file and change 'path').")
           if (system("which \"$_\" >/dev/null 2>&1"));
     }
 
@@ -329,7 +328,7 @@ sub sanity_check()
 
   # Wget must be found if url is http:// or ftp://.
     clean_exit("Error: \"wget\" binary not found ".
-               "(perhaps you must edit $config_file and change 'path')")
+               "(perhaps you must edit $config_file and change 'path').")
       if ($config{'url'} =~ /^(http|ftp):/ && system("which \"wget\" >/dev/null 2>&1"));
 
   # Make sure the output directory exists and is readable.
@@ -361,15 +360,15 @@ sub download_rules($ $)
                        "Consider running in non-quiet mode if the problem persists.")
               if (system("wget","-q","-O","$localfile","$url"));         # quiet mode
         } elsif ($verbose) {
-            clean_exit("Error: unable to download rules.")
+            clean_exit("Error: unable to download rules (got error code from wget).")
               if (system("wget","-v","-O","$localfile","$url"));         # verbose mode
         } else {
-            clean_exit("Error: unable to download rules.")
+            clean_exit("Error: unable to download rules (got error code from wget).")
               if (system("wget","-nv","-O","$localfile","$url"));        # normal mode
         }
     } elsif ($url =~ /^file/) {        # grab file from local filesystem
         $url =~ s/^file:\/\///;        # remove "file://", the rest is the actual filename
-	clean_exit("Error: the file $url does not exist.\n")
+	clean_exit("Error: the file $url does not exist.")
           unless (-e "$url");
         print STDERR "Copying rules archive from $url... "
           unless ($quiet);
@@ -402,7 +401,7 @@ sub unpack_rules_archive($)
 
   # Run integrity check (gzip -t) on the gzip file.
     clean_exit("Error: integrity check on gzip file failed (file transfer failed or ".
-               "file in URL not in gzip format?)")
+               "file in URL not in gzip format?).")
       if (system("gzip","-t","$archive"));
 
   # Decompress it.
@@ -936,6 +935,9 @@ sub get_new_filenames($ $)
           if (/$config{update_files}/ && !exists($config{file_ignore_list}{$_}));
     }
     closedir(NEWRULES);
+
+  # Return number of new interesting filenames.
+    return(keys(%$fn_ref));
 }
 
 
