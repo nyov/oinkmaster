@@ -632,7 +632,7 @@ sub setup_rules_hash($)
 		  if (exists($allsids{new}{"$sid"}));
 
 		$rh{new}{rules}{"$file"}{"$sid"} = $single;
-		$allsids{new}{"$sid"}++ unless ($single =~ /^#/);
+		$allsids{new}{"$sid"}++;
 	    } else {                                 # add non-rule line to hash
 	        push(@{$rh{new}{other}{"$file"}}, $nonrule);
 	    }
@@ -655,7 +655,7 @@ sub setup_rules_hash($)
 		      if (exists($allsids{old}{"$sid"}));
 
 	  	    $rh{old}{rules}{"$file"}{"$sid"} = $single;
-	  	    $allsids{old}{"$sid"}++ unless ($single =~ /^#/);
+	  	    $allsids{old}{"$sid"}++;
                 } else {                     # add non-rule line to hash
 	            push(@{$rh{old}{other}{"$file"}}, $nonrule);
                 }
