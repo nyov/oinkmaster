@@ -21,12 +21,15 @@ If oinkmaster.conf.new looks ok, simply rename it to oinkmaster.conf.
 RTFM
 
 
-# Regexp to match a snort rule line.
-my $SINGLELINE_RULE_REGEXP = '^\s*#*\s*(?:alert|log|pass)\s.+msg\s*:\s*"(.+?)'.
-                             '"\s*;.*sid\s*:\s*(\d+)\s*;.*\)\s*$'; # ';
+# Regexp to match a snort rule line. The msg string will go into $1 and
+# the sid will go into $2.
+my $SINGLELINE_RULE_REGEXP = '^\s*#*\s*(?:alert|drop|log|pass|reject|sdrop)'.
+                             '\s.+msg\s*:\s*"(.+?)"\s*;.*sid\s*:\s*(\d+)'.
+                             '\s*;.*\)\s*$'; # ';
 
 # Regexp to match the start (the first line) of a possible multi-line rule.
-my $MULTILINE_RULE_REGEXP = '^\s*#*\s*(?:alert|log|pass)\s.*\\\\\s*\n$'; # ';
+my $MULTILINE_RULE_REGEXP  = '^\s*#*\s*(?:alert|drop|log|pass|reject|sdrop)'.
+                             '\s.*\\\\\s*\n$'; # ';
 
 my $config   = shift || die($USAGE);
 my $rulesdir = shift || die($USAGE);

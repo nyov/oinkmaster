@@ -13,11 +13,11 @@ my $USAGE = "usage: $0 <rulesdir>\n";
 
 # Regexp to match a snort rule line. SID must not be required in this one.
 # We only care about active rules.
-my $SINGLELINE_RULE_REGEXP = '^\s*(?:alert|log|pass) '.
+my $SINGLELINE_RULE_REGEXP = '^\s*(?:alert|drop|log|pass|reject|sdrop) '.
                              '.+msg\s*:\s*"(.+?)"\s*;.*\)\s*$'; # ';
 
 # Regexp to match the start (the first line) of a possible multi-line rule.
-my $MULTILINE_RULE_REGEXP = '^\s*(?:alert|log|pass)\s.*\\\\\s*\n$'; # ';
+my $MULTILINE_RULE_REGEXP = '^\s*(?:alert|drop|log|pass|reject|sdrop)\s.*\\\\\s*\n$'; # ';
 
 
 # Set this to the default classtype you want to add, if missing.

@@ -61,12 +61,14 @@ my $preserve_comments = 1;
 
 # Regexp to match a snort rule line. The msg string will go into $1 and
 # the sid will go into $2.
-my $SINGLELINE_RULE_REGEXP = '^\s*#*\s*(?:alert|log|pass)\s.+msg\s*:\s*"(.+?)'.
-                             '"\s*;.*sid\s*:\s*(\d+)\s*;.*\)\s*$'; # ';
+my $SINGLELINE_RULE_REGEXP = '^\s*#*\s*(?:alert|drop|log|pass|reject|sdrop)'.
+                             '\s.+msg\s*:\s*"(.+?)"\s*;.*sid\s*:\s*(\d+)'.
+                             '\s*;.*\)\s*$'; # ';
 
 # Regexp to match the start (the first line) of a possible multi-line rule.
-my $MULTILINE_RULE_REGEXP  = '^\s*#*\s*(?:alert|log|pass)\s.*\\\\\s*\n$'; # ';
-
+my $MULTILINE_RULE_REGEXP  = '^\s*#*\s*(?:alert|drop|log|pass|reject|sdrop)'.
+                             '\s.*\\\\\s*\n$'; # ';
+        
 # Set default temporary base directory.
 my $tmp_basedir = $ENV{TMP} || $ENV{TMPDIR} || $ENV{TEMPDIR} || '/tmp';
 
@@ -314,7 +316,7 @@ sub read_config($ $)
     my $linenum     = 0;
 
     unless (-e "$config_file") {
-        die("configuration file \"$config_file\" does not exist.\n".
+        die("Configuration file \"$config_file\" does not exist.\n".
             "Put it there or use the -C argument.\n");
     }
 
@@ -1542,7 +1544,8 @@ sub untaint_path($)
 
     if ($taint_mode) {
         (($path) = $path =~ /^([$OK_PATH_CHARS]+)$/)
-          or clean_exit("illegal characterss in path/filename \"$orig_path\", allowed are $OK_PATH_CHARS\n");
+          or clean_exit("illegal characterss in path/filename ".
+                        "\"$orig_path\", allowed are $OK_PATH_CHARS\n");
     }
 
     return ($path);
