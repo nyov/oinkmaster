@@ -344,7 +344,7 @@ sub download_rules($ $)
     my $localfile = shift;
 
     if ($url =~ /^(?:http|ftp)/) {     # Use wget if URL starts with http:// or ftp://
-        print STDERR "Downloading rules archive from $url...\n"
+        print STDERR "Downloading rules archive from $url... "
           unless ($quiet);
         if ($quiet) {
             clean_exit("Error: unable to download rules.\n".
@@ -361,7 +361,7 @@ sub download_rules($ $)
         $url =~ s/^file:\/\///;             # Remove "file://", the rest is the actual filename.
 	clean_exit("Error: the file $url does not exist.\n")
           unless (-e "$url");
-        print STDERR "Copying rules archive from $url...\n"
+        print STDERR "Copying rules archive from $url... "
           unless ($quiet);
         copy("$url", "$localfile")
           or cleann_exit("Error: unable to copy $url to $localfile: $!");
@@ -372,6 +372,8 @@ sub download_rules($ $)
         clean_exit("Error: failed to get rules archive: downloaded file $localfile".
                    "doesn't exist or hasn't non-zero size after download.");
     }
+
+    print STDERR "done.\n" unless ($quiet);
 }
 
 
@@ -381,9 +383,11 @@ sub download_rules($ $)
 sub unpack_rules_archive($)
 {
     my $archive  = shift;
-    my $ok_chars = 'a-zA-Z0-9_\.\-/\n :';   # allowed chars for filenames in the tar archive
+    my $ok_lead  = 'a-zA-Z0-9_';           # allowed leading char in filenames in the tar archive
+    my $ok_chars = 'a-zA-Z0-9_\.\-/\n';    # allowed chars in filenames in the tar archive
 
-    (my $dir)   = ($archive =~ /(.*)\//);   # extract directory part of the filename
+    my ($dir) = ($archive =~ /(.*)\//);  # extract directory part of the filename
+
     my $old_dir = getcwd or clean_exit("Could not get current directory: $!");
     chdir("$dir") or clean_exit("Could not change directory to \"$dir\": $!");
 
@@ -400,24 +404,25 @@ sub unpack_rules_archive($)
 
   # Look for uncool stuff in the archive.
     if (open(TAR,"-|")) {
-        @_ = <TAR>;                       # read output of the "tar vtf" command into @_
+        @_ = <TAR>;                       # read output of the tar command into @_
     } else {
-        exec("tar","vtf","$archive")
+        exec("tar","tf","$archive")
           or die("Unable to execute untar/unpack command: $!\nExiting");
     }
 
+  # For each filename in the archive...
     foreach $_ (@_) {
-      # We don't want to have any weird characters in the tar file.
-       clean_exit("Error: forbidden characters in tar archive. Offending file/line:\n$_")
+      # Make sure the leading char is valid (not an absolute path, for example).
+        clean_exit("Error: forbidden leading character in filename in tar archive. Offending file/line:\n$_")
+          unless (/^[$ok_lead]/);
+
+      # We don't want to have any weird characters anywhere in the filename.
+       clean_exit("Error: forbidden characters in filename in tar archive. Offending file/line:\n$_")
           if (/[^$ok_chars]/);
+
       # We don't want to unpack any "../../" junk.
-        clean_exit("Error: file in tar archive contains \"..\" in filename.\nOffending file/line:\n$_")
+        clean_exit("Error: filename in tar archive contains \"..\".\nOffending file/line:\n$_")
           if (/\.\./);
-      # Links in the tar archive are not allowed
-      # (should be detected because of illegal chars above though).
-        clean_exit("Error: file in tar archive contains link: refuse to unpack file.\n".
-                   "Offending file/line:\n$_")
-          if (/->/ || /=>/ || /==/);
     }
 
   # Looks good. Now we can finally untar it.
