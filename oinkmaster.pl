@@ -127,7 +127,8 @@ if ($#modified_files > -1) {
         print STDERR "No need to backup old files (running in careful mode), skipping.\n"
           if (defined($backup_dir) && (!$quiet));
     }  else {
-        make_backup($output_dir, $backup_dir) if (defined($backup_dir));
+        make_backup($output_dir, $backup_dir)
+          if (defined($backup_dir));
         update_rules($output_dir, @modified_files);
     }
 } else {
@@ -574,18 +575,18 @@ sub setup_rules_hash($ $ @)
 	$file =~ s/.*\///;
 
 	while (<NEWFILE>) {
-            s/\s*\n$/\n/;         # remove trailing whitespaces (for both rules and non-rules)
+            s/\s*\n$/\n/;                    # remove trailing whitespaces (for rules and non-rules)
 
-	    if (/$SNORT_RULE_REGEXP/) {        # add rule line to hash
+	    if (/$SNORT_RULE_REGEXP/) {      # add rule line to hash
 	        my $sid = $2;
-  	        s/^\s*//;         # remove leading whitespaces
-		s/^#+\s*/#/;      # remove whitespaces next to the leading #
+  	        s/^\s*//;                    # remove leading whitespaces
+		s/^#+\s*/#/;                 # remove whitespaces next to the leading #
 
 		warn("WARNING: duplicate SID in downloaded rules archive in file ".
                      "$file: SID $sid\n")
 		  if (exists($$rh_ref{new}{rules}{"$file"}{"$sid"}));
 		$$rh_ref{new}{rules}{"$file"}{"$sid"} = $_;
-	    } else {                           # add non-rule line to hash
+	    } else {                         # add non-rule line to hash
 	        push(@{$$rh_ref{new}{other}{"$file"}}, $_);
 	    }
 	}
@@ -599,24 +600,24 @@ sub setup_rules_hash($ $ @)
 
 	    while (<OLDFILE>) {
 
-	        s/\s*\n$/\n/;         # remove trailing whitespaces (for both rules and non-rules)
+	        s/\s*\n$/\n/;                # remove trailing whitespaces (for rules and non-rules)
 
-                if (/$SNORT_RULE_REGEXP/) {        # add rule line to hash
+                if (/$SNORT_RULE_REGEXP/) {  # add rule line to hash
 		    my $sid = $2;
-		    s/^\s*//;         # remove leading whitespaces
-		    s/^#+\s*/#/;      # remove whitespaces next to the leading #
+		    s/^\s*//;                # remove leading whitespaces
+		    s/^#+\s*/#/;             # remove whitespaces next to the leading #
 
 		    warn("WARNING: duplicate SID in your local rules in file ".
                          "$file: SID $sid\n")
 	  	      if (exists($$rh_ref{old}{rules}{"$file"}{"$sid"}));
 	  	    $$rh_ref{old}{rules}{"$file"}{"$sid"} = $_;
-                } else {                           # add non-rule line to hash
+                } else {                     # add non-rule line to hash
 	            push(@{$$rh_ref{old}{other}{"$file"}}, $_);
                 }
             }
 
             close(OLDFILE);
-        } else {                      # downloaded file did not exist in old rules dir
+        } else {                             # downloaded file did not exist in old rules dir
 	    $$rh_ref{added_files}{"$file"}++;
         }
     }
