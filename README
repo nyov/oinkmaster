@@ -1,6 +1,6 @@
 # $Id$ #
 
-README for Oinkmaster v0.5
+README for Oinkmaster v0.6
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Written by Andreas Östling <andreaso@it.su.se>.
@@ -252,9 +252,9 @@ o It's a really good idea to have a separate directory for your snort.org rules
   snort.conf in the rules directory and specify another snort.conf when starting
   Snort. This way I can keep track of changes in the snort.conf from the rules
   archive while keeping my customized copy intact. If there are added/removed 
-  rules files in the archive, you will have to edit your snort.conf 
-  manually and include/exclude those files. Oinkmaster does not do that 
-  kind of stuff.
+  rules files in the archive or added/changed variables in snort.conf, you will
+  have to edit your production copy of snort.conf manually and update as needed.
+  Oinkmaster does not do that kind of stuff.
 
 o Oinkmaster also never deletes any rules files from your system.
   So if a file called foo.rules is usually included in the rules distribution
