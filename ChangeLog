@@ -63,7 +63,8 @@ o Added ability to use "include <file>" in oinkmaster configuration
   files.
 o Also permit an arbitrary number of "-C" arguments to be specified on
   command line to load multiple config files. They will be loaded in the
-  order of appearance.
+  order of appearance. Thanks to Rickard Cedergren for inspiration with
+  his 'policy-based sensor setup' doc and patch.
 o Permit https://... in url specification. Only useful if your wget is
   SSL-enabled and you download from an SSL-enabled site.
 o Permit scp://<user>@<remotehost>:<file.tar.gz> in url specification.
