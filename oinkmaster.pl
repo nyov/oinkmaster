@@ -434,8 +434,6 @@ sub read_config($ $)
             s/^#.*//;
         }
 
-        next unless /\S/;
-
       # Multi-line start/continuation?
         if (/\\\s*\n$/) {
             s/\\\s*\n$//;
