@@ -29,7 +29,7 @@ sub clean_exit($);
 
 
 my $VERSION           = 'Oinkmaster v0.8 by Andreas Östling <andreaso@it.su.se>';
-my $TMPDIR            = "/tmp/oinkmaster.$$";
+my $TMP_BASEDIR       = "/tmp";
 
 my $PRINT_NEW         = 1;
 my $PRINT_OLD         = 2;
@@ -37,6 +37,7 @@ my $PRINT_BOTH        = 3;
 
 my $config_file       = "/usr/local/etc/oinkmaster.conf";
 my $outfile           = "snortrules.tar.gz";
+
 my $verbose           = 0;
 my $careful           = 0;
 my $quiet             = 0;
@@ -57,7 +58,7 @@ use vars qw
    );
 
 my (
-      %config, %new_files
+      $tmpdir, %config, %new_files
    );
 
 
@@ -76,15 +77,18 @@ my $start_date = scalar(localtime);
 # Will exit if something is wrong.
 parse_cmdline(\%config);
 
-# Why would anyone want to run as root?
-die("Don't run as root!\nExiting...\n") if (!$>);
-
-# Create empty temporary directory. Die if we can't create unique filename.
-mkdir("$TMPDIR", 0700)
-  or die("Could not create temporary directory $TMPDIR: $!\nExiting");
-
 # Read in $config_file. Will exit if something is wrong.
 read_config($config_file, \%config);
+
+# Create empty temporary directory.
+if (exists($config{tmpdir})) {
+    $tmpdir = "$config{tmpdir}/oinkmaster.$$";
+} else {
+    $tmpdir = "$TMP_BASEDIR/oinkmaster.$$";
+}
+
+mkdir("$tmpdir", 0700)
+  or die("Could not create temporary directory $tmpdir: $!\nExiting");
 
 # Do some basic sanity checking and exit if something fails.
 # A new PATH will be set.
@@ -94,19 +98,19 @@ sanity_check();
 umask($config{umask}) if exists($config{umask});
 
 # Download the rules archive.
-# This will leave us with the file $TMPDIR/$outfile
+# This will leave us with the file $tmpdir/$outfile
 # (/tmp/oinkmaster.$$/snortrules.tar.gz). Will exit if download fails.
-download_rules("$config{'url'}", "$TMPDIR/$outfile");
+download_rules("$config{'url'}", "$tmpdir/$outfile");
 
 # Verify and unpack archive. This will leave us with a directory
 # called "rules/" in the same directory as the archive, containing the
 # new rules. Will exit if something fails.
-unpack_rules_archive("$TMPDIR/$outfile");
+unpack_rules_archive("$tmpdir/$outfile");
 
 # Create list of new files that we care about from the downloaded archive.
 # Filenames (with full path) will be stored as %new_files{filenme}.
 # Make sure there is at least one file to be updated.
-if (get_new_filenames(\%new_files, "$TMPDIR/rules/") < 1) {
+if (get_new_filenames(\%new_files, "$tmpdir/rules/") < 1) {
     clean_exit("no rules files found in downloaded archive.");
 }
 
@@ -300,6 +304,8 @@ sub read_config($ $)
 	    $$cfg_ref{update_files} = $1;
         } elsif (/^umask\s*=\s*([0-7]{3,4})$/) {         # umask
 	  $$cfg_ref{umask} = oct($1);
+        } elsif (/^tmpdir\s*=\s*(.+)/) {
+          $$cfg_ref{tmpdir} = $1;                        # tmpdir
         } else {                                         # invalid line
             warn("WARNING: line $linenum in $config_file is invalid, ignoring\n");
         }
@@ -441,16 +447,16 @@ sub unpack_rules_archive($)
   # Suffix has now changed from .tar.gz to .tar.
     $archive =~ s/\.gz$//;
 
-  # Read output from "tar tf $archive" into @_.
+  # Read output from "tar tf $archive" into @tar_test.
+    my @tar_test;
     if (open(TAR,"-|")) {
-        @_ = <TAR>;
+        @tar_test = <TAR>;
     } else {
-        exec("tar","tf","$archive")
-          or die("Unable to execute untar/unpack command: $!\nExiting");
+        exec("tar","tf","$archive");
     }
 
   # For each filename in the archive...
-    foreach my $filename (@_) {
+    foreach my $filename (@tar_test) {
        chomp($filename);
 
       # Make sure the leading char is valid (not an absolute path, for example).
@@ -728,7 +734,7 @@ sub make_backup($ $)
     my $dest_dir = shift;    # where to put the tarball containing the backed up rules
 
     my $date       = strftime("%Y%m%d-%H%M", localtime);
-    my $bu_tmp_dir = "$TMPDIR/rules-backup-$date";
+    my $bu_tmp_dir = "$tmpdir/rules-backup-$date";
 
     print STDERR "Creating backup of old rules..."
       unless ($quiet);
@@ -749,13 +755,13 @@ sub make_backup($ $)
 
     closedir(OLDRULES);
 
-  # Change directory to $TMPDIR (so we'll be right below the directory where
+  # Change directory to $tmpdir (so we'll be right below the directory where
   # we have our rules to be backed up).
     my $old_dir = getcwd or clean_exit("could not get current directory: $!");
-    chdir("$TMPDIR")     or clean_exit("could not change directory to $TMPDIR: $!");
+    chdir("$tmpdir")     or clean_exit("could not change directory to $tmpdir: $!");
 
   # Execute tar command. This will archive "rules-backup-$date/"
-  # into the file rules-backup-$date.tar, placed in $TMPDIR.
+  # into the file rules-backup-$date.tar, placed in $tmpdir.
     warn("WARNING: tar command did not exit with status 0 when archiving backup files.\n")
       if (system("tar","cf","rules-backup-$date.tar","rules-backup-$date"));
 
@@ -768,8 +774,8 @@ sub make_backup($ $)
     chdir("$old_dir") or clean_exit("could not change directory back to $old_dir: $!");
 
   # Move the archive to the backup directory.
-    move("$TMPDIR/rules-backup-$date.tar.gz", "$dest_dir/")
-      or warn("WARNING: unable to move $TMPDIR/rules-backup-$date.tar.gz ".
+    move("$tmpdir/rules-backup-$date.tar.gz", "$dest_dir/")
+      or warn("WARNING: unable to move $tmpdir/rules-backup-$date.tar.gz ".
               "to $dest_dir/: $!\n");
 
     print STDERR " saved as $dest_dir/rules-backup-$date.tar.gz.\n"
@@ -982,7 +988,7 @@ sub get_changes($ $)
         while ($_ = readdir(OLDRULES)) {
             $changes{removed_files}{"$_"}++
               if (/$config{update_files}/ && !exists($config{file_ignore_list}{$_}) &&
-                !-e "$TMPDIR/rules/$_");
+                !-e "$tmpdir/rules/$_");
         }
 
         closedir(OLDRULES);
@@ -1110,8 +1116,8 @@ sub is_in_path($)
 # of just exit(0).
 sub clean_exit($)
 {
-    system("/bin/rm","-r","-f","$TMPDIR")
-      and warn("WARNING: unable to remove temporary directory $TMPDIR.\n");
+    system("/bin/rm","-r","-f","$tmpdir")
+      and warn("WARNING: unable to remove temporary directory $tmpdir.\n");
 
     if ($_[0] eq "") {
         exit(0);
