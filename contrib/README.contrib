@@ -18,10 +18,10 @@
   A script that parses *.rules in a directory and adds a SID to (active) rules
   that don't have any. (Actually, rev and classtype are also added if 
   missing, unless you edit addsid.pl and tune this.) The script first  
-  looks for the current highest SID and starts at SID+1, unless this is 
-  value is below MIN_SID (defined inside addsid.pl). By default, this 
-  value is set to 1000000 since this is the lowest SID assigned for local 
-  usage. Handles multi-line rules.
+  looks for the current highest SID (even in inactive rules) and starts at
+  the next one, unless this value is below MIN_SID (defined inside addsid.pl).
+  By default, this value is set to 1000001 since this is the lowest SID assigned
+  for local usage. Handles multi-line rules.
 
   Usage: addsid.pl <rulesdir> [rulesdir2, ...]
 
