@@ -16,6 +16,9 @@ o You can now run without any external binaries if you have the required
   Perl modules are already included in ActivePerl), and 1 on other systems 
   (i.e. same behaviour as before). This makes it much simpler to install 
   Oinkmaster on Windows/ActivePerl.
+o A fully featured graphical multi-platform front-end to Oinkmaster 
+  written in Perl/Tk is included in the contrib directory (oinkgui.pl). 
+  See README.gui for more information.
 o Major documentation updates.
 
 
