@@ -400,19 +400,23 @@ sub read_config
         if (/^disablesids*\s+(\d.*)/) {                            # disablesid
 	    $args = $1;
 	    foreach $_ (split(/\s*,\s*/, $args)) {
-                die("Line $linenum in $config_file is invalid, giving up.\nExiting")
-		  unless (/^\d+$/);
-                $sid_disable_list{$_}++;
+  	        if (/^\d+$/) {
+                    $sid_disable_list{$_}++;
+	        } else {
+                    print STDERR ("WARNING: line $linenum in $config_file is invalid, ignoring\n")
+	        }
 	    }
         } elsif (/^modifysid\s+(\d+)\s+(.*)/i) {                   # modifysid
             push(@{$sid_modify_list{$1}}, $2);
         } elsif (/^skipfiles*\s+(.*)/) {                           # skipfile
 	    $args = $1;
 	    foreach $_ (split(/\s*,\s*/, $args)) {
-                die("Line $linenum in $config_file is invalid, giving up.\nExiting")
-		  unless (/^\S.*\S$/);
-                $verbose && print STDERR "Adding file to ignore list: $_.\n";
-                $file_ignore_list{$_}++;
+	        if (/^\S.*\S$/) {
+                    $verbose && print STDERR "Adding file to ignore list: $_.\n";
+                    $file_ignore_list{$_}++;
+		} else {
+                    print STDERR ("WARNING: line $linenum in $config_file is invalid, ignoring\n")
+		}
 	    }
 	} elsif (/^url\s*=\s*(.*)/i) {                             # URL to use
 	    $url = $1 unless (defined($url));                      # may already be defined by -u <url>
@@ -423,7 +427,7 @@ sub read_config
 	} elsif (/^skip_diff\s*=\s*(.*)/i) {                       # regexp of files to skip comparison for
 	    $config{skip_diff} = $1;
         } else {                                                   # invalid line
-            die("Line $linenum in $config_file is invalid, giving up.\nExiting");
+            print STDERR ("WARNING: line $linenum in $config_file is invalid, ignoring\n")
         }
 
     }
