@@ -1,9 +1,11 @@
 # $Id$ #
 
-Usually you just overwrite the old oinkmaster.pl file with the 
-new one and then run as usual. A good tip though is to always have
-a quick look at the new documentation and default oinkmaster.conf
-for new options and features.
+Usually you just overwrite the old oinkmaster.pl file with the new one 
+and then run as usual. A good tip though is to always have a quick look at 
+the new documentation and default oinkmaster.conf for new options and 
+features. Also, to be on the safe side it's recommended to do an extra 
+backup of the rules first and to do a test run with -c (careful mode) to 
+make sure you don't get unexpected results.
 
 Here are a few notes about issues between specific versions that might 
 require some attention. 
