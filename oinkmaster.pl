@@ -120,8 +120,8 @@ clean_exit("not enough rules files in downloaded archive (is it broken?)\n".
            "Number of rules files is $num_files but minimum is set to $min_files.")
   if ($num_files < $min_files);
 
-# Disable (#comment out) all sids listed in conf{sid_disable_list}
-# and modify sids listed in conf{sid_modify_list}.
+# In the downloaded rules, disable (#comment out) all sids listed in
+# conf{sid_disable_list} and modify sids listed in conf{sid_modify_list}.
 # Will open each file listed in %new_files, make modifications, and
 # write back to the same file.
 my $num_rules = disable_and_modify_rules(\%{$config{sid_disable_list}},
@@ -539,16 +539,16 @@ sub unpack_rules_archive($)
 
 
 
-# Open all rules files in the temporary directory and disable (#comment out)
-# all rules in listed in the disable list and then write back to the same files.
-# Also clean unwanted whitespaces from them.
+# Open all rules files in the temporary directory and disable/modify all
+# rules/lines as requested in oinkmaster.conf, and then write back to the
+# same files. Also clean unwanted whitespaces and duplicate sids from them.
 sub disable_and_modify_rules($ $ $)
 {
     my $disable_sid_ref = shift;
     my $modify_sid_ref  = shift;
     my $newfiles_ref    = shift;
     my $num_disabled    = 0;
-    my $num_rules       = 0;
+    my %sids;
 
     warn("WARNING: all rules that are disabled by default will be re-enabled\n")
       if (!$preserve_comments && !$quiet);
@@ -579,12 +579,20 @@ sub disable_and_modify_rules($ $ $)
 		next RULELOOP;
 	    }
 
-          # We've got a valid snort rule.
-            $num_rules++;
-
-          # Grab msg and sid.
+          # We've got a valid snort rule. Grab msg and sid.
 	    $single =~ /$SINGLELINE_RULE_REGEXP/oi;
    	    my ($msg, $sid) = ($1, $2);
+
+          # If we have already seen a rule with this sid, discard this one.
+            if (exists($sids{$sid})) {
+                $_ = $file;
+                $_ =~ s/.*\///;
+                warn("\nWARNING: duplicate SID in $_ (discarding rule), ".
+                     "SID=$sid, rule=\"$msg\"\n");
+                next RULELOOP;
+            }
+
+            $sids{$sid}++;
 
           # Even if it was a single-line rule, we want to have a copy in $multi now.
 	    $multi = $single unless (defined($multi));
@@ -647,11 +655,11 @@ sub disable_and_modify_rules($ $ $)
         close(OUTFILE);
     }
 
-    print STDERR "$num_disabled out of $num_rules rules disabled.\n"
+    print STDERR "$num_disabled out of " . keys(%sids) . " rules disabled.\n"
       unless ($quiet);
 
   # Return total number of valid rules.
-    return ($num_rules);
+    return (keys(%sids));
 }
 
 
@@ -682,10 +690,6 @@ sub setup_rules_hash($)
 	    if (defined($single)) {
 	        $single =~ /$SINGLELINE_RULE_REGEXP/oi;
 	        my $sid = $2;
-
-		warn("WARNING: duplicate SID in downloaded rules archive, SID=$sid\n")
-		  if (exists($allsids{new}{"$sid"}));
-
 		$rh{new}{rules}{"$file"}{"$sid"} = $single;
 		$allsids{new}{"$sid"}++;
 	    } else {                                 # add non-rule line to hash
@@ -694,6 +698,7 @@ sub setup_rules_hash($)
 	}
 
 	# Also read in old file if it exists.
+        # We do a sid dup check in these files.
         if (-f "$config{output_dir}/$file") {
             open(OLDFILE, "<$config{output_dir}/$file")
               or clean_exit("could not open $config{output_dir}/$file for reading: $!");
@@ -705,7 +710,8 @@ sub setup_rules_hash($)
 	            $single =~ /$SINGLELINE_RULE_REGEXP/oi;
 		    my $sid = $2;
 
-		    warn("WARNING: duplicate SID in local rules, SID=$sid\n")
+		    warn("WARNING: duplicate SID in your local rules, SID $sid exists multiple ".
+                         "times, please fix this manually!\n")
 		      if (exists($allsids{old}{"$sid"}));
 
 	  	    $rh{old}{rules}{"$file"}{"$sid"} = $single;
