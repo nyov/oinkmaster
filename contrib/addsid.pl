@@ -66,19 +66,16 @@ while ($file = readdir(RULESDIR)) {
             my $msg = $1;
 
             if ($single !~ /sid\s*:\s*\d+\s*;/) {
-                print STDERR "Adding sid to \"$msg\"\n";
 		$sid++;
                 $multi =~ s/;\s*\)\s*\n/; sid:$sid;)\n/;
 	    }
 
             if ($single !~ /rev\s*:\s*\d+\s*;/) {
-                print STDERR "Adding rev to \"$msg\"\n";
                 $multi =~ s/;\s*\)\s*\n/; rev:1;)\n/;
 	    }
 
             if (defined($classtype)) {
                 if ($single !~ /classtype\s*:\s*".*"\s*;/) {
-                    print STDERR "Adding classtype to \"$msg\"\n";
                     $multi =~ s/;\s*\)\s*\n/; classtype:"$classtype";)\n/;
 	        }
             }
