@@ -21,18 +21,18 @@ such as ability to enable, disable and modify specified rules after each
 update. It will tell you the exact changes from the previous rules, so you 
 have total control of your rules.
 
-Oinkmaster is most often used to grab the latest official rules tarball from 
-www.snort.org and apply a set of modifications to them (such as disabling 
-unwanted rules) before merging the changes into your local rules files, 
-but it can just as well be used to manage/distribute both official and 
-local local rules to multiple sensors with ability to fine-tune the rules 
-on each sensor or group of sensors. 
+Oinkmaster is most often used to grab the latest official rules tarball 
+from www.snort.org and apply a set of modifications to them (such as 
+disabling unwanted rules) before merging the changes into your local rules 
+files, but it can just as well be used to manage/distribute both official 
+and local local rules to multiple sensors with ability to fine-tune the 
+rules on each sensor or group of sensors. 
 
-Oinkmaster is based on the (now extremely obsolete) arachNIDS snort rules 
+Oinkmaster is based on the (now extremely obsolete) arachNIDS Snort rules 
 updater which was pretty much the same thing but for the arachNIDS Snort
 rules exports at http://www.whitehats.com/ which have not been maintained
-for a very long time, and it may be useful in conjunction with any program
-that can use Snort rules, like Snort (doh!) or Prelude-NIDS.
+for a very long time. It may be useful in conjunction with any 
+program that can use Snort rules, like Snort (doh!) or Prelude-NIDS.
 
 Use Oinkmaster with care and at your own risk. Check the INSTALL file for 
 quick installation instructions. You may also find the FAQ useful, and 
@@ -50,8 +50,9 @@ Requirements
 It should work on most UNIX-like systems with a recent version of Perl 5.
 You also need either the binaries tar, gzip and wget, or the Perl modules
 Archive::Tar, IO::Zlib and LWP::UserAgent. (See oinkmaster.conf for more
-information about this.) So far it has been successfully tested on OpenBSD,
-FreeBSD, NetBSD, Linux, AIX, Solaris, Mac OS X and Microsoft Windows.
+information about this.) So far it has been successfully tested on 
+OpenBSD, FreeBSD, NetBSD, Linux, AIX, Solaris, Mac OS X and Microsoft 
+Windows.
 
 Again, use it at your own risk!
 
@@ -76,10 +77,12 @@ This is where Oinkmaster comes in - it will automatically do those boring
 modifications to the rules that you would usually have to do manually 
 after each update. You could say that Oinkmaster is a documented way of 
 applying a set of modifications to the new rules (such as disabling, 
-enabling and modifying them) after each download of the updated rules 
-tarball before overwriting your local rules files. This means that all 
-permanent modifications must be done by editing oinkmaster.conf, not by 
-editing your rules files directly. 
+enabling or modifying them) after each download of the updated rules 
+tarball before overwriting your local rules files. This means that after 
+switching to Oinkmaster for performing rules updating, permanent 
+modifications to the rules files must be done by editing oinkmaster.conf, 
+not by editing your rules files directly as such modifications will be 
+lost after an update.
 
 
 
@@ -105,8 +108,9 @@ activate additional procedures, but this is how the basic update works.)
    the temporary directory).
 
 4) These new files are now compared to the rules in your output directory 
-   (the one specified by "-o"). Files that are not identical are copied
-   from the temporary directory to the output directory.
+   (the one specified with "-o"), file by file. All lines are compared, 
+   not just the actual rules. Files that are not identical are copied from 
+   the temporary directory to the output directory.
    Detailed result of the comparison is then printed.
 
 
@@ -115,7 +119,8 @@ Usage information
 ~~~~~~~~~~~~~~~~~
 
 Try ./oinkmaster.pl -h for more usage information and available options.
-There are also many useful notes and examples in the default oinkmaster.conf.
+There are also many useful notes and examples in the default 
+oinkmaster.conf.
 
 As a first test, you can create an empty rules directory, for example
 /tmp/rules/. Then try executing "oinkmaster.pl -o /tmp/rules". Since your 
@@ -125,8 +130,8 @@ will be regarded as added, and copied to that directory. Then try
 downloaded archive will be compared to the ones in /tmp/rules/ and 
 Oinkmaster will tell you if something has been updated. 
 
-If you already have several rules commented out (or removed) in your current
-local rules, you need to add the SIDs (Snort rule ID) of those to 
+If you already have several rules commented out (or removed) in your 
+current local rules, you need to add the SIDs (Snort rule ID) of those to 
 oinkmaster.conf manually (or check out the contrib directory for a help 
 script) before running Oinkmaster, or they will be re-enabled after each 
 update. 
@@ -145,13 +150,13 @@ example if you don't include the file icmp-info.rules from your snort.conf
 and don't care about keeping it up to date and don't want to be notified
 of changes in it, you can to add the line "skipfile icmp-info.rules" to
 oinkmaster.conf. Although it may be a good idea to track changes even for
-rules files you don't use (i.e. that you don't include from your snort.conf).
-Who knows, you might find something interesting some day.
+rules files you don't use (i.e. that you don't include from your 
+snort.conf). Who knows, you might find something interesting some day.
 
 The skilled/brave/stupid people can also use the "modifysid" keyword in
 oinkmaster.conf to make arbitrary changes to certain rules after each 
-download. This is an excellent way to screw up your rules, so don't use it 
-unless you really have to. See oinkmaster.conf for more information and 
+download. This is an excellent way to screw up your rules, so don't use 
+it unless you really have to. See oinkmaster.conf for more information and 
 examples.
 
 Oinkmaster should probably be run manually but can also be run as a cron 
@@ -173,9 +178,10 @@ Usage examples
 ~~~~~~~~~~~~~~
 
 To automagically update the rules every night at 02:30 and make a backup
-of the old ones if there were any updates, and sending difference notification
-to syslog, you could use something like this in your crontab. Always consider
-using the -c flag (careful mode) when running as a cron job though.
+of the old ones if there were any updates, and sending difference 
+notification to syslog, you could use something like this in your crontab. 
+Always consider using the -c flag (careful mode) when running as a cron 
+job though.
 
 30 2 * * * oinkmaster.pl -o /etc/snort/rules/ -b /etc/snort/backup 2>&1 | logger -t oinkmaster
 
@@ -183,9 +189,9 @@ When you check your syslog the next time and see that a new rule has been
 added that you don't want to use, just add its SID to oinkmaster.conf and
 it will always be commented out in future updates. Or if a rule you have
 disabled has changed and you now decide that you want to use it again, 
-just remove its SID from oinkmaster.conf and it will be reactivated in the 
-next update. If you want the output to be sent to you in a mail instead, 
-you could use something like:
+just remove its SID from oinkmaster.conf and it will be reactivated in 
+the next update. If you want the output to be sent to you in a mail 
+instead, you could use something like:
 oinkmaster.pl ... 2>&1 | mail -s "subject" you@example.com
 
 If you just want to check for changes in the rules but not actually update
@@ -193,9 +199,9 @@ your existing rules, you can use the -c flag for "careful" mode.
 It's nice to combine -c with -q and run as a cron job to silently
 check for updates (perhaps you just want to use this script to check for
 updates but still want to do the actual rules updating manually).
-To silently check for updates as a cron job and not sending any e-mail unless
-there were updates available, you could use something like this (wrapped 
-for readability):
+To silently check for updates as a cron job and not sending any e-mail 
+unless there were updates available, you could use something like this 
+(wrapped for readability):
 
 30 2 * * * TMP=`mktemp /tmp/oinkmaster.XXXXXX` &&
 (oinkmaster.pl -o /etc/snort/rules/ -q -c > $TMP 2>&1;
@@ -247,7 +253,8 @@ o Modified inactive:
 
 
 Non-rule changes will also be printed, if any. Non-rule lines are simply 
-lines that are not actual rules, and Oinkmaster will keep track of those 
+lines that are not actual rules (or rules that for some reason could not 
+be successfully parsed), and Oinkmaster will keep track of those 
 as well.
 
 Here comes some typical example output. We see that an active rule in 
@@ -330,23 +337,25 @@ o It's a really good idea to separate your local rules files (if you have
   you think it's a good idea.
 
 o Oinkmaster never deletes any rules files from your system.
-  So if a file called foo.rules is usually included in the rules distribution
-  archive but is one day removed from it, the old foo.rules will still be left
-  in your rules directory. Oinkmaster will notify you of this but only if you
-  use the "-r" argument, which means that each interesting file
-  (*.rules, *.conf ...) in your output directory will be checked to see if it
-  also exists in the downloaded rules archive. If it doesn't, it will be
-  regarded as removed from the archive and a message will be printed because
-  you may want to edit your Snort configuration file to exclude this file and
-  possibly remove it from your system as well.
+  So if a file called foo.rules is usually included in the rules 
+  distribution archive but is one day removed from it, the old foo.rules 
+  will still be left in your rules directory. Oinkmaster will notify you 
+  of this but only if you use the "-r" argument, which means that each 
+  interesting file (*.rules, *.conf ...) in your output directory will be 
+  checked to see if it also exists in the downloaded rules archive. If it 
+  doesn't, it will be regarded as removed from the archive and a message 
+  will be printed because you may want to edit your Snort configuration 
+  file to exclude this file and possibly remove it from your system as 
+  well.
 
   So if you use a separate directory for your Snort rules from snort.org
   (i.e. you have possible local rules files in another directory) you
   probably want to use the "-r" argument. Otherwise it will be very
   misleading since your local rules files obviously don't exist in the
-  rules distribution, and will therefore be regarded as removed every time.
+  rules distribution, and will therefore be regarded as removed every 
+  time.
 
 o Don't depend too much on this script for the rules updating process.
   It's just intended to be a small help and you should always keep an eye
-  on it. Manual reviewing of all your rules and configuration should always be
-  done every now and then.
+  on it. Manual reviewing of all your rules and configuration should 
+  always be done every now and then.
