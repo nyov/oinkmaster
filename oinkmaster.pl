@@ -53,7 +53,8 @@ sub parse_cmdline($);
 sub read_config($ $);
 sub sanity_check();
 sub download_file($ $);
-sub unpack_rules_archive($ $);
+sub unpack_rules_archive($ $ $);
+sub join_tmp_rules_dirs($ @);
 sub process_rules($ $ $ $ $ $);
 sub process_rule($ $ $ $ $ $ $ $);
 sub setup_rules_hash($ $);
@@ -214,20 +215,29 @@ if ($config{config_test_mode}) {
 
 umask($config{umask}) if exists($config{umask});
 
-# Download the rules archive. Will exit if it fails.
-download_file("$config{url}", "$tmpdir/$OUTFILE");
+# Download and unpack all the rules archives into separate tmp dirs.
+my @url_tmpdirs;
+foreach my $url (@{$config{url}}) {
+    my $url_tmpdir = tempdir("url.XXXXXXXXXX", DIR => $tmpdir)
+      or clean_exit("could not create temporary directory in $tmpdir: $!");
+    push(@url_tmpdirs, "$url_tmpdir/$RULES_DIR");
+    download_file($url, "$url_tmpdir/$OUTFILE");
+    unpack_rules_archive("$url", "$url_tmpdir/$OUTFILE", $RULES_DIR);
+}
 
-# Verify and unpack archive. This will leave us with a directory
-# called $RULES_DIR in the same directory as the archive, containing the
-# new rules. Will exit if something fails.
-unpack_rules_archive("$tmpdir/$OUTFILE", $RULES_DIR);
+
+# Copy all rules files from the tmp dirs into $RULES_DIR in the tmp directory.
+# File matching 'skipfile' a directive will not be copied.
+# Will exit in case of duplicate filenames.
+join_tmp_rules_dirs("$tmpdir/$RULES_DIR", @url_tmpdirs);
+
 
 # Create list of new files that we care about from the downloaded
 # Filenames (with full path) will be stored as %new_files{filename}.
 my $num_files = get_new_filenames(\my %new_files, "$tmpdir/$RULES_DIR");
 
 # Make sure we have at least the minimum number of files.
-clean_exit("not enough rules files in downloaded archive (is it broken?)\n".
+clean_exit("not enough rules files in downloaded rules archive(s).\n".
            "Number of rules files is $num_files but minimum is set to $config{min_files}.")
   if ($num_files < $config{min_files});
 
@@ -243,7 +253,7 @@ my $num_rules = process_rules(\@{$config{sid_modify_list}},
                               \%new_files);
 
 # Make sure we have at least the minimum number of rules.
-clean_exit("not enough rules in downloaded archive (is it broken?)\n".
+clean_exit("not enough rules in downloaded archive(s).\n".
            "Number of rules is $num_rules but minimum is set to $config{min_rules}.")
   if ($num_rules < $config{min_rules});
 
@@ -344,6 +354,7 @@ Options:
 -T        Config test - just check configuration file(s) for errors/warnings
 -u <url>  Download from this URL instead of the one in the configuration file
           (must be http://, https://, ftp://, file:// or scp:// ... .tar.gz)
+          May be specified multiple times to grab multiple rules archives.
 -U <file> Merge new variables from downloaded snort.conf into <file>
 -v        Verbose mode (debug)
 -V        Show version and exit
@@ -375,7 +386,7 @@ sub parse_cmdline($)
         "r"   => \$$cfg_ref{check_removed},
         "s"   => \$$cfg_ref{summary_output},
         "T"   => \$$cfg_ref{config_test_mode},
-        "u=s" => \$$cfg_ref{url},
+        "u=s" => \@{$$cfg_ref{url}},
         "U=s" => \$$cfg_ref{varfile},
         "v"   => \$$cfg_ref{verbose},
         "V"   => sub {
@@ -403,7 +414,7 @@ sub parse_cmdline($)
     }
 
   # Mark that url was set on command line (so we don't override it later).
-    $$cfg_ref{cmdline_url} = 1 if ($$cfg_ref{url});
+    $$cfg_ref{cmdline_url} = 1 if ($#{$config{url}} > -1);
 }
 
 
@@ -573,7 +584,7 @@ sub read_config($ $)
 	    }
 
 	} elsif (/^url\s*=\s*(.*)/i) {
-	    $$cfg_ref{url} = $1
+            push(@{$$cfg_ref{url}}, $1)
               unless ($$cfg_ref{cmdline_url});
 
 	} elsif (/^path\s*=\s*(.+)/i) {
@@ -693,9 +704,18 @@ sub sanity_check()
     }
 
   # Make sure $url is defined (either by -u <url> or url=... in the conf).
-    clean_exit("incorrect URL or URL not specified in either configuration file or command line.")
-      unless (defined($config{'url'}) &&
-        (($config{'url'}) = $config{'url'} =~ /^((?:https*|ftp|file|scp):\/\/.+\.tar\.gz)$/));
+    clean_exit("URL not specified. Specify at least one \"url=<url>\" in the \n".
+               "Oinkmaster configuration file or use the \"-u <url>\" argument")
+      if ($#{$config{url}} == -1);
+
+  # Make sure all urls look ok, and untaint them.
+    my @urls = @{$config{url}};
+    $#{$config{url}} = -1;
+    foreach my $url (@urls) {
+        clean_exit("incorrect URL: \"$url\"")
+          unless ($url =~ /^((?:https*|ftp|file|scp):\/\/.+\.tar\.gz)$/);
+        push(@{$config{url}}, $1);
+    }
 
   # Wget must be found if url is http[s]:// or ftp://.
     if ($config{use_external_bins}) {
@@ -799,7 +819,7 @@ sub download_file($ $)
 
         if ($config{verbose}) {
             print STDERR "\n";
-            clean_exit("could not download file")
+            clean_exit("could not download from $url")
               if (system("wget", "-v", "-O", "$localfile", "$url"));
         } else {
             if (system("wget", "-v", "-o", "$log", "-O", "$localfile", "$url")) {
@@ -807,7 +827,7 @@ sub download_file($ $)
                   or clean_exit("could not open $log for reading: $!");
                 my @log = <LOG>;
                 close(LOG);
-                clean_exit("could not download file. Output from wget follows:\n\n @log");
+                clean_exit("could not download from $url. Output from wget follows:\n\n @log");
             }
             print STDERR "done.\n" unless ($config{quiet});
         }
@@ -822,7 +842,7 @@ sub download_file($ $)
 	my $request = HTTP::Request->new(GET => $url);
 	my $response = $ua->request($request, $localfile);
 
-        clean_exit("could not download file: " . $response->status_line)
+        clean_exit("could not download from $url: " . $response->status_line)
           unless $response->is_success;
 
         print "done.\n" unless ($config{quiet});
@@ -869,22 +889,61 @@ sub download_file($ $)
     }
 
   # Make sure the downloaded file actually exists.
-    clean_exit("failed to download file: ".
+    clean_exit("failed to download $url: ".
                "local target file $localfile doesn't exist after download.")
       unless (-e "$localfile");
 
   # Also make sure it's at least non-empty.
-    clean_exit("failed to download file: local target file $localfile is empty ".
+    clean_exit("failed to download $url: local target file $localfile is empty ".
                "after download (perhaps you're out of diskspace or file in url is empty?)")
       unless (-s "$localfile");
 }
 
 
 
+# Copy all rules files from the tmp dirs (one for each url)
+# into a single directory inside the tmp dir, except for files
+# matching a 'skipfile' directive'.
+# Will exit in case of colliding filenames.
+sub join_tmp_rules_dirs($ @)
+{
+    my $rules_dir   = shift;
+    my @url_tmpdirs = @_;
+
+    my %rules_files;
+
+    clean_exit("failed to create directory \"$rules_dir\": $!")
+      unless (mkdir($rules_dir));
+
+    foreach my $url_tmpdir (@url_tmpdirs) {
+        opendir(URL_TMPDIR, "$url_tmpdir")
+          or clean_exit("could not open directory \"$url_tmpdir\": $!");
+
+        while ($_ = readdir(URL_TMPDIR)) {
+            next if (/^\.\.?$/ || exists($config{file_ignore_list}{$_}) || !/$config{update_files}/);
+
+            clean_exit("a file called \"$_\" exists in multiple rules archives")
+              if (exists($rules_files{$_}));
+
+            $rules_files{$_} = 1;
+
+            my $src_file = untaint_path("$url_tmpdir/$_");
+            copy("$src_file", "$rules_dir")
+              or clean_exit("could not copy \"$src_file\" to \"$rules_dir\": $!");
+        }
+
+        closedir(URL_TMPDIR);
+    }
+
+}
+
+
+
 # Make a few basic sanity checks on the rules archive and then
 # uncompress/untar it if everything looked ok.
-sub unpack_rules_archive($ $)
+sub unpack_rules_archive($ $ $)
 {
+    my $url       = shift;  # only used when printing warnings/errors
     my $archive   = shift;
     my $rules_dir = shift;
 
@@ -893,25 +952,25 @@ sub unpack_rules_archive($ $)
     my $old_dir = untaint_path(File::Spec->rel2abs(File::Spec->curdir()));
 
     my $dir = dirname($archive);
-    chdir("$dir") or clean_exit("could not change directory to \"$dir\": $!");
+    chdir("$dir") or clean_exit("$url: could not change directory to \"$dir\": $!");
 
     if ($config{use_external_bins}) {
 
       # Run integrity check on the gzip file.
-        clean_exit("integrity check on gzip file failed (file transfer failed or ".
+        clean_exit("$url: integrity check on gzip file failed (file transfer failed or ".
                    "file in URL not in gzip format?).")
           if (system("gzip", "-t", "$archive"));
 
       # Decompress it.
         system("gzip", "-d", "$archive")
-          and clean_exit("unable to uncompress $archive.");
+          and clean_exit("$url: unable to uncompress $archive.");
 
       # Suffix has now changed from .tar.gz to .tar.
         $archive =~ s/\.gz$//;
 
       # Make sure the .tar file now exists.
       # (Gzip may not return an error if it was not a gzipped file...)
-        clean_exit("failed to unpack gzip file (file transfer failed or ".
+        clean_exit("$url: failed to unpack gzip file (file transfer failed or ".
                    "file in URL not in gzip format?).")
           unless (-e  "$archive");
 
@@ -926,7 +985,7 @@ sub unpack_rules_archive($ $)
         open(STDOUT, ">&OLDOUT") or clean_exit("could not dup STDOUT: $!");
         close(OLDOUT);
 
-        clean_exit("could not list files in tar archive (is it broken?)")
+        clean_exit("$url: could not list files in tar archive (is it broken?)")
           if ($ret);
 
         open(TAR, "$stdout_file") or clean_exit("failed to open $stdout_file: $!");
@@ -936,13 +995,13 @@ sub unpack_rules_archive($ $)
  # use_external_bins=0
     } else {
         $tar = Archive::Tar->new($archive, 1);
-        clean_exit("could not read $archive\n")
+        clean_exit("$url: could not read $archive\n")
           unless (defined($tar));
         @tar_content = $tar->list_files();
     }
 
   # Make sure we could grab some content from the tarball.
-    clean_exit("could not list files in tar archive (is it broken?)")
+    clean_exit("$url: could not list files in tar archive (is it broken?)")
       if ($#tar_content < 0);
 
   # For each filename in the archive, do some basic sanity checks.
@@ -950,17 +1009,17 @@ sub unpack_rules_archive($ $)
        chomp($filename);
 
       # We don't want absolute filename.
-        clean_exit("rules archive contains absolute filename. ".
+        clean_exit("$url: rules archive contains absolute filename. ".
                    "Offending file/line:\n$filename")
           if ($filename =~ /^\//);
 
       # We don't want to have any weird characters anywhere in the filename.
-        clean_exit("illegal character in filename in tar archive. Allowed are ".
+        clean_exit("$url: illegal character in filename in tar archive. Allowed are ".
                    "$OK_PATH_CHARS\nOffending file/line:\n$filename")
           if ($config{use_path_checks} && $filename =~ /[^$OK_PATH_CHARS]/);
 
       # We don't want to unpack any "../../" junk (check is useless now though).
-        clean_exit("filename in tar archive contains \"..\".\n".
+        clean_exit("$url: filename in tar archive contains \"..\".\n".
                    "Offending file/line:\n$filename")
           if ($filename =~ /\.\./);
     }
@@ -986,8 +1045,24 @@ sub unpack_rules_archive($ $)
         }
     }
 
-    clean_exit("no \"$rules_dir\" directory found in tar file.")
+  # Make sure that non-empty rules directory existed in archive.
+  # We permit empty rules directory if min_files is set to 0 though.
+    clean_exit("$url: no \"$rules_dir\" directory found in tar file.")
       unless (-d "$dir/$rules_dir");
+
+    my $num_files = 0;
+    opendir(RULESDIR, "$dir/$rules_dir")
+      or clean_exit("could not open directory \"$dir/$rules_dir\": $!");
+
+    while ($_ = readdir(RULESDIR)) {
+        next if (/^\.\.?$/);
+        $num_files++;
+    }
+
+    closedir(RULESDIR);
+
+    clean_exit("$url: directory \"$rules_dir\" in unpacked archive is empty")
+      if ($num_files == 0 && $config{min_files} != 0);
 
     chdir($old_dir)
       or clean_exit("could not change directory back to $old_dir: $!");
