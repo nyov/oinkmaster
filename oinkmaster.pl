@@ -149,7 +149,7 @@ unpack_rules_archive("$tmpdir/$OUTFILE");
 
 # Create list of new files that we care about from the downloaded
 # Filenames (with full path) will be stored as %new_files{filenme}.
-my $num_files = get_new_filenames(\my %new_files, "$tmpdir/rules/");
+my $num_files = get_new_filenames(\my %new_files, "$tmpdir/rules");
 
 # Make sure the number of files is at least $min_files.
 clean_exit("not enough rules files in downloaded archive (is it broken?)\n".
@@ -563,22 +563,31 @@ sub download_rules($ $)
 {
     my $url       = shift;
     my $localfile = shift;
+    my $ret;
+    my $log       = "$tmpdir/wget.log";
 
   # Use wget if URL starts with "http[s]" or "ftp".
     if ($url =~ /^(?:https*|ftp)/) {
         print STDERR "Downloading rules archive from $url...\n"
           unless ($quiet);
+
         if ($quiet) {
-            clean_exit("unable to download rules from $url (got error code from wget).\n".
-                       "Consider running in non-quiet mode if the problem persists.")
-              if (system("wget","-q","-O","$localfile","$url"));         # quiet mode
+            $ret = system("wget","-v","-o", "$log","-O","$localfile","$url");
         } elsif ($verbose) {
-            clean_exit("unable to download rules from $url (got error code from wget).")
-              if (system("wget","-v","-O","$localfile","$url"));         # verbose mode
+            clean_exit("could not download rules")
+              if (system("wget","-v","-O","$localfile","$url"));
         } else {
-            clean_exit("unable to download rules from $url (got error code from wget).")
-              if (system("wget","-nv","-O","$localfile","$url"));        # normal mode
+            $ret = system("wget","-v","-o","$log","-O","$localfile","$url");
         }
+
+    if ($ret) {
+        open(LOG, "<", "$log")
+          or clean_exit("could not open $log for reading: $!");
+        my @log = <LOG>;
+        close(LOG);
+
+        clean_exit("could not download rules. Output from wget follows:\n @log");
+    }
 
   # Grab file from local filesystem if file://...
     } elsif ($url =~ /^file/) {
