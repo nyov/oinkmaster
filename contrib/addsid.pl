@@ -7,7 +7,7 @@ use strict;
 sub get_next_entry($ $ $ $);
 
 
-my $USAGE = "usage: $0 <rulesdir> <start sid>\n";
+my $USAGE = "usage: $0 <rulesdir>\n";
 
 # SID must not be required in this regexp.
 my $SNORT_RULE_REGEXP = '^\s*#*\s*(?:alert|log|pass) .+msg\s*:\s*"(.+?)"\s*;.*\)\s*$';
@@ -19,12 +19,42 @@ my $classtype = "misc-attack";
 # Only >= 1000000 is reserved for personal use.
 my $min_sid = 1000000;
 
+my %sids;
+
 my $rulesdir = shift || die("$USAGE");
-my $sid      = shift || die("$USAGE");   # XXX should start with the next available SID by default? but option should remain
 
-die("sid to start with must be at least $min_sid!\n")
-  unless ($sid >= $min_sid);
 
+# Find out the next available SID.
+
+opendir(RULESDIR, "$rulesdir") or die("could not open $rulesdir: $!\n");
+
+while (my $file = readdir(RULESDIR)) {
+    next unless ($file =~ /\.rules$/);
+
+    open(OLDFILE, "$rulesdir/$file") or die("could not open $rulesdir/$file: $!\n");
+    my @file = <OLDFILE>;
+    close(OLDFILE);
+
+    my ($single, $multi, $nonrule);
+    while (get_next_entry(\@file, \$single, \$multi, \$nonrule)) {
+        if (defined($single) && $single =~ /sid\s*:(\d+)\s*;/) {
+	    my $tmpsid = $1;
+	    if (exists($sids{$tmpsid})) {
+	        print STDERR "WARNING: duplicate sid: $tmpsid\n";
+	    }
+	    $sids{$tmpsid}++;
+        }
+    }
+}
+
+@_ = sort {$a <=> $b} keys(%sids);
+my $sid = pop(@_);
+$sid = $min_sid unless(defined($sid));
+print STDERR "highest current: $sid\n";
+
+$sid++;
+$sid = $min_sid if ($sid < $min_sid);
+print STDERR "using start sid: $sid\n\n";
 
 opendir(RULESDIR, "$rulesdir") or die("could not open $rulesdir: $!\n");
 
@@ -49,8 +79,8 @@ while (my $file = readdir(RULESDIR)) {
         $multi = $single unless (defined($multi));
 
         if ($single !~ /sid\s*:\s*\d+\s*;/) {
-            $sid++;
             $multi =~ s/\)\s*\n/sid:$sid;)\n/;
+            $sid++;
         }
 
         if ($single !~ /rev\s*:\s*\d+\s*;/) {
