@@ -28,7 +28,7 @@ sub clean_exit($);
 my $VERSION           = 'Oinkmaster v0.7 by Andreas Östling <andreaso@it.su.se>';
 my $TMPDIR            = "/tmp/oinkmaster.$$";
 
-my $config_file       = "./oinkmaster.conf";
+my $config_file       = "/usr/local/etc/oinkmaster.conf";
 my $outfile           = "snortrules.tar.gz";
 my $verbose           = 0;
 my $careful           = 0;
