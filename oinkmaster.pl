@@ -561,7 +561,7 @@ sub disable_rules
 # As a bonus, we get list of added files in %added_files.
 sub setup_rule_hashes
 {
-    my ($file);
+    my ($file, $sid);
 
     foreach $file (keys(%new_files)) {
         open(NEWFILE, "$tmpdir/rules/$file") or clean_exit("Could not open $tmpdir/rules/$file: $!");
@@ -579,7 +579,10 @@ sub setup_rule_hashes
             open(OLDFILE, "$output_dir/$file") or clean_exit("Could not open $output_dir/$file: $!");
 	    while (<OLDFILE>) {
                 if (/$snort_rule_regexp/) {
-                    $old_rules{$file}{$2} = $_;
+		    $sid = $2;
+		    s/^\s*//;
+		    s/^#+\s+/#/;  # make sure comment syntax is how we want it
+                    $old_rules{$file}{$sid} = $_;
                 } else {
                     push(@{$old_other{$file}}, $_);
                 }
