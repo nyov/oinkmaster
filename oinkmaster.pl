@@ -218,11 +218,13 @@ clean_exit("");
 # Show usage information and exit.
 sub show_usage()
 {
+    my $progname = basename($0);
+
     print STDERR << "RTFM";
 
 $VERSION
 
-Usage: $0 -o <output dir> [options]
+Usage: $progname -o <output dir> [options]
 
 <output dir> is where to put the new files.
 This should be the directory where you store the snort rules.
@@ -275,7 +277,7 @@ sub parse_cmdline($)
 
     if (defined($opt_b)) {
         $$cfg_ref{backup_dir} = $opt_b;
-        $$cfg_ref{backup_dir} =~ s/\/+$//;
+        $$cfg_ref{backup_dir} ne "/" && $$cfg_ref{backup_dir} =~ s/\/+$//;
         $make_backup = 1;
     }
 
@@ -296,7 +298,7 @@ sub parse_cmdline($)
   # -o <dir> is the only required option in normal usage.
     if (defined($opt_o)) {
         $$cfg_ref{output_dir} = $opt_o;
-        $$cfg_ref{output_dir} =~ s/\/+$//;
+        $$cfg_ref{output_dir} ne "/" && $$cfg_ref{output_dir} =~ s/\/+$//;
     } else {
         show_usage();
     }
