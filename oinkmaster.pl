@@ -341,7 +341,7 @@ Options:
 -r        Check for rules files that exist in the output directory
           but not in the downloaded rules archive
 -s        Leave out details in rules results, just print SID, msg and filename
--T        Config test - Just check configuration file(s) for errors/warnings
+-T        Config test - just check configuration file(s) for errors/warnings
 -u <url>  Download from this URL instead of the one in the configuration file
           (must be http://, https://, ftp://, file:// or scp:// ... .tar.gz)
 -U <file> Merge new variables from downloaded snort.conf into <file>
