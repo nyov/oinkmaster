@@ -400,7 +400,7 @@ sub read_config
                 $sid_disable_list{$_}++;
 	    }
         } elsif (/^modifysid\s+(\d+)\s+(.*)/) {                    # modifysid
-	    $sid_modify_list{$1} = $2;
+            push(@{$sid_modify_list{$1}}, $2);
         } elsif (/^skipfiles*\s+(.*)/) {                           # skipfile
 	    $args = $1;
 	    foreach $_ (split(/\s*,\s*/, $args)) {
@@ -606,8 +606,8 @@ sub disable_rules
 	    }
 
           # Modify rule, if requested.
-	    if (exists($sid_modify_list{$sid})) {
-		eval "\$line =~ $sid_modify_list{$sid}";
+            foreach $_ (@{$sid_modify_list{$sid}}) {
+		eval "\$line =~ $_";
 	    }
 
           # Disable rule, if requested.
