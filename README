@@ -29,7 +29,7 @@ Oinkmaster will tell you exactly what had changed since the last update,
 hence giving you good control of your rules. It is most often used to 
 update the official rules from www.snort.org, but can just as well be used 
 for managing/distributing your homemade rules. Oinkmaster may be useful 
-in concuntion with any program that can use Snort rules, like Snort (doh!)
+in conjunction with any program that can use Snort rules, like Snort (doh!)
 or Prelude-NIDS.
 
 It's a variant of the (now extremely obsolete) arachNIDS snort rules updater
