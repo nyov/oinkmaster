@@ -785,7 +785,7 @@ sub unpack_rules_archive($ $)
         open(OLDOUT, ">&STDOUT")      or clean_exit("could not dup STDOUT: $!");
         open(STDOUT, ">$stdout_file") or clean_exit("could not redirect STDOUT: $!");
 
-        my $ret = system("tar", "tfP", "$archive");
+        my $ret = system("tar", "tPf", "$archive");
 
         close(STDOUT);
         open(STDOUT, ">&OLDOUT") or clean_exit("could not dup STDOUT: $!");
