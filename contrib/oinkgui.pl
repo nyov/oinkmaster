@@ -77,6 +77,7 @@ my %config = (
     varfile          => "",
     backupdir        => "",
     editor           => "",
+    perl             => "",
 );
 
 my %help = (
@@ -158,6 +159,15 @@ EDITOR:foreach my $ed (@editors) {
             last EDITOR;
         }
     } 
+}
+
+# Look for Perl binary.
+PERL:foreach my $dir (File::Spec->path()) {
+    my $file = "$dir/perl";
+    if ((-f "$file" && -x "$file") || (-f "$file.exe" && -x "$file.exe")) {
+        $config{perl} = $file;
+        last PERL;
+    }
 }
 
 # Find out where the GUI config file is (it's not required).
@@ -699,7 +709,8 @@ sub create_fileSelectFrame($ $ $ $ $ $)
                                      system($config{editor}, $$var_ref); # MainLoop will be put on hold...
                                      $main->Unbusy;
                                  } else {
-                                     logmsg("No suitable editor found (looked for @editors in path).\n\n", 'ERROR');
+                                     logmsg("No suitable editor found (looked for @editors ".
+                                            "in path)\n\n", 'ERROR');
                                  }
                              }
         )->pack(
@@ -747,12 +758,17 @@ sub show_version()
     $config{oinkmaster} =~ s/^\s+//;
     $config{oinkmaster} =~ s/\s+$//;
 
+    unless ($config{perl} && -x "$config{perl}") {
+        logmsg("Perl binary not found in PATH!\n\n", 'ERROR');
+        return;
+    }
+
     unless ($config{oinkmaster} && (-x "$config{oinkmaster}" || $^O eq 'MSWin32')) {
         logmsg("Location to oinkmaster.pl is not set correctly!\n\n", 'ERROR');
         return;
     }
 
-    my $cmd = "perl $config{oinkmaster} -V";
+    my $cmd = "$config{perl} $config{oinkmaster} -V";
     logmsg("$cmd:\n", 'EXEC');
     my $output = `$cmd 2>&1` || "Could not execute $config{oinkmaster}: $!\n";
     logmsg("$output", 'OUTPUT');
@@ -766,12 +782,17 @@ sub show_help()
     $config{oinkmaster} =~ s/^\s+//;
     $config{oinkmaster} =~ s/\s+$//;
 
+    unless ($config{oinkmaster} && -x "$config{perl}") {
+        logmsg("Perl binary not found in PATH!\n\n", 'ERROR');
+        return;
+    }
+
     unless ($config{oinkmaster} && (-x "$config{oinkmaster}" || $^O eq 'MSWin32')) {
         logmsg("Location to oinkmaster.pl is not set correctly!\n\n", 'ERROR');
         return;
     }
 
-    my $cmd = "perl $config{oinkmaster} -h";
+    my $cmd = "$config{perl} $config{oinkmaster} -h";
     logmsg("$cmd:\n", 'EXEC');
     my $output = `$cmd 2>&1` || "Could not execute $config{oinkmaster}: $!\n";
     logmsg("$output\n", 'OUTPUT');
@@ -779,7 +800,8 @@ sub show_help()
 
 
 
-sub execute_oinkmaster(@) {
+sub execute_oinkmaster(@)
+{
     my @cmd = @_;
 
     logmsg("@cmd:\n", 'EXEC');
@@ -810,6 +832,11 @@ sub execute_oinkmaster(@) {
 sub test_config()
 {
     my @cmd;
+
+    unless ($config{perl} && -x "$config{perl}") {
+        logmsg("Perl binary not found in PATH!\n\n", 'ERROR');
+        return;
+    }
 
     create_cmdline(\@cmd) || return;
 
@@ -864,9 +891,9 @@ sub update_rules()
 {
     my @cmd;
 
+    create_cmdline(\@cmd) || return;
     clear_messages();
     $main->Busy(-recurse => 1);
-    create_cmdline(\@cmd) || return;
     execute_oinkmaster(@cmd);
     $main->Unbusy;
 }
@@ -902,6 +929,11 @@ sub create_cmdline($)
         }
     }
 
+    unless ($config{perl} && -x "$config{perl}") {
+        logmsg("Perl binary not found in PATH!\n\n", 'ERROR');
+        return (0);
+    }
+
     unless ($oinkmaster && (-x "$oinkmaster" || $^O eq 'MSWin32')) {
         logmsg("Location to oinkmaster.pl is not set correctly!\n\n", 'ERROR');
         return (0);
@@ -918,7 +950,7 @@ sub create_cmdline($)
     }
 
     push(@$cmd_ref, 
-      "perl", "$oinkmaster",
+      "$config{perl}", "$oinkmaster",
       "-C", "$oinkmaster_conf", 
       "-o", "$outdir");
 
