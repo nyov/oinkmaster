@@ -6,7 +6,7 @@ Intro
 Oinkmaster GUI (oinkgui.pl in the contrib directory) is my very first 
 attempt at creating a graphical user interface in Perl/Tk. It was 
 written just for fun. The result is not the prettiest interface you've
-seen, but it actually works. It runs on Unix systems and also on
+seen, but it actually works. It runs on UNIX systems and also on
 Windows with ActivePerl. It has not been tested under Cygwin.
 Send feedback to Andreas Östling <andreaso@it.su.se>.
 
@@ -25,11 +25,11 @@ information.
 
 The GUI is written in Perl and requires the Perl Tk module.
 You must also make sure the Perl binary (at least 5.6.1) is in your PATH.
-If you're on Unix and don't have the Tk module already, install the 
+If you're on UNIX and don't have the Tk module already, install the 
 latesty version from http://www.cpan.org/authors/id/NI-S/. At the time of 
 writing, http://www.cpan.org/authors/id/NI-S/Tk-800.024.tar.gz is probably 
 the one you'll want. Unpack it and run "perl Makefile.pl && make && make 
-install" and you should then be able to start the GUI by running 
+install" and you should then be able to start the GUI by executing
 oinkgui.pl. If you're on *BSD, it's probably better to install the 
 /usr/ports/*/p5-Tk/ port instead.
 
@@ -43,7 +43,7 @@ and is as simple as typing "ppm install Win32::FileOp" in a DOS shell.
 After you've made sure you have the Tk module installed, simply execute
 oinkgui.pl (it's found in Oinkmaster's contrib directory, and you may
 want to copy it to some better location first).
-You don't have to be in a DOS shell / Unix shell to start it - you
+You don't have to be in a DOS shell / UNIX shell to start it - you
 can create a shortcut for it on your desktop if you like.
 
 
@@ -57,7 +57,7 @@ All entries under the "Required files and directories" tab must
 be set correctly or you will not be able to do anything. When they are 
 set correctly (i.e. when all the labels have turned green), you are ready 
 to go. The files/directories under the "Optional files and directories" 
-tab are not required and if you leave a field empty, that option will
+tab are not required, and if you leave a field empty, that option will
 simply not be used.
 
 When all required fields are set, it's recommended to push the 

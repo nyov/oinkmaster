@@ -6,9 +6,7 @@ Introduction
 There are three known ways to run Oinkmaster under Windows:
 
 - ActivePerl
-
 - Cygwin from within a Cygwin shell
-
 - Cygwin but not from within a Cygwin shell
 
 Which method you choose is mostly a matter of taste, although I'd
@@ -53,7 +51,8 @@ ActivePerl
 
 - If you don't have a recent version of ActivePerl installed already, get 
   it from http://www.activestate.com/Products/ActivePerl/.
-  It contains all required Perl modules (even for the Oinkmaster GUI).
+  It contains all required Perl modules (even for the Oinkmaster GUI), 
+  no external binaries are required.
 
 - Install Oinkmaster by following the INSTALL file.
 
@@ -108,9 +107,9 @@ without first starting a Cygwin shell.
 - Install Oinkmaster by following the INSTALL file.
 
 - Make sure the 'path' option in oinkmaster.conf includes the
-  directory/directories containing the required Cygwin 
-  libraries and binaries. You can specify the path as either msdos style 
-  or Cygwin style, e.g.:
+  directory/directories containing the required Cygwin libraries and 
+  binaries. You can specify the path as either msdos style or Cygwin 
+  style, e.g.:
 
   path = c:\cygwin;c:\cygwin\bin
 

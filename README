@@ -16,10 +16,10 @@ Introduction
 
 Oinkmaster is simple Perl script released under the BSD license that 
 helps you keep your Snort rules current with little or no user 
-interaction. It has quite a few nifty features regarding rules management, 
-such as ability to enable, disable and modify specified rules after each 
-update. It will tell you the exact changes from your previous rules, so
-you have total control of them.
+interaction. It has quite a few useful features regarding rules 
+management, such as ability to enable, disable and modify specified rules 
+after each update. It will tell you the exact changes from your previous 
+rules, so you have total control of what's going on.
 
 Oinkmaster is most often used to grab the latest official rules tarball 
 from www.snort.org and apply a set of modifications to them (such as 
@@ -47,7 +47,7 @@ rules.
 Requirements
 ~~~~~~~~~~~~
 
-It should work on most UNIX-like systems with a recent version of Perl 5.
+It should work on most UNIX-like systems with Perl 5.6.1 or later.
 You also need either the binaries tar, gzip and wget, or the Perl modules
 Archive::Tar, IO::Zlib and LWP::UserAgent. See oinkmaster.conf for more
 information about this. So far it has been successfully tested on 
@@ -77,9 +77,9 @@ This is where Oinkmaster comes in - it will automatically do those boring
 modifications to the rules that you would usually have to do manually 
 after each update. You could say that Oinkmaster is a documented way of 
 applying a set of modifications to the new rules (such as disabling, 
-enabling or modifying them) after each download of the updated rules 
+enabling or modifying them) after each download of the new rules 
 tarball before overwriting your local rules files. This means that after 
-switching to Oinkmaster for performing rules updating, permanent 
+switching to Oinkmaster for performing the rules updating, permanent 
 modifications to the rules files must be done by editing oinkmaster.conf, 
 not by editing your rules files directly as such modifications will be 
 lost after an update.
@@ -165,10 +165,10 @@ job. But of course, be very careful when doing the latter. Think about
 what you're doing. It usually doesn't take much for these automatic 
 updating scripts to fail, so things could easily get messed up from one 
 update to another because of different layout in the rules archive, typo 
-in a rule, bugs in the script etc etc (at least run snort -T on the new 
-rules before restarting your running Snort process!). And as always when 
-updating the Snort rules, there may be some changes that you really don't 
-like (or at least want to know about before using), so you should always 
+in a rule, bugs in the script etc etc. (At least run snort -T on the new 
+rules before restarting your Snort process!). And as always when updating
+the Snort rules, there may be some changes that you really don't like 
+(or at least want to know about before using), so you should always 
 manually verify the new rules before using them. Since Oinkmaster will 
 print all changes in the new rules to the screen (in an easy-to-read 
 format), this becomes a fairly simple task.
@@ -178,8 +178,8 @@ format), this becomes a fairly simple task.
 Usage examples
 ~~~~~~~~~~~~~~
 
-To automagically update the rules every night at 02:30 and make a backup
-of the old ones if there were any updates, and sending difference 
+To automatically update the rules every night at 02:30 and make a backup
+of the old ones if there were any changes, and sending difference 
 notification to syslog, you could use something like this in your crontab. 
 Always consider using the -c flag (careful mode) when running as a cron 
 job though.
@@ -361,4 +361,4 @@ o Oinkmaster never deletes any rules files from your system.
 o Don't depend too much on this script for the rules updating process.
   It's just intended to be a small help and you should always keep an eye
   on it. Manual reviewing of all your rules and configuration should 
-  always be done every now and then.
+  always be done,
