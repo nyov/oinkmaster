@@ -6,6 +6,8 @@ use strict;
 use Tk;
 use Tk::NoteBook;
 use Tk::ROText;
+use Tk::Balloon;
+
 
 sub test_config();
 sub show_version();
@@ -27,7 +29,6 @@ sub logmsg($ $);
 my $version     = 'Oinkmaster GUI v0.1';
 
 my %gui_config;
-
 
 my @oinkmaster_pl   = qw(./oinkmaster.pl
                          /etc/oinkmaster.pl 
@@ -63,6 +64,26 @@ $gui_config{varfile}                = "";
 $gui_config{backupdir}              = "";
 
 my $gui_config_file     = "";
+
+
+my %help = (
+
+  # File locations.
+    oinkscript   => 'Location of the executable oinkmaster.pl file',
+    oinkconf     => 'The oinkmaster configuration file to use',
+    outdir       => 'The directory where you store your rules. Must be writable.',
+
+  # Action buttons.
+    clear        => 'Clear current output messages',
+    exit         => 'Exit the GUI',
+    update       => 'Execute Oinkmaster to update the rules',
+    test         => 'Test current oinkmaster configuration. ' .
+                    'If there are no fatal errors, you are ready to update the rules.',
+    help         => 'Execute oinkmaster -h',
+    version      => 'Display Oinkmaster version',
+
+);
+
 
 
 #### MAIN ####
@@ -107,6 +128,15 @@ my $out_frame = $main->Scrolled('ROText',
   -foreground => 'white',
 );
 
+my $help_label = $main->Label(
+    -relief     => 'groove',
+    -background => "$labelcolor"
+);
+
+my $balloon = $main->Balloon(
+    -statusbar => $help_label,
+);
+
 
 # Create notebook.
 my $notebook = $main->NoteBook(
@@ -127,13 +157,21 @@ my $req_tab = $notebook->add("required",
 my ($oinkscript_frame, $oinkscript_label, $oinkscript_entry, $oinkscript_but) = 
   create_fileSelectFrame($req_tab, "Oinkmaster.pl", 'FILE');
 
+$balloon->attach($oinkscript_frame, -statusmsg => $help{oinkscript});
+
+
 # Create frame with oinkmaster.pl location.
 my ($oinkconf_frame, $oinkconf_label, $oinkconf_entry, $oinkconf_but) = 
   create_fileSelectFrame($req_tab, "Oinkmaster.conf", 'FILE');
 
+$balloon->attach($oinkconf_frame, -statusmsg => $help{oinkconf});
+
+
 # Create frame with output directory. XXX must be able to select dir only.
 my ($outdir_frame, $outdir_label, $outdir_entry, $outdir_but) = 
   create_fileSelectFrame($req_tab, "Output directory", 'DIR');
+
+$balloon->attach($outdir_frame, -statusmsg => $help{outdir});
 
 
 
@@ -232,12 +270,18 @@ $main->Label(
 );
 
 
+
 # Pack output frame.
 $out_frame->pack(
   -expand     => 'yes',
   -fill       => 'both'
 );
 
+
+# Pack help label below output window.
+$help_label->pack(
+    -fill       => 'x',
+);
 
 
 # Create "actions" label.
@@ -250,13 +294,37 @@ $opt_frame->Label(
 );
 
 
-# Create actions button.
-create_actionbutton($opt_frame, "Show version",       \&show_version);
-create_actionbutton($opt_frame, "Show help",          \&show_help);
-create_actionbutton($opt_frame, "Test configuration", \&test_config);
-create_actionbutton($opt_frame, "Update rules!",      \&update_rules);
-create_actionbutton($opt_frame, "Clear messages",     \&clear_messages);
-create_actionbutton($opt_frame, "Exit",               \&exit);
+# Create action buttons.
+
+$balloon->attach(
+  create_actionbutton($opt_frame, "Show version", \&show_version), 
+  -statusmsg => $help{version}
+);
+
+$balloon->attach(
+  create_actionbutton($opt_frame, "Show help", \&show_help),
+  -statusmsg => $help{help}
+);
+
+$balloon->attach(
+  create_actionbutton($opt_frame, "Test configuration", \&test_config),
+  -statusmsg => $help{test}
+);
+
+$balloon->attach(
+  create_actionbutton($opt_frame, "Update rules!", \&update_rules),
+  -statusmsg => $help{update}
+);
+
+$balloon->attach(
+  create_actionbutton($opt_frame, "Clear messages", \&clear_messages),
+  -statusmsg => $help{clear}
+);
+
+$balloon->attach(
+  create_actionbutton($opt_frame, "Exit", \&exit),
+  -statusmsg => $help{exit}
+);
 
 
 
@@ -374,7 +442,7 @@ sub create_checkbutton($ $ $)
     my $name    = shift;
     my $var_ref = shift;
  
-    $frame->Checkbutton(
+    my $button = $frame->Checkbutton(
       -text       => $name,
       -background => $butcolor,
       -variable   => $var_ref,
@@ -385,6 +453,8 @@ sub create_checkbutton($ $ $)
       -side       => 'top',
       -pady       => '1',
     );
+
+    return ($button);
 }
 
 
@@ -395,13 +465,15 @@ sub create_actionbutton($ $ $)
     my $name     = shift;
     my $func_ref = shift;
 
-    $frame->Button(
+    my $button = $frame->Button(
       -text       => "$name",
       -command    => sub { &$func_ref }, 
       -background => "$actbutcolor",
     )->pack(
       -fill       => 'x',
     );
+
+    return ($button);
 }
 
 
@@ -412,7 +484,7 @@ sub create_radiobutton($ $ $)
     my $name     = shift;
     my $mode_ref = shift;
  
-    $frame->Radiobutton(
+    my $button = $frame->Radiobutton(
       -text       => "$name",
       -background => "$butcolor",
       -variable   =>  $mode_ref,
@@ -424,6 +496,8 @@ sub create_radiobutton($ $ $)
       -pady       => '1',
       -fill       => 'x',
     );
+
+    return ($button);
 }
 
 
@@ -487,9 +561,6 @@ sub logmsg($ $)
     my $text = shift;
     my $type = shift;
 
-    die("too early to use logmsg(), msg=$text\n")
-      unless (defined($out_frame));
-
     return unless (defined($text));
 
     $out_frame->tag(qw(configure OUTPUT -foreground grey));
@@ -508,8 +579,8 @@ sub show_version()
 {
     my $oinkmaster = $oinkscript_entry->get;
 
-    $filename =~ s/^\s+//;
-    $filename =~ s/\s+$//;
+    $oinkmaster =~ s/^\s+//;
+    $oinkmaster =~ s/\s+$//;
 
     unless ($oinkmaster && -x "$oinkmaster") {
         logmsg("Location to oinkmaster.pl is not set correctly!\n\n", 'ERROR');
@@ -528,8 +599,8 @@ sub show_help()
 {
     my $oinkmaster = $oinkscript_entry->get;
 
-    $filename =~ s/^\s+//;
-    $filename =~ s/\s+$//;
+    $oinkmaster =~ s/^\s+//;
+    $oinkmaster =~ s/\s+$//;
 
     unless ($oinkmaster && -x "$oinkmaster") {
         logmsg("Location to oinkmaster.pl is not set correctly!\n\n", 'ERROR');
@@ -731,7 +802,6 @@ sub save_config()
     }
 
     foreach my $option (sort(keys(%gui_config))) {
-        print STDERR "$option = $gui_config{$option}\n";
         print RC "$option = $gui_config{$option}\n";
     }
 
