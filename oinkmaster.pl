@@ -553,7 +553,7 @@ sub disable_rules
     $num_disabled = 0;
 
     unless ($preserve_comments) {
-        print STDERR "Warning: rules that are disabled by default will be enabled\n";
+        print STDERR "Warning: all rules that are disabled by default will be re-enabled\n";
     }
 
     print STDERR "Disabling rules according to $config_file... " unless ($quiet);
@@ -582,7 +582,7 @@ sub disable_rules
           # Enable them if -e is specified.
 	    if ($line =~ /^#/) {
 		if ($preserve_comments) {
-		    print STDERR "Preserving disabed rule (sid $sid): $msg\n"
+		    print STDERR "Preserving disabled rule (sid $sid): $msg\n"
 		      if ($verbose && !exists($sid_disable_list{$sid}));
 		} else {
 		    print STDERR "Enabling disabled rule (sid $sid): $msg\n"
