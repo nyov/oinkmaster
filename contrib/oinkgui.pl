@@ -22,7 +22,7 @@ sub fileDialog($ $ $);
 sub load_config();
 sub save_config();
 sub update_file_label_color($ $ $);
-sub create_fileSelectFrame($ $ $ $);
+sub create_fileSelectFrame($ $ $ $ $);
 sub create_checkbutton($ $ $);
 sub create_radiobutton($ $ $);
 sub create_actionbutton($ $ $);
@@ -38,11 +38,14 @@ my @oinkmaster_conf = qw(./oinkmaster.conf
                          /usr/local/etc/oinkmaster.conf
                         );
 
+# Graphical editors to look for.
+my @editors = qw (kwrite kate kedit gedit xemacs xedit notepad wordpad);
 
 # List of URLs that will show up in the URL BrowseEntry.
 my @urls = qw(http://www.snort.org/dl/rules/snortrules-stable.tar.gz
               http://www.snort.org/dl/rules/snortrules-current.tar.gz
              );
+
 
 my $bgcolor        = 'Bisque3';
 my $butcolor       = 'Bisque2';
@@ -65,7 +68,8 @@ $config{url}             = "";
 $config{varfile}         = "";
 $config{backupdir}       = "";
 
-my $config_file     = "";
+my $gui_config_file     = "";
+my $editor = "";
 
 
 my %help = (
@@ -77,7 +81,7 @@ my %help = (
                     'store your existing rules.',
 
     url          => 'Alternate location of rules archive. '.
-                    'If empty, the location in Oinkmaster.conf is used.',
+                    'If empty, the location in oinkmaster.conf is used.',
     varfile      => 'Variables that exist in downloaded snort.conf but not in '.
                     'this file will be added to it. Leave empty to skip.',
     backupdir    => 'Directory to put tarball of old rules before overwriting them. '.
@@ -122,18 +126,36 @@ foreach my $file (@oinkmaster_conf) {
 # Find out which oinkmaster.pl file to use.
 foreach my $dir (File::Spec->path()) {
     my $file = "$dir/oinkmaster";
-    if (-f "$file" && -x "$file") {
+    if (-f "$file" && (-x "$file" || $^O eq 'MSWin32')) {
         $config{oinkmaster} = $file;
         last;
-    } elsif (-f "$file.pl" && -x "$file.pl") {
+    } elsif (-f "$file.pl" && (-x "$file" || $^O eq 'MSWin32')) {
         $config{oinkmaster} = "$file.pl";
         last;
     } 
 }
 
+# Find out which editor to use.
+EDITOR:foreach my $ed (@editors) {
+    foreach my $dir (File::Spec->path()) {
+        my $file = "$dir/$ed";
+        if (-f "$file" && -x "$file") {
+            $editor = $file;
+            last EDITOR;
+        } elsif (-f "$file.exe" && -x "$file.exe") {
+            $editor = $file;
+            last EDITOR;
+        }
+    } 
+}
+
 
 # Find out where the GUI config file is (it's not required).
-$config_file = "$ENV{HOME}/.oinkguirc" if ($ENV{HOME});
+if ($ENV{HOME}) {
+    $gui_config_file = "$ENV{HOME}/.oinkguirc"
+} elsif ($ENV{HOMEDRIVE} && $ENV{HOMEPATH}) {
+   $gui_config_file = "$ENV{HOMEDRIVE}/$ENV{HOMEPATH}/.oinkguirc";
+}
 
 
 # Create main window.
@@ -177,21 +199,21 @@ my $req_tab = $notebook->add("required",
 
 # Create frame with oinkmaster.pl location.
 my ($oinkscript_frame, $oinkscript_label, $oinkscript_entry, $oinkscript_but) = 
-  create_fileSelectFrame($req_tab, "Oinkmaster.pl", 'EXECFILE', \$config{oinkmaster});
+  create_fileSelectFrame($req_tab, "oinkmaster.pl", 'EXECFILE', \$config{oinkmaster}, 'NOEDIT');
 
 $balloon->attach($oinkscript_frame, -statusmsg => $help{oinkscript});
 
 
 # Create frame with oinkmaster.conf location.
 my ($oinkconf_frame, $oinkconf_label, $oinkconf_entry, $oinkconf_but) = 
-  create_fileSelectFrame($req_tab, "Oinkmaster.conf", 'ROFILE', \$config{oinkmaster_conf});
+  create_fileSelectFrame($req_tab, "oinkmaster.conf", 'ROFILE', \$config{oinkmaster_conf}, 'EDIT');
 
 $balloon->attach($oinkconf_frame, -statusmsg => $help{oinkconf});
 
 
 # Create frame with output directory.
 my ($outdir_frame, $outdir_label, $outdir_entry, $outdir_but) = 
-  create_fileSelectFrame($req_tab, "Output directory", 'WRDIR', \$config{outdir});
+  create_fileSelectFrame($req_tab, "output directory", 'WRDIR', \$config{outdir}, 'NOEDIT');
 
 $balloon->attach($outdir_frame, -statusmsg => $help{outdir});
 
@@ -206,21 +228,21 @@ my $opt_tab = $notebook->add("optional",
 
 # Create frame with alternate URL location.
 my ($url_frame, $url_label, $url_entry, $url_but) = 
-  create_fileSelectFrame($opt_tab, "Alternate URL", 'URL', \$config{url});
+  create_fileSelectFrame($opt_tab, "Alternate URL", 'URL', \$config{url}, 'NOEDIT');
 
 $balloon->attach($url_frame, -statusmsg => $help{url});
 
 
 # Create frame with variable file.
 my ($varfile_frame, $varfile_label, $varfile_entry, $varfile_but) = 
-  create_fileSelectFrame($opt_tab, "Variable file", 'WRFILE', \$config{varfile});
+  create_fileSelectFrame($opt_tab, "Variable file", 'WRFILE', \$config{varfile}, 'EDIT');
 
 $balloon->attach($varfile_frame, -statusmsg => $help{varfile});
 
 
 # Create frame with backup dir location.
 my ($backupdir_frame, $backupdir_label, $backupdir_entry, $backupdir_but) = 
-  create_fileSelectFrame($opt_tab, "Backup directory", 'WRDIR', \$config{backupdir});
+  create_fileSelectFrame($opt_tab, "Backup directory", 'WRDIR', \$config{backupdir}, 'NOEDIT');
 
 $balloon->attach($backupdir_frame, -statusmsg => $help{backupdir});
 
@@ -389,7 +411,7 @@ load_config();
 logmsg("No oinkmaster.pl set, please select one above!\n", 'ERROR')
   if ($config{oinkmaster} !~ /\S/);
 
-logmsg("No configuration file set, please select one above!\n", 'ERROR')
+logmsg("No oinkmaster configuration file set, please select one above!\n", 'ERROR')
   if ($config{oinkmaster_conf} !~ /\S/);
 
 logmsg("Output directory is not set, please select one above!\n", 'ERROR')
@@ -459,7 +481,7 @@ sub update_file_label_color($ $ $)
             $label->configure(-background => 'red');
         }
     } elsif ($type eq "EXECFILE") {
-        if (-f "$filename" && -x "$filename") {
+        if (-f "$filename" && (-x "$filename" || $^O eq 'MSWin32')) {
             $label->configure(-background => "#00e000");
         } else {
             $label->configure(-background => 'red');
@@ -553,12 +575,13 @@ sub create_radiobutton($ $ $)
 
 
 # Create <label><entry><browsebutton> in given frame.
-sub create_fileSelectFrame($ $ $ $) 
+sub create_fileSelectFrame($ $ $ $ $) 
 {
     my $win     = shift;
     my $name    = shift;
     my $type    = shift;  # FILE|DIR|URL
     my $var_ref = shift;
+    my $edtype  = shift;  # EDIT|NOEDIT
 
   # Create frame.
     my $frame = $win->Frame->pack(
@@ -577,36 +600,61 @@ sub create_fileSelectFrame($ $ $ $)
       -side       => 'left'
     );
 
-my $entry;
+    my $entry;
 
-if ($type eq 'URL') {
-    $entry = $frame->BrowseEntry(
-      -textvariable    => $var_ref,
-      -background      => 'white',
-      -width           => '80',
-      -choices         => \@urls,
-      -validate        => 'key',
-      -validatecommand => sub { update_file_label_color($label, $_[0], $type) },
-    )->pack(
-      -side            => 'left',
-      -expand          => 'yes',
-      -fill            => 'x'
-   );
-} else {
-    $entry = $frame->Entry(
-      -textvariable    => $var_ref,
-      -background      => 'white',
-      -width           => '80',
-      -validate        => 'key',
-      -validatecommand => sub { update_file_label_color($label, $_[0], $type) },
-    )->pack(
-      -side            => 'left',
-      -expand          => 'yes',
-      -fill            => 'x'
-   );
+    if ($type eq 'URL') {
+        $entry = $frame->BrowseEntry(
+          -textvariable    => $var_ref,
+          -background      => 'white',
+          -width           => '80',
+          -choices         => \@urls,
+          -validate        => 'key',
+          -validatecommand => sub { update_file_label_color($label, $_[0], $type) },
+        )->pack(
+          -side            => 'left',
+          -expand          => 'yes',
+          -fill            => 'x'
+        );
+    } else {
+        $entry = $frame->Entry(
+          -textvariable    => $var_ref,
+          -background      => 'white',
+          -width           => '80',
+          -validate        => 'key',
+          -validatecommand => sub { update_file_label_color($label, $_[0], $type) },
+        )->pack(
+          -side            => 'left',
+          -expand          => 'yes',
+          -fill            => 'x'
+       );
 
-}
+    }
 
+  # Create edit-button if file is ediable.
+    if ($edtype eq 'EDIT') {
+        my $edit_but = $frame->Button(
+          -text       => "Edit",
+          -background => "$actbutcolor",
+          -command    => sub {
+                                 unless (-e "$$var_ref") {
+                                     logmsg("Select an existing file first!.\n\n", 'ERROR');
+                                     return;
+                                 }
+
+                                 if ($editor) {
+                                     $main->Busy(-recurse => 1);
+                                     logmsg("Launching $editor. Close it to continue the GUI.\n\n", 'MISC');
+                                     sleep(2);
+                                     system($editor, $$var_ref);  # yes, MainLoop will be put on hold...
+                                     $main->Unbusy;
+                                 } else {
+                                     logmsg("No suitable editor found.\n\n", 'ERROR');
+                                 }
+                             }
+        )->pack(
+          -side       => 'left',
+        );
+    }
 
   # Create browse-button.
     my $but = $frame->Button(
@@ -650,7 +698,7 @@ sub show_version()
     $config{oinkmaster} =~ s/^\s+//;
     $config{oinkmaster} =~ s/\s+$//;
 
-    unless ($config{oinkmaster} && -x "$config{oinkmaster}") {
+    unless ($config{oinkmaster} && (-x "$config{oinkmaster}" || $^O eq 'MSWin32')) {
         logmsg("Location to oinkmaster.pl is not set correctly!\n\n", 'ERROR');
         return;
     }
@@ -669,7 +717,7 @@ sub show_help()
     $config{oinkmaster} =~ s/^\s+//;
     $config{oinkmaster} =~ s/\s+$//;
 
-    unless ($config{oinkmaster} && -x "$config{oinkmaster}") {
+    unless ($config{oinkmaster} && (-x "$config{oinkmaster}" || $^O eq 'MSWin32')) {
         logmsg("Location to oinkmaster.pl is not set correctly!\n\n", 'ERROR');
         return;
     }
@@ -690,17 +738,24 @@ sub test_config()
     push(@cmd, "-T");
     logmsg("@cmd:\n", 'EXEC');
 
-    if (open(OINK,"-|")) {
+    if ($^O eq 'MSWin32') {
+        open(OINK, "@cmd 2>&1|");
         while (<OINK>) {
             logmsg($_, 'OUTPUT');
         }
+        close(OINK);
     } else {
-        open(STDERR, '>&', 'STDOUT');
-        exec(@cmd);
+        if (open(OINK,"-|")) {
+            while (<OINK>) {
+                logmsg($_, 'OUTPUT');
+            }
+        } else {
+            open(STDERR, '>&', 'STDOUT');
+            exec(@cmd);
+        }
+        close(OINK);
+        logmsg("\n", 'MISC');
     }
-    close(OINK);
-
-    logmsg("\n", 'MISC');
 }
 
 
@@ -755,7 +810,7 @@ sub create_cmdline($)
         $config{$var} =~ s/\s+$//;
     }
  
-    unless ($config{oinkmaster} && -x "$config{oinkmaster}") {
+    unless ($config{oinkmaster} && (-x "$config{oinkmaster}" || $^O eq 'MSWin32')) {
         logmsg("Location to oinkmaster.pl is not set correctly!\n\n", 'ERROR');
         return (0);
     }
@@ -800,20 +855,18 @@ sub create_cmdline($)
 # Load $config file into %config hash.
 sub load_config()
 {
-    unless (defined($config_file) && $config_file) {
+    unless (defined($gui_config_file) && $gui_config_file) {
         logmsg("Unable to determine config file location, is your \$HOME set?\n\n", 'ERROR');
         return;
     }
 
-    unless (-e "$config_file") {
-        logmsg("$config_file does not exist, keeping current/default settings\n\n", 'MISC');
+    unless (-e "$gui_config_file") {
+        logmsg("$gui_config_file does not exist, keeping current/default settings\n\n", 'MISC');
         return;
     }
 
-    logmsg("Loading GUI settings from $config_file\n\n", 'MISC');
-
-    unless (open(RC, "<$config_file")) {
-        logmsg("Could not open $config_file for reading: $!\n", 'ERROR');
+    unless (open(RC, "<$gui_config_file")) {
+        logmsg("Could not open $gui_config_file for reading: $!\n", 'ERROR');
         return;
     }
 
@@ -823,6 +876,7 @@ sub load_config()
     }
 
     close(RC);
+    logmsg("Successfully loaded GUI settings from $gui_config_file\n\n", 'MISC');
 }
 
 
@@ -830,15 +884,13 @@ sub load_config()
 # Save %config into file $config.
 sub save_config()
 {
-    unless (defined($config_file) && $config_file) {
+    unless (defined($gui_config_file) && $gui_config_file) {
         logmsg("Unable to determine config file location, is your \$HOME set?\n\n", 'ERROR');
         return;
     }
 
-    logmsg("Saving current GUI settings to $config_file\n\n", 'MISC');
-
-    unless (open(RC, ">$config_file")) {
-        logmsg("Could not open $config_file for writing: $!\n", 'ERROR');
+    unless (open(RC, ">$gui_config_file")) {
+        logmsg("Could not open $gui_config_file for writing: $!\n", 'ERROR');
         return;
     }
 
@@ -847,4 +899,5 @@ sub save_config()
     }
 
     close(RC);
+    logmsg("Successfully saved current GUI settings to $gui_config_file\n\n", 'MISC');
 }
