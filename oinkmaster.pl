@@ -206,7 +206,7 @@ if ($check_removed) {
     while ($_ = readdir(OLDRULES)) {
         $removed_files .= "    -> $_\n"
           if (/$config{update_files}/ && !exists($file_ignore_list{$_})
-              && !exists($new_files{$_}));
+            && !exists($new_files{$_}));
     }
     closedir(OLDRULES);
 }
@@ -375,8 +375,8 @@ sub parse_cmdline
   # Print warning if -p is used (obsolete).
   # (But keep it valid for a while though, so we don't screw up people's cron jobs)
     if (defined($opt_p)) {
-    print STDERR "Note: the -p switch is obsolete " .
-                 "(not needed anymore since this is now the default behaviour)\n";
+        print STDERR "Note: the -p switch is obsolete " .
+                     "(not needed anymore since this is now the default behaviour)\n";
   }
 
   # Remove possible trailing slash (just for cosmetic reasons).
