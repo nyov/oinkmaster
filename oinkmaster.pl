@@ -87,7 +87,7 @@ use vars qw
    );
 
 my (
-      %config, %new_files, $tmpdir
+      %config, %includes, $tmpdir
    );
 
 
@@ -146,7 +146,7 @@ unpack_rules_archive("$tmpdir/$OUTFILE");
 # Create list of new files (with full path) that we care about from the
 # downloaded archive. Filenames (with full path) will be stored as
 # %new_files{filenme}.
-my $num_files = get_new_filenames(\%new_files, "$tmpdir/rules/");
+my $num_files = get_new_filenames(\my %new_files, "$tmpdir/rules/");
 
 # Make sure the number of files is at least $min_files.
 clean_exit("not enough rules files in downloaded archive (is it broken?)\n".
@@ -337,10 +337,18 @@ sub read_config($ $)
                    "Put it there or use the -C argument.");
     }
 
+  # Basic check to avoid cross-include of files (infinite recursion).
+    clean_exit("attempt to load \"$config_file\" twice.")
+      if (exists($includes{$config_file}));
+
+    $includes{$config_file}++;
+
     open(CONF, "<$config_file")
       or clean_exit("could not open configuration file \"$config_file\": $!");
+    my @conf = <CONF>;
+    close(CONF);
 
-    while (<CONF>) {
+    while ($_ = shift(@conf)) {
         $linenum++;
 
       # Remove comments unless it's a modifysid line.
@@ -408,11 +416,14 @@ sub read_config($ $)
         } elsif (/^scp_key\s*=\s*(.+)/i) {      # scp_key
             $$cfg_ref{scp_key} = $1;
 
+        } elsif (/^include\s+(\S+.*)/) {        # include <file>
+             my $include = $1;
+             read_config($include, $cfg_ref);
+
         } else {                                # invalid line
             warn("WARNING: line $linenum in $config_file is invalid, ignoring\n");
         }
     }
-    close(CONF);
 }
 
 

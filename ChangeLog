@@ -8,6 +8,13 @@ o Permit scp://user@remotehost:/file.tar.gz in url specification.
   in oinkmaster.conf (or set it in ~/.ssh/config).
 o You can now specify "-i" for interactive mode. You will be asked
   to approve the changes before Oinkmaster modifies anything.
+o Added ability to use "include <file>" in oinkmaster configuration
+  files. <file> will be parsed (just like the regular 
+  oinkmaster.conf) as soon as the include statement is seen, and then
+  return and continue parsing the rest of the original file.
+  If an option is re-defined, it will override the previous value.
+  You can use as many 'include' statements as you wish, and also
+  include even more files from included files.
 
 
 
