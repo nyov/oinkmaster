@@ -14,9 +14,9 @@ o As requested by a few poeple, permit filename as argument to
   rules in the specified files(s).
 o Many updates to the FAQ, especially regarding how to update rules 
   from multiple sources.
-o Process modifysid/use_template statements of all types in the exact
-  order as specified in the config file. Previously, all the wildcards
-  were processed last.
+o modifysid/use_template statements of all types will now be processed
+  in the exact order as specified in the config file. Previously, all
+  the wildcards were processed last.
 o You can now download multiple rules archives from different URLs,
   either by specifying several -u <url> on the command line or by using
   several url=<url> directives in the Oinkmaster configuration file(s).
