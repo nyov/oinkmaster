@@ -231,7 +231,7 @@ This should be the directory where you store the snort rules.
 Options:
 -b <dir>   Backup your old rules into <dir> before overwriting them
 -c         Careful mode - only check for changes and do not update anything
--C <cfg>   Use this config file instead of $config_file
+-C <cfg>   Use this configuration file instead of $config_file
 -e         Re-enable all rules that are disabled by default in the rules
            distribution (they are disabled for a reason, so use with care)
 -h         Show this usage information
@@ -316,12 +316,12 @@ sub read_config($ $)
     my $linenum     = 0;
 
     unless (-e "$config_file") {
-        die("Configuration file \"$config_file\" does not exist.\n".
-            "Put it there or use the -C argument.\n");
+        clean_exit("configuration file \"$config_file\" does not exist.\n".
+                   "Put it there or use the -C argument.");
     }
 
     open(CONF, "<$config_file")
-      or die("could not open config file \"$config_file\": $!");
+      or clean_exit("could not open configuration file \"$config_file\": $!");
 
     while (<CONF>) {
         $linenum++;
@@ -1390,7 +1390,7 @@ sub make_tempdir($)
     my $tmpdir = "$base/oinkmaster.$$";
 
     mkdir("$tmpdir", 0700)
-      or die("Could not create temporary directory $tmpdir: $!\nExiting...\n");
+      or clean_exit("could not create temporary directory $tmpdir: $!");
 
     return ($tmpdir);
 }
