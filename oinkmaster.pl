@@ -54,6 +54,7 @@ my $super_quiet       = 0;
 my $check_removed     = 0;
 my $make_backup       = 0;
 my $update_vars       = 0;
+my $config_test_mode  = 0;
 my $preserve_comments = 1;
 
 # Regexp to match a snort rule line. The msg string will go into $1 and
@@ -77,8 +78,8 @@ if (exists($ENV{tmp})) {
 
 use vars qw
    (
-      $opt_b $opt_c $opt_C $opt_e $opt_h $opt_o
-      $opt_q $opt_Q $opt_r $opt_u $opt_U $opt_v $opt_V
+      $opt_b $opt_c $opt_C $opt_e $opt_h $opt_o $opt_q
+      $opt_Q $opt_r $opt_T $opt_u $opt_U $opt_v $opt_V
    );
 
 my (
@@ -107,6 +108,12 @@ read_config($config_file, \%config);
 # Do some basic sanity checking and exit if something fails.
 # A new PATH will be set.
 sanity_check();
+
+# If we're in config test mode and have come this far, we're done.
+if ($config_test_mode) {
+    print "No fatal errors in configuration.\n";
+    clean_exit("");
+}
 
 # Create empty temporary directory.
 my $tmpdir = make_tempdir($tmp_basedir);
@@ -228,6 +235,7 @@ Options:
 -r         Check for rules files that exist in the output directory
            but not in the downloaded rules archive (i.e. files that may
            have been removed from the distribution archive)
+-T         Test configuration and then exit
 -u <url>   Download from this URL (http://, ftp:// or file:// ...tar.gz)
            instead of the URL specified in the configuration file
 -U <file>  Variables that exist in the distribution snort.conf but not in <file>
@@ -245,7 +253,7 @@ RTFM
 sub parse_cmdline($)
 {
     my $cfg_ref    = shift;
-    my $cmdline_ok = getopts('b:cC:eho:qQru:U:vV');
+    my $cmdline_ok = getopts('b:cC:eho:qQrTu:U:vV');
 
     $config_file          = $opt_C if (defined($opt_C));
     $$cfg_ref{url}        = $opt_u if (defined($opt_u));
@@ -253,6 +261,7 @@ sub parse_cmdline($)
     $preserve_comments    = 0      if (defined($opt_e));
     $quiet                = 1      if (defined($opt_q));
     $check_removed        = 1      if (defined($opt_r));
+    $config_test_mode     = 1      if (defined($opt_T));
     $verbose              = 1      if (defined($opt_v));
 
     if (defined($opt_Q)) {
