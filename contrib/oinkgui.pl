@@ -31,7 +31,6 @@ my $version     = 'Oinkmaster GUI v0.1';
 my %gui_config;
 
 my @oinkmaster_pl   = qw(./oinkmaster.pl
-                         /etc/oinkmaster.pl 
                          /usr/local/bin/oinkmaster.pl
                         );
 
@@ -69,19 +68,34 @@ my $gui_config_file     = "";
 my %help = (
 
   # File locations.
-    oinkscript   => 'Location of the executable oinkmaster.pl file',
-    oinkconf     => 'The oinkmaster configuration file to use',
-    outdir       => 'The directory where you store your rules. Must be writable.',
+    oinkscript   => 'Location of the executable oinkmaster.pl file.',
+    oinkconf     => 'The oinkmaster configuration file to use.',
+    outdir       => 'Where to put the new rules. This shoudl be the directory where you '.
+                    'store your existing rules.',
+
+    url          => 'Alternate location of rules archive. '.
+                    'If empty, the location in oinkmaster.conf is used.',
+    varfile      => 'Variables that exist in downloaded snort.conf but not in '.
+                    'this file will be added to it. Leave empty to skip.',
+    backupdir    => 'Directory to put tarball of old rules before overwriting them. '.
+                    'Leave empty to skip backup.',
+
+  # Checkbuttons.
+    careful      => 'In careful mode, Oinkmaster will just check for changes '.
+                    'and not update anything.',
+    enable       => 'Some rules may be commented out by default. '.
+                    'This option will make Oinkmaster enable those rules.',
+    removed      => 'Check for rules files that exist in the output directory but not '.
+                    'in the downloaded rules archive.',
 
   # Action buttons.
-    clear        => 'Clear current output messages',
-    exit         => 'Exit the GUI',
-    update       => 'Execute Oinkmaster to update the rules',
+    clear        => 'Clear current output messages.',
+    exit         => 'Exit the GUI.',
+    update       => 'Execute Oinkmaster to update the rules.',
     test         => 'Test current oinkmaster configuration. ' .
                     'If there are no fatal errors, you are ready to update the rules.',
-    help         => 'Execute oinkmaster -h',
-    version      => 'Display Oinkmaster version',
-
+    help         => 'Execute oinkmaster -h.',
+    version      => 'Request version information from Oinkmaster.',
 );
 
 
@@ -186,13 +200,21 @@ my $opt_tab = $notebook->add("optional",
 my ($url_frame, $url_label, $url_entry, $url_but) = 
   create_fileSelectFrame($opt_tab, "Alternate URL", 'FILE');
 
+$balloon->attach($url_frame, -statusmsg => $help{url});
+
+
 # Create frame with variable file.
 my ($varfile_frame, $varfile_label, $varfile_entry, $varfile_but) = 
   create_fileSelectFrame($opt_tab, "Variable file", 'FILE');
 
+$balloon->attach($varfile_frame, -statusmsg => $help{varfile});
+
+
 # Create frame with backup dir location. XXX must be able to select dir only.
 my ($backupdir_frame, $backupdir_label, $backupdir_entry, $backupdir_but) = 
   create_fileSelectFrame($opt_tab, "Backup directory", 'DIR');
+
+$balloon->attach($backupdir_frame, -statusmsg => $help{backupdir});
 
 
 $notebook->pack(
@@ -238,9 +260,20 @@ $opt_frame->Label(
 
 
 # Create checkbuttons in the option frame.
-create_checkbutton($opt_frame, "Careful mode",            \$gui_config{careful});
-create_checkbutton($opt_frame, "Enable all",              \$gui_config{enable_all});
-create_checkbutton($opt_frame, "Check for removed files", \$gui_config{check_removed});
+$balloon->attach(
+  create_checkbutton($opt_frame, "Careful mode", \$gui_config{careful}),
+  -statusmsg => $help{careful}
+);
+
+$balloon->attach(
+  create_checkbutton($opt_frame, "Enable all", \$gui_config{enable_all}),
+  -statusmsg => $help{enable}
+);
+
+$balloon->attach(
+  create_checkbutton($opt_frame, "Check for removed files", \$gui_config{check_removed}),
+  -statusmsg => $help{removed}
+);
 
 
 # Create "mode" label.
@@ -590,7 +623,8 @@ sub show_version()
     my $cmd = "$oinkmaster -V";
     logmsg("$cmd:\n", 'EXEC');
     my $output = `$cmd 2>&1`;
-    logmsg("$output\n", 'OUTPUT');
+    logmsg("$output", 'OUTPUT');
+    logmsg("$version by Andreas Östling <andreaso\@it.su.se>\n\n", 'OUTPUT');
 }
 
 
