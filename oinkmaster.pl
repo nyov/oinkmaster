@@ -16,7 +16,7 @@ sub download_rules($ $);
 sub unpack_rules_archive($);
 sub disable_and_modify_rules($ $ @);
 sub setup_rules_hash($ $ @);
-sub find_line($ @);
+sub find_line($ $);
 sub print_changes($ $);
 sub make_backup($ $);
 sub get_modified_files($ $);
@@ -520,7 +520,6 @@ sub disable_and_modify_rules($ $ @)
 # Format for rules will be:     rh{old|new}{rules{filename}{sid} = rule
 # Format for non-rules will be: rh{old|new}{other}{filename}     = array of lines
 # List of added files will be stored as rh{added_files}{filename}
-# XXX shouldn't added files go to %changes instead?
 sub setup_rules_hash($ $ @)
 {
     my $rh_ref    = shift;
@@ -583,16 +582,15 @@ sub setup_rules_hash($ $ @)
 # Try to find a given string in a given array. Return 1 if found, or 0 if not.
 # Some things will always be considered as found (lines that we don't care if
 # they were added/removed). It's extremely slow and braindead, but who cares.
-# XXX pass array as ref instead?
-sub find_line($ @)
+sub find_line($ $)
 {
-    my $line = shift;   # line to look for
-    my @arr  = @_;      # array to look in
+    my $line    = shift;   # line to look for
+    my $arr_ref = shift;   # reference to array to look in
 
     return 1 unless ($line =~ /\S/);                         # skip blank lines
     return 1 if     ($line =~ /^\s*#+\s*\$I\S:.+Exp\s*\$/);  # also skip CVS Id tag
 
-    foreach $_ (@arr) {
+    foreach $_ (@$arr_ref) {
         return 1 if ($_ eq $line);                           # string found
     }
 
@@ -652,52 +650,72 @@ sub make_backup($ $)
 }
 
 
-# FIX ME PLEASE
+
 sub print_changes($ $)
 {
-    foreach my $type (keys(%{$changes{other}})) {
-        print "type: $type\n";
-        foreach my $file (keys(%{$changes{other}{"$type"}})) {
-            print "  file -> $file\n";
-            foreach my $line (@{$changes{other}{"$type"}{"$file"}}) {
-	        print "line: $line";
-	    }
-        }
-    }
+    my $ch_ref = shift;
+    my $rh_ref = shift;
 
-    foreach my $type (keys(%{$changes{rules}})) {
+
+  # Print rules changes.
+  # FIXME
+    foreach my $type (keys(%{$$ch_ref{rules}})) {
         print "type: $type\n";
-        foreach my $file (keys(%{$changes{rules}{"$type"}})) {
+        foreach my $file (keys(%{$$ch_ref{rules}{"$type"}})) {
             print "  file -> $file\n";
-            foreach my $sid (keys(%{$changes{rules}{"$type"}{"$file"}})) {
+            foreach my $sid (keys(%{$$ch_ref{rules}{"$type"}{"$file"}})) {
 	        print "          old: $rh{old}{rules}{$file}{$sid}\n"
-                  if (exists($rh{old}{rules}{"$file"}{"$sid"}));
+                  if (exists($$rh_ref{old}{rules}{"$file"}{"$sid"}));
 	        print "          new: $rh{new}{rules}{$file}{$sid}\n"
-                  if (exists($rh{new}{rules}{"$file"}{"$sid"}));
+                  if (exists($$rh_ref{new}{rules}{"$file"}{"$sid"}));
   	    }
         }
     }
 
+
+  # Print added non-rule lines.
+    print "\n[+]       Added non-rule lines:       [+]\n";
+    foreach my $file (keys(%{$$ch_ref{other}{added}})) {
+        print "    -> File \"$file\":\n";
+        foreach my $other (@{$$ch_ref{other}{added}{$file}}) {
+	    print "       $other";
+        }
+    }
+    print "    None.\n" if (keys(%{$$ch_ref{other}{added}}) < 1);
+
+
+  # Print removed non-rule lines.
+    print "\n[-]       Removed lines:       [-]\n";
+    foreach my $file (keys(%{$$ch_ref{other}{removed}})) {
+        print "    -> File \"$file\":\n";
+        foreach my $other (@{$$ch_ref{other}{removed}{$file}}) {
+	    print "       $other";
+        }
+    }
+    print "    None.\n" if (keys(%{$$ch_ref{other}{removed}}) < 1);
+
+
   # Print list of added files.
-    if (keys(%{$changes{added_files}}) > 0) {
-        print "\n[*] Added files (consider updating your snort.conf to include them): [*]\n";
-        foreach my $added_file (keys(%{$changes{added_files}})) {
+    if (keys(%{$$ch_ref{added_files}}) > 0) {
+        print "\n[+] Added files (consider updating your snort.conf to include them): [+]\n";
+        foreach my $added_file (keys(%{$$ch_ref{added_files}})) {
             print "    -> $added_file\n";
         }
     } else {
-         print "\n[*] Added files: [*]\n" .
+         print "\n[+] Added files: [+]\n" .
                "    None.\n";
     }
 
+
   # Print list of possibly removed files, if requested.
     if ($check_removed) {
-        if (keys(%{$changes{removed_files}}) > 0) {
-            print "\n[*] Possibly removed files (consider removing them from your snort.conf): [*]\n";
-            foreach my $removed_file (keys(%{$changes{removed_files}})) {
+        if (keys(%{$$ch_ref{removed_files}}) > 0) {
+            print "\n[-] Possibly removed files (consider removing them from your snort.conf): [-]\n";
+            foreach my $removed_file (keys(%{$$ch_ref{removed_files}})) {
                 print "    -> $removed_file\n";
 	    }
         } else {
-             print "\n[*] Removed files: [*]\n" .
+             print "\n[-] Removed files: [-]\n" .
                    "    None.\n";
         }
     }
@@ -812,15 +830,15 @@ sub get_changes($ $)
 
       # Check for added non-rule lines.
         foreach my $other_added (@{$rh{new}{other}{$file}}) {
-            unless (find_line($other_added, @{$rh{old}{other}{"$file"}})) {
-	        push(@{$changes{other}{other_added}{$file}}, $other_added);
+            unless (find_line($other_added, \@{$rh{old}{other}{"$file"}})) {
+	        push(@{$changes{other}{added}{$file}}, $other_added);
             }
         }
 
       # Check for removed non-rule lines.
         foreach my $other_removed (@{$rh{old}{other}{$file}}) {
-            unless (find_line($other_removed, @{$rh{new}{other}{"$file"}})) {
-	        push(@{$changes{other}{other_removed}{$file}}, $other_removed);
+            unless (find_line($other_removed, \@{$rh{new}{other}{"$file"}})) {
+	        push(@{$changes{other}{removed}{$file}}, $other_removed);
             }
         }
     } # foreach new file
