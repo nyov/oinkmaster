@@ -2005,9 +2005,9 @@ sub minimize_diff($ $)
     my $additional_chars = 20;
 
   # Remove the rev keyword from the rules, as it often
-  # makes diff minimizing useless.
-    $old_rule =~ s/rev\s*:\s*\d+\s*;//;
-    $new_rule =~ s/rev\s*:\s*\d+\s*;//;
+  # makes the whole diff minimizing useless.
+    $old_rule =~ s/\s*\brev\s*:\s*\d+\s*;\s*//;
+    $new_rule =~ s/\s*\brev\s*:\s*\d+\s*;\s*//;
 
   # Go forward char by char until they aren't equeal.
     my @old = split(//, $old_rule);
