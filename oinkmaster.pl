@@ -236,12 +236,12 @@ sub read_config($ $)
     my $linenum     = 0;
 
     unless (-e "$config_file") {
-        clean_exit("Configuration file \"$config_file\" does not exist.\n".
+        clean_exit("Error: configuration file \"$config_file\" does not exist.\n".
                    "Put it there or use the -C argument.");
     }
 
     open(CONF, "<$config_file")
-      or clean_exit("Could not open config file \"$config_file\": $!");
+      or clean_exit("Error: could not open config file \"$config_file\": $!");
 
     while (<CONF>) {
         $linenum++;
@@ -301,12 +301,12 @@ sub sanity_check()
    my @req_binaries = qw (which gzip rm tar);  # These binaries are always required.
 
   # Can't use both -q and -v.
-    clean_exit("Both quiet mode and verbose mode at the same time doesn't make sense.")
+    clean_exit("Error: both quiet mode and verbose mode at the same time doesn't make sense.")
       if ($quiet && $verbose);
 
   # Make sure all required variables are defined in the config file.
     foreach $_ (@req_config) {
-        clean_exit("The required parameter \"$_\" is not defined in $config_file")
+        clean_exit("Error: the required parameter \"$_\" is not defined in $config_file")
           unless (exists($config{$_}));
     }
 
@@ -317,31 +317,31 @@ sub sanity_check()
   # Make sure all required binaries can be found.
   # (Wget is not required if user specifies file:// as url. That check is done below.)
     foreach $_ (@req_binaries) {
-        clean_exit("\"$_\" binary not found ".
+        clean_exit("Error: \"$_\" binary not found ".
                    "(perhaps you must edit $config_file and change 'path')")
           if (system("which \"$_\" >/dev/null 2>&1"));
     }
 
   # Make sure $url is defined (either by -u <url> or url=... in the conf).
-    clean_exit("Incorrect URL or URL not specified in neither $config_file nor command line.")
+    clean_exit("Error: incorrect URL or URL not specified in neither $config_file nor command line.")
       unless (exists($config{'url'}) &&
         $config{'url'}  =~ /^(?:http|ftp|file):\/\/\S+.*\.tar\.gz$/);
 
   # Wget must be found if url is http:// or ftp://.
-    clean_exit("\"wget\" binary not found ".
+    clean_exit("Error: \"wget\" binary not found ".
                "(perhaps you must edit $config_file and change 'path')")
       if ($config{'url'} =~ /^(http|ftp):/ && system("which \"wget\" >/dev/null 2>&1"));
 
   # Make sure the output directory exists and is readable.
-    clean_exit("The output directory \"$output_dir\" doesn't exist or isn't readable by you.")
+    clean_exit("Error: the output directory \"$output_dir\" doesn't exist or isn't readable by you.")
       if (!-d "$output_dir" || !-x "$output_dir");
 
   # Make sure the output directory is writable unless running in careful mode.
-    clean_exit("The output directory \"$output_dir\" isn't writable by you.")
+    clean_exit("Error: the output directory \"$output_dir\" isn't writable by you.")
       if (!$careful && !-w "$output_dir");
 
   # Make sure the backup directory exists and is writable if running with -b.
-    clean_exit("The backup directory \"$backup_dir\" doesn't exist or isn't writable by you.")
+    clean_exit("Error: the backup directory \"$backup_dir\" doesn't exist or isn't writable by you.")
       if (defined($backup_dir) && (!-d "$backup_dir" || !-w "$backup_dir"));
 }
 
@@ -397,8 +397,8 @@ sub unpack_rules_archive($)
 
     my ($dir) = ($archive =~ /(.*)\//);  # extract directory part of the filename
 
-    my $old_dir = getcwd or clean_exit("Could not get current directory: $!");
-    chdir("$dir") or clean_exit("Could not change directory to \"$dir\": $!");
+    my $old_dir = getcwd or clean_exit("Error: could not get current directory: $!");
+    chdir("$dir") or clean_exit("Error: could not change directory to \"$dir\": $!");
 
   # Run integrity check (gzip -t) on the gzip file.
     clean_exit("Error: integrity check on gzip file failed (file transfer failed or ".
@@ -444,7 +444,7 @@ sub unpack_rules_archive($)
     clean_exit("\nError: no \"rules/\" directory found in tar file.")
       unless (-d "$dir/rules");
 
-    chdir("$old_dir") or clean_exit("Could not change directory back to $old_dir: $!");
+    chdir("$old_dir") or clean_exit("Error: could not change directory back to $old_dir: $!");
 
     print STDERR "done.\n" unless ($quiet);
 }
