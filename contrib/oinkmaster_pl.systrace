@@ -71,6 +71,7 @@ Policy: /path/to/oinkmaster.pl, Emulation: native
 	native-mmap: permit
 	native-mprotect: permit
 	native-munmap: permit
+	native-nanosleep: permit
 	native-pipe: permit
 	native-pread: permit
 	native-read: permit
@@ -81,7 +82,9 @@ Policy: /path/to/oinkmaster.pl, Emulation: native
 	native-sigaction: permit
 	native-sigprocmask: permit
 	native-socket: sockdom eq "AF_INET" and socktype eq "SOCK_DGRAM" then permit
+	native-socket: sockdom eq "AF_INET6" and socktype eq "SOCK_DGRAM" then permit
 	native-socket: sockdom eq "AF_INET" and socktype eq "SOCK_STREAM" then permit
+	native-socket: sockdom eq "AF_INET6" and socktype eq "SOCK_STREAM" then permit
 	native-utimes: permit
 	native-wait4: permit
 	native-write: permit
