@@ -2,7 +2,7 @@ v0.4 - 200204XX
 ~~~~~~~~~~~~~~~
 o More or less rewritten from scratch.
 o The file rules.ignore has been renamed to oinkmaster.conf, which contains
-  more than just the sids to disable.
+  more than just the sids to disable (have a look at it).
 o Slightly improved error checking.
 o Better output format (or at least it has changed).
 o Oinkmaster will now also update other files (and print changes in them) than
@@ -17,7 +17,7 @@ o "file" and "sid" keywords in oinkmaster.conf are now invalid.
   They are now called "skipfile" and "disablesid" (to avoid confusion
   when possibly adding new keywords in the future).
 o Instead of specifying one "disablesid X" per line, you can now also use
-  a comma-separated list, e.g. "disablesid 1,2,3,4,42".
+  comma-separated lists, e.g. "disablesid 1,2,3,4,42".
   Same goes for the skipfile keyword.
 o Various minor bug fixes and tweaks.
 o Some documentation updates.
