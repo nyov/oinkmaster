@@ -315,7 +315,7 @@ sub read_config($ $)
 # Will also set a new PATH as defined in the config file.
 sub sanity_check()
 {
-   my @req_config   = qw (path update_files);  # Required parameters in oinkmaster.conf.
+   my @req_params   = qw (path update_files);  # Required parameters in oinkmaster.conf.
    my @req_binaries = qw (gzip rm tar);        # These binaries are always required.
 
   # Can't use both -q and -v.
@@ -323,9 +323,9 @@ sub sanity_check()
       if ($quiet && $verbose);
 
   # Make sure all required variables are defined in the config file.
-    foreach $_ (@req_config) {
-        clean_exit("the required parameter \"$_\" is not defined in $config_file.")
-          unless (exists($config{$_}));
+    foreach my $param (@req_params) {
+        clean_exit("the required parameter \"$param\" is not defined in $config_file.")
+          unless (exists($config{$param}));
     }
 
   # We now know a path was defined in the config, so set it.
@@ -336,9 +336,9 @@ sub sanity_check()
 
   # Make sure all required binaries can be found.
   # (Wget is not required if user specifies file:// as url. That check is done below.)
-    foreach $_ (@req_binaries) {
-        clean_exit("\"$_\" could not be found in PATH")
-          unless (is_in_path($_));
+    foreach my $binary (@req_binaries) {
+        clean_exit("\"$binary\" could not be found in PATH")
+          unless (is_in_path($binary));
     }
 
   # Make sure $url is defined (either by -u <url> or url=... in the conf).
@@ -452,18 +452,18 @@ sub unpack_rules_archive($)
     }
     close(TAR);
 
-  # For each filename in the archive...
+  # For each filename in the archive, do some basic (pretty useless) sanity checks.
     foreach my $filename (@tar_test) {
        chomp($filename);
 
       # Make sure the leading char is valid (not an absolute path, for example).
         clean_exit("forbidden leading character in filename in tar archive. ".
-                   "Offending file/line:\n$_")
+                   "Offending file/line:\n$filename")
           unless ($filename =~ /^[$ok_lead]/);
 
       # We don't want to have any weird characters anywhere in the filename.
         clean_exit("forbidden characters in filename in tar archive. ".
-                   "Offending file/line:\n$_")
+                   "Offending file/line:\n$filename")
           if ($filename =~ /[^$ok_chars]/);
 
       # We don't want to unpack any "../../" junk.
@@ -1062,8 +1062,8 @@ sub is_in_path($)
 {
     my $file = shift;
 
-    foreach $_ (split(/:/, $ENV{PATH})) {
-        return (1) if (-x "$_/$file");
+    foreach my $dir (split(/:/, $ENV{PATH})) {
+        return (1) if (-x "$dir/$file");
     }
 
     return (0);
