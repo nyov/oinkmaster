@@ -1,6 +1,6 @@
 v0.8 - 200xxxxx
 ~~~~~~~~~~~~~~~
-o Multi-line rule support.
+o Experimental multi-line rule support.
 o Temporary directory can now be specified in oinkmaster.conf.
 o deleted.rules is skipped in default oinkmaster.conf ("skipfile deleted.rules")
 o A bunch of Win32/Cygwin fixes, mostly from Ueli Kistler <iuk@gmx.ch>
@@ -9,6 +9,13 @@ o A bunch of Win32/Cygwin fixes, mostly from Ueli Kistler <iuk@gmx.ch>
 o Better check for duplicate SIDs (check is done across all files now).
 o Slightly modified format when printing results 
   (hopefully easier to read when there are a large number of changes).
+o New options in oinkmaster.conf: min_files and min_rules.
+  If number of rules files or number of rules are not at least min_files
+  and min_rules respectively, the rules tarball is regarded as broken and
+  the update is aborted. Both are set to 1 by default.
+o New command line option, -U <file>. If specified, variable definitions that
+  exist in the distribution snort.conf but not in <file>
+  will be inserted at the beginning of it. See README for more info.
 
 
 
