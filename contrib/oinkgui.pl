@@ -830,6 +830,8 @@ sub execute_oinkmaster(@)
 
     logmsg("@cmd:\n", 'EXEC');
 
+    $main->Busy(-recurse => 1);
+
     if ($^O eq 'MSWin32') {
         open(OINK, "@cmd 2>&1|");
         while (<OINK>) {
@@ -848,6 +850,7 @@ sub execute_oinkmaster(@)
         close(OINK);
     }
 
+    $main->Unbusy;
     logmsg("done.\n\n", 'EXEC');
 }
 
@@ -917,9 +920,7 @@ sub update_rules()
 
     create_cmdline(\@cmd) || return;
     clear_messages();
-    $main->Busy(-recurse => 1);
     execute_oinkmaster(@cmd);
-    $main->Unbusy;
 }
 
 
