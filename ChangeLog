@@ -24,7 +24,8 @@ o Added 'enablesid' keyword to oinkmaster.conf.
   The order in oinkmaster.conf does not matter. All the
   'modifysid' will be processed first, then 'disablesid' and last
   'enablesid'.
-  
+o Slightly improved rules parsing.
+
 
 
 v0.8 - 20030902

@@ -26,7 +26,7 @@ sub get_changes($ $);
 sub get_new_filenames($ $);
 sub update_rules($ @);
 sub is_in_path($);
-sub get_next_entry($ $ $ $);
+sub get_next_entry($ $ $ $ $ $);
 sub make_tempdir($);
 sub get_new_vars($ $ $);
 sub add_new_vars($ $);
@@ -35,6 +35,7 @@ sub msdos_to_cygwin_path($);
 sub parse_mod_expr($ $ $ $);
 sub untaint_path($);
 sub approve_changes();
+sub parse_singleline_rule($ $ $);
 sub clean_exit($);
 
 
@@ -62,12 +63,6 @@ my $config_test_mode  = 0;
 my $interactive       = 0;
 my $preserve_comments = 1;
 
-
-# Regexp to match a snort rule line. The msg string will go into $1 and
-# the sid will go into $2.
-my $SINGLELINE_RULE_REGEXP = '^\s*#*\s*(?:alert|drop|log|pass|reject|sdrop)'.
-                             '\s.+msg\s*:\s*"(.+?)"\s*;.*sid\s*:\s*(\d+)'.
-                             '\s*;.*\)\s*$'; # ';
 
 # Regexp to match the start (the first line) of a possible multi-line rule.
 my $MULTILINE_RULE_REGEXP  = '^\s*#*\s*(?:alert|drop|log|pass|reject|sdrop)'.
@@ -734,19 +729,15 @@ sub process_rules($ $ $ $)
 	open(OUTFILE, ">$file")
           or clean_exit("could not open $file for writing: $!");
 
-        my ($single, $multi, $nonrule);
+        my ($single, $multi, $nonrule, $msg, $sid);
 
-	RULELOOP:while (get_next_entry(\@infile, \$single, \$multi, \$nonrule)) {
+	RULELOOP:while (get_next_entry(\@infile, \$single, \$multi, \$nonrule, \$msg, \$sid)) {
 	    if (defined($nonrule)) {
 	        print OUTFILE "$nonrule";
 		next RULELOOP;
 	    }
 
-          # We've got a valid snort rule. Grab msg and sid.
-	    $single =~ /$SINGLELINE_RULE_REGEXP/oi;
-   	    my ($msg, $sid) = ($1, $2);
-
-          # If we have already seen a rule with this sid, discard this one.
+          # We've got a valid rule. If we have already seen this sid, discard this rule.
             if (exists($sids{$sid})) {
                 $_ = basename($file);
                 warn("\nWARNING: duplicate SID in downloaded file $_, ".
@@ -852,12 +843,10 @@ sub setup_rules_hash($)
       # From now on we don't care about the path, so remove it.
 	$file = basename($file);
 
-        my ($single, $multi, $nonrule);
+        my ($single, $multi, $nonrule, $msg, $sid);
 
-	while (get_next_entry(\@newfile, \$single, \$multi, \$nonrule)) {
+	while (get_next_entry(\@newfile, \$single, \$multi, \$nonrule, \$msg, \$sid)) {
 	    if (defined($single)) {
-	        $single =~ /$SINGLELINE_RULE_REGEXP/oi;
-	        my $sid = $2;
 		$rh{new}{rules}{"$file"}{"$sid"} = $single;
 		$allsids{new}{"$sid"}++;
 	    } else {                                 # add non-rule line to hash
@@ -873,11 +862,8 @@ sub setup_rules_hash($)
 	    my @oldfile = <OLDFILE>;
             close(OLDFILE);
 
-	    while (get_next_entry(\@oldfile, \$single, \$multi, \$nonrule)) {
+	    while (get_next_entry(\@oldfile, \$single, \$multi, \$nonrule, undef, \$sid)) {
 	        if (defined($single)) {
-	            $single =~ /$SINGLELINE_RULE_REGEXP/oi;
-		    my $sid = $2;
-
 		    warn("WARNING: duplicate SID in your local rules, SID ".
                          "$sid exists multiple times, please fix this manually!\n")
 		      if (exists($allsids{old}{"$sid"}));
@@ -1343,16 +1329,20 @@ sub is_in_path($)
 # - non-rule line (put in 4th ref)
 # If the entry is a multi-line rule, its single-line version is also
 # returned (put in the 2nd ref).
-sub get_next_entry($ $ $ $)
+sub get_next_entry($ $ $ $ $ $)
 {
     my $arr_ref     = shift;
     my $single_ref  = shift;
     my $multi_ref   = shift;
     my $nonrule_ref = shift;
+    my $msg_ref     = shift;
+    my $sid_ref     = shift;
 
     undef($$single_ref);
     undef($$multi_ref);
     undef($$nonrule_ref);
+    undef($$msg_ref);
+    undef($$sid_ref);
 
     my $line = shift(@$arr_ref) || return(0);
 
@@ -1399,7 +1389,7 @@ sub get_next_entry($ $ $ $)
 
       # Single-line version should now be a valid rule.
       # If not, it wasn't a valid multi-line rule after all.
-        if ($$single_ref =~ /$SINGLELINE_RULE_REGEXP/oi) {
+        if (parse_singleline_rule($$single_ref, $msg_ref, $sid_ref)) {
 
             $$single_ref =~ s/^\s*//;     # remove leading whitespaces
             $$single_ref =~ s/^#+\s*/#/;  # remove whitespaces next to leading #
@@ -1430,8 +1420,7 @@ sub get_next_entry($ $ $ $)
 
             return (1);   # return non-rule
         }
-
-    } elsif ($line =~ /$SINGLELINE_RULE_REGEXP/oi) {  # regular single-line rule?
+     } elsif (parse_singleline_rule($line, $msg_ref, $sid_ref)) {  # regular single-line rule?
         $$single_ref = $line;
         $$single_ref =~ s/^\s*//;     # remove leading whitespaces
         $$single_ref =~ s/^#+\s*/#/;  # remove whitespaces next to leading #
@@ -1636,6 +1625,36 @@ sub approve_changes()
     }
 
     return ($answer =~ /^y/);
+}
+
+
+
+# Check a string and return 1 if it's a valid snort rule, or otherwise 0.
+# Msg string is put in second arg, and sid in third.
+sub parse_singleline_rule($ $ $)
+{
+    my $line    = shift;
+    my $msg_ref = shift;
+    my $sid_ref = shift;
+
+    if ($line =~ /^\s*#*\s*(?:alert|drop|log|pass|reject|sdrop)\s.+;\s*\)\s*$/oi) {
+
+        if ($line =~ /msg\s*:\s*"(.+?)"\s*;/oi) {
+            $$msg_ref = $1;
+        } else {
+            return (0);
+        }
+
+        if ($line =~ /sid\s*:\s*(\d+)\s*;/oi) {
+            $$sid_ref = $1;
+        } else {
+            return (0);
+        }
+
+        return (1);
+    }
+
+    return (0);
 }
 
 
