@@ -182,7 +182,7 @@ Options:
 -c         Careful mode - only check for changes, but do not update anything
 -C <cfg>   Use this config file instead of $config_file
 -e         Re-enable all rules that are disabled by default in the rules
-           distribution (they are disabled for a reason so use with care)
+           distribution (they are disabled for a reason, so use with care)
 -h         Show this usage information
 -q         Quiet mode - no output unless changes were found
 -Q         über-quiet mode (like -q but even more quiet when printing results)
