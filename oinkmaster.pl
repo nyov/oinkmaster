@@ -340,7 +340,7 @@ sub read_config($ $)
 
     $loaded{$config_file}++;
 
-    open(CONF, "<$config_file")
+    open(CONF, "<", "$config_file")
       or clean_exit("could not open configuration file \"$config_file\": $!");
     my @conf = <CONF>;
     close(CONF);
@@ -735,13 +735,13 @@ sub process_rules($ $ $ $)
         clean_exit("$file is not a regular file.")
           unless (-f "$file" && !-l "$file");
 
-        open(INFILE, "<$file")
+        open(INFILE, "<", "$file")
           or clean_exit("could not open $file for reading: $!");
 	my @infile = <INFILE>;
         close(INFILE);
 
       # Write back to the same file.
-	open(OUTFILE, ">$file")
+	open(OUTFILE, ">", "$file")
           or clean_exit("could not open $file for writing: $!");
 
         my ($single, $multi, $nonrule, $msg, $sid);
@@ -850,7 +850,7 @@ sub setup_rules_hash($)
         warn("WARNING: downloaded rules file $file is empty\n")
           if (!-s "$file" && $verbose);
 
-        open(NEWFILE, "<$file")
+        open(NEWFILE, "<", "$file")
           or clean_exit("could not open $file for reading: $!");
         my @newfile = <NEWFILE>;
         close(NEWFILE);
@@ -872,7 +872,7 @@ sub setup_rules_hash($)
 	# Also read in old file if it exists.
         # We do a sid dup check in these files.
         if (-f "$config{output_dir}/$file") {
-            open(OLDFILE, "<$config{output_dir}/$file")
+            open(OLDFILE, "<", "$config{output_dir}/$file")
               or clean_exit("could not open $config{output_dir}/$file for reading: $!");
 	    my @oldfile = <OLDFILE>;
             close(OLDFILE);
@@ -1482,7 +1482,7 @@ sub get_new_vars($ $ $)
 
 
   # Read in variables from old file.
-    open(LOCAL_CONF, "<$local_conf")
+    open(LOCAL_CONF, "<", "$local_conf")
       or clean_exit("could not open $local_conf for reading: $!");
 
     my @local_conf = <LOCAL_CONF>;
@@ -1495,7 +1495,7 @@ sub get_new_vars($ $ $)
 
 
   # Read in variables from new file.
-    open(DIST_CONF, "<$dist_conf")
+    open(DIST_CONF, "<", "$dist_conf")
       or clean_exit("could not open $dist_conf for reading: $!");
 
     while ($_ = <DIST_CONF>) {
@@ -1522,12 +1522,12 @@ sub add_new_vars($ $)
 
     return unless ($#{$changes{new_vars}} > -1);
 
-    open(OLD_LOCAL_CONF, "<$varfile")
+    open(OLD_LOCAL_CONF, "<", "$varfile")
       or clean_exit("could not open $varfile for reading: $!");
     my @old_content = <OLD_LOCAL_CONF>;
     close(OLD_LOCAL_CONF);
 
-    open(NEW_LOCAL_CONF, ">$varfile")
+    open(NEW_LOCAL_CONF, ">", "$varfile")
       or clean_exit("could not open $varfile for writing: $!");
 
     my @old_vars = grep(/$VAR_REGEXP/i, @old_content);
