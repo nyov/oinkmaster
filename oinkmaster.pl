@@ -14,13 +14,18 @@ sub unpack_rules_archive;
 sub disable_rules;
 sub setup_rule_hashes;
 sub find_line;
+sub do_backup;
 
-my $version     = 'Oinkmaster v0.4 by Andreas Östling <andreaso@it.su.se>';
-my $config_file = "./oinkmaster.conf";
-my $tmpdir      = "/tmp/oinkmaster.$$";
-my $outfile     = "snortrules.tar.gz";
-my $verbose     = 0;
-my $quiet       = 0;
+my $version           = 'Oinkmaster v0.4 by Andreas Östling <andreaso@it.su.se>';
+my $config_file       = "./oinkmaster.conf";
+my $tmpdir            = "/tmp/oinkmaster.$$";
+my $outfile           = "snortrules.tar.gz";
+my $verbose           = 0;
+my $careful           = 0;
+my $quiet             = 0;
+my $rules_changed     = 0;
+my $other_changed     = 0;
+my $check_removed     = 0;
 
 # Regexp to match a Snort rule line.
 # The msg string will go into $1, and the sid will go into $2.
@@ -28,11 +33,12 @@ my $snort_rule_regexp = '^\s*#*\s*(?:alert|log|pass) .+msg\s*:\s*"(.+?)"\s*;.+si
 
 use vars qw
    (
-      $opt_h $opt_v $opt_o $opt_q
+      $opt_h $opt_v $opt_o $opt_q $opt_c $opt_b $opt_r
    );
 
 my (
-      $output_dir, $sid, $old_rule, $new_rule, $file
+      $output_dir, $sid, $old_rule, $new_rule, $file, $backup_dir,
+      $start_date, $added_files, $removed_files
    );
 
 #my (
@@ -41,7 +47,8 @@ my (
 
 my (
       %sid_disable_list, %file_ignore_list, %config, %changes, %added_files,
-      %new_files, %new_rules, %new_other, %old_rules, %old_other
+      %new_files, %new_rules, %new_other, %old_rules, %old_other, %printed,
+      %modified_files
    );
 
 
@@ -51,6 +58,9 @@ my (
 select(STDERR); $| = 1;         # No buffering.
 select(STDOUT); $| = 1;
 
+$start_date = scalar(localtime);
+
+# die("Don't run as root!\nExiting") if (!$>);
 parse_cmdline;
 read_config;
 sanity_check;
@@ -89,13 +99,8 @@ while ($_ = readdir(NEWRULES)) {
 closedir(NEWRULES);
 
 # Make sure there is at least one file to be updated.
-$_ = keys(%new_files);
-if ($_  < 1) {
-    die("Found no files in archive to be updated\nExiting");
-} else {
-    print STDERR ("Found $_ files to be updated.\n")
-      unless ($quiet);
-}
+die("Found no files in archive to be updated\nExiting")
+  if (keys(%new_files) < 1);
 
 # Disable (#comment out) all rules listed in %sid_disable_list.
 # All files will still be left in the temporary directory.
@@ -110,33 +115,44 @@ setup_rule_hashes;
 # in the old rule set.  If it does then check if it has been modified, 
 # but if it doesn't, it must have been added.
 
-print STDERR "Comparing your old files to the new ones, hang on...\n"
+print STDERR "Comparing your old files to the new ones... "
   unless ($quiet);
 
-foreach $file (keys(%new_files)) {                         # for each new file
-    next if ($file =~ /$config{skip_diff}/);               # skip comparing for files listed in skip_diff
-    foreach $sid (keys(%{$new_rules{$file}})) {            # for each sid in the new file
-        $new_rule = $new_rules{$file}{$sid};               # save the rule in $new_rule for easier access
-            if (exists($old_rules{$file}{$sid})) {         # does this sid also exist in the old rules file?
-                $old_rule = $old_rules{$file}{$sid};       # yes, put old rule in $old_rule
+foreach $file (keys(%new_files)) {                      # for each new file
+    next if ($file =~ /$config{skip_diff}/);            # skip comparing for files listed in skip_diff
+    next if (exists($added_files{$file}));              # also skip of its an added file
+
+    foreach $sid (keys(%{$new_rules{$file}})) {         # for each sid in the new file
+        $new_rule = $new_rules{$file}{$sid};            # save the rule in $new_rule for easier access
+            if (exists($old_rules{$file}{$sid})) {      # does this sid also exist in the old rules file?
+                $old_rule = $old_rules{$file}{$sid};    # yes, put old rule in $old_rule
 
 		unless ($new_rule eq $old_rule) {                             # are they identical?
+		    $rules_changed = 1;
                     if ("#$old_rule" eq $new_rule) {                          # rule disabled?
+			fix_fileinfo("removed_dis", $file);
                         $changes{removed_dis}       .= "       $new_rule";
                     } elsif ($old_rule eq "#$new_rule") {                     # rule enabled?
+			fix_fileinfo("added_ena", $file);
                         $changes{added_ena}         .= "       $new_rule";
                     } elsif ($old_rule =~ /^\s*#/ && $new_rule !~ /^\s*#/) {  # rule enabled and  modified?
+			fix_fileinfo("added_ena_mod", $file);
                         $changes{added_ena_mod}     .= "       Old: $old_rule       New: $new_rule";
                     } elsif ($old_rule !~ /^\s*#/ && $new_rule =~ /^\s*#/) {  # rule disabled and modified?
+			fix_fileinfo("removed_dis_mod", $file);
                         $changes{removed_dis_mod}   .= "       Old: $old_rule       New: $new_rule";
                     } elsif ($old_rule =~ /^\s*#/ && $new_rule =~ /^\s*#/) {  # inactive rule modified?
+			fix_fileinfo("modified_inactive", $file);
                         $changes{modified_inactive} .= "       Old: $old_rule       New: $new_rule";
                     } else {                                                  # active rule modified?
+			fix_fileinfo("modified_active", $file);
                         $changes{modified_active}   .= "       Old: $old_rule       New: $new_rule";
 	  	    }
 		}
 
 	    } else {
+	        $rules_changed  = 1;
+ 		fix_fileinfo("added_new", $file);
 	        $changes{added_new} .= "   $new_rule";
 	    }
     } # foreach sid
@@ -145,6 +161,7 @@ foreach $file (keys(%new_files)) {                         # for each new file
     foreach $sid (keys(%{$old_rules{$file}})) {
         unless (exists($new_rules{$file}{$sid})) {
             $old_rule = $old_rules{$file}{$sid};
+	    fix_fileinfo("removed_del", $file);
             $changes{removed_del} .= "       $old_rule";
         }
     }
@@ -154,31 +171,133 @@ foreach $file (keys(%new_files)) {                         # for each new file
   # First check for added lines.
     foreach $_ (@{$new_other{$file}}) {
         unless (find_line($_, @{$old_other{$file}})) {  # Does this line also exist in the old rules file?
-#            fix_fileinfo("other_added", $file);         # Nope, it's an added line.
+            fix_fileinfo("other_added", $file);         # Nope, it's an added line.
             $changes{other_added} .= "       $_";
-#            $other_changed = 1;
+            $other_changed = 1;
         }
     }
 
   # Check for removed lines.
     foreach $_ (@{$old_other{$file}}) {
         unless (find_line($_, @{$new_other{$file}})) {  # Does this line also exist in the new rules file?
- #           fix_fileinfo("other_removed", $file);       # Nope, it's a removed line.
+            fix_fileinfo("other_removed", $file);       # Nope, it's a removed line.
             $changes{other_removed} .= "       $_";
-#            $other_changed = 1;
+            $other_changed = 1;
+        }
+    }
+} # foreach new file
+
+# Creaste list of possibly removed files if -r is specified.
+if ($check_removed) {
+    opendir(OLDRULES, "$output_dir") or die("could not open directory $output_dir: $!\nExiting");
+    while ($_ = readdir(OLDRULES)) {
+        $removed_files .= "    -> $_\n"
+        if (/$config{update_files}/ && !exists($file_ignore_list{$_}) && !exists($new_files{$_}));
+    }
+    closedir(OLDRULES);
+}
+
+print STDERR "done.\n" unless ($quiet);
+
+# Update files listed in %modified_files (move the new files from the temporary
+# directory into our -o <outout directory>, unless we're running in careful mode.
+# Also create backup first if running with -b.
+if ($rules_changed || $other_changed) {
+    if ($careful) {
+        print STDERR "Running in careful mode - not updating any files.\n";
+        print STDERR "No need to backup old files, skipping.\n"
+          if (defined($backup_dir) && (!$quiet));
+    }  else {
+        do_backup if (defined($backup_dir));                      # backup old rules if -b
+
+      # Move each modified file from the temporary directory to the output directory.
+        foreach $_ (keys(%modified_files)) {
+            move("$tmpdir/rules/$_", "$output_dir/$_")
+              or die("\nWarning: could not move $tmpdir/rules/$_ to $output_dir/$_: $!\nExiting")
+        }
+    }
+} else {
+    print STDERR "No files modified - no need to backup old files, skipping.\n"
+      if (defined($backup_dir) && !$quiet);
+}
+
+# Move files listed in %added_files into our output directory.
+foreach $_ (keys(%added_files)) {
+    move("$tmpdir/rules/$_", "$output_dir/$_")
+      or die("\nWarning: could not move $tmpdir/rules/$_ to $output_dir/$_: $!\nExiting")
+}
+
+# Remove temporary directory.
+system("/bin/rm","-r","-f","$tmpdir")
+  and print STDERR "Warning: unable to remove temporary directory $tmpdir.\n";
+
+# Time to print the results.
+
+if (($rules_changed || $other_changed || keys(%added_files) > 0 || defined($removed_files))
+     || !$quiet) {
+    print "\n[***] Results from Oinkmaster started $start_date [***]\n";
+    print "\nNote: Oinkmaster was running in careful mode - no files were really updated or added.\n"
+      if ($careful && $rules_changed || $other_changed || keys(%added_files) > 0);
+
+  # Print rule changes.
+    print "\n[*] Rules added/removed/modified: [*]\n";
+
+    if ($rules_changed) {
+        print "\n  [+++]           Added:           [+++]\n $changes{added_new}"
+          if (exists($changes{added_new}));
+        print "\n  [+++]          Enabled:          [+++]\n $changes{added_ena}"
+          if (exists($changes{added_ena}));
+        print "\n  [+++]    Enabled and modified:   [+++]\n $changes{added_ena_mod}"
+          if (exists($changes{added_ena_mod}));
+        print "\n  [---]          Removed:          [---]\n $changes{removed_del}"
+          if (exists($changes{removed_del}));
+        print "\n  [---]          Disabled:         [---]\n $changes{removed_dis}"
+          if (exists($changes{removed_dis}));
+        print "\n  [---]    Disabled and modified:  [---]\n $changes{removed_dis_mod}"
+          if (exists($changes{removed_dis_mod}));
+        print "\n  [///]       Modified active:     [///]\n $changes{modified_active}"
+          if (exists($changes{modified_active}));
+        print "\n  [///]      Modified inactive:    [///]\n $changes{modified_inactive}"
+          if (exists($changes{modified_inactive}));
+        print "\n";
+    } else {
+        print "    None.\n";
+    }
+
+  # Print non-rule changes.
+    print "\n[*] Non-rule lines added/removed/modified: [*]\n";
+    if ($other_changed) {
+        print "\n  [+++]       Added line(s):       [+++]\n $changes{other_added}"
+          if (exists($changes{other_added}));
+        print "\n  [---]      Removed line(s):      [---]\n $changes{other_removed}"
+          if (exists($changes{other_removed}));
+        print "\n";
+    } else {
+        print "    None.\n";
+    }
+
+  # Print list of added files.
+    if (keys(%added_files) > 0) {
+        print "\n[*] Added files (consider updating your Snort configuration file to include them): [*]\n" .
+              "$added_files";
+    } else {
+         print "\n[*] Added files: [*]\n" .
+               "    None.\n";
+    }
+
+  # Print list of possibly deleted files if -r is specified.
+    if ($check_removed) {
+        if (defined($removed_files)) {
+            print "\n[*] Possibly removed files (consider removing them from your".
+                  " snort.conf): [*]\n$removed_files";
+        } else {
+            print "\n[*] Files possibly removed from archive: [*]\n    None.\n";
         }
     }
 
-} # foreach new file
+    print "\n";
 
-
-print "\n\nResults:\n";
-
-print "removed rules:\n$changes{removed_del}\n";
-print "other_added:\n$changes{other_added}\n";
-print "other_removed:\n$changes{other_removed}\n";
-
-
+}
 # END OF MAIN #
 
 
@@ -190,9 +309,14 @@ sub show_usage
 		 "<dir> is where to put the new rules files. This should be the\n".
                  "directory where you store your snort.org rules\n".
                  "\nOptions:\n".
+		 "-b <dir>  Backup old rules into <dir> if anything had changed\n".
+		 "-c        Careful mode. Don't update anything, just check for changes\n".
+                 "-r        Check for rules files that exist in the output directory\n".
+                 "          but not in the downloaded rules archive (i.e. files that may\n".
+                 "          have been removed from the archive).\n".
                  "-q        Quiet mode. No output unless changes were found\n".
 		 "-v        Verbose mode\n".
-                 "-h        Show usage help\n";
+                 "-h        Show usage help\n\n";
     exit;
 }
 
@@ -200,26 +324,26 @@ sub show_usage
 
 sub parse_cmdline
 {
-    my $cmdline_ok = getopts('ho:qv');
+    my $cmdline_ok = getopts('b:cho:qrv');
 
+    $backup_dir    = 1 if (defined($opt_b));
+    $quiet         = 1 if (defined($opt_q));
+    $verbose       = 1 if (defined($opt_v));
+    $careful       = 1 if (defined($opt_c));
+    $check_removed = 1 if (defined($opt_r));
+    show_usage         if (defined($opt_h));
 
-    $quiet   = 1 if     (defined($opt_q));  # -q
-    $verbose = 1 if     (defined($opt_v));  # -v
-    show_usage   if     (defined($opt_h));  # -h
-    show_usage   unless ($cmdline_ok);
+    show_usage unless ($cmdline_ok);
 
     if (defined($opt_o)) {                # -o <dir>, the only required option.
         $output_dir = $opt_o;
     } else {
-        print STDERR "You must specify where to put the rules with -o <dir>.\n\n";
         show_usage;
     }
 
   # Can't use both -q and -v.
     die("Both quiet mode and verbose mode at the same time doesn't make sense.\nExiting")
       if ($quiet && $verbose);
-
-#    die("Don't run as root!\nExiting") if (!$>);
 }
 
 
@@ -278,7 +402,7 @@ sub sanity_check
     }
 
   # Make sure the output directory exists and is writable.
-    die("The output directory \"$output_dir\" doesn't exist or isn't writable by you.\n\nExiting")
+    die("The output directory \"$output_dir\" doesn't exist or isn't writable by you.\nExiting")
       if (! -d "$output_dir" || ! -w "$output_dir");
 }
 
@@ -337,7 +461,7 @@ sub unpack_rules_archive
     }
 
   # Looks good. Now we can finally untar it.
-    print STDERR "Archive successfully downloaded, unpacking...\n" unless ($quiet);
+    print STDERR "Archive successfully downloaded, unpacking... " unless ($quiet);
 
     die("Failed to untar $filename\nExiting")
       if system("tar","xf","$filename");
@@ -347,6 +471,8 @@ sub unpack_rules_archive
 
   # Change back to old dir.
     chdir("$old_dir") or die("could not change directory back to $tmpdir: $!\nExiting");
+
+    print STDERR "done.\n" unless ($quiet);
 }
 
 
@@ -358,7 +484,8 @@ sub disable_rules
     my ($num_disabled, $msg, $sid, $line, $file);
 
     $num_disabled = 0;
-    print STDERR "Disabling rules...\n" unless ($quiet);
+    print STDERR "Disabling rules according to $config_file... " unless ($quiet);
+    print STDERR "\n" if ($verbose);
 
     foreach $file (keys(%new_files)) {
         open(INFILE, "<$tmpdir/rules/$file") or die("could not open $tmpdir/rules/$file: $!\nExiting");
@@ -366,7 +493,7 @@ sub disable_rules
         close(INFILE);
 
       # Write back to the same file.
-	open(OUTFILE, ">$tmpdir/rules/$_") or die("could not open $tmpdir/rules/$_: $!\nExiting");
+	open(OUTFILE, ">$tmpdir/rules/$file") or die("could not open $tmpdir/rules/$file: $!\nExiting");
 	RULELOOP:foreach $line (@_) {
             unless ($line =~ /$snort_rule_regexp/) {    # only care about snort rules
 	        print OUTFILE $line;
@@ -391,7 +518,7 @@ sub disable_rules
         }
         close(OUTFILE);
     }
-    print STDERR "Disabled $num_disabled rules.\n" unless ($quiet)
+    print STDERR "$num_disabled rules disabled.\n" unless ($quiet)
 }
 
 
@@ -427,6 +554,7 @@ sub setup_rule_hashes
             }
             close(OLDFILE);
         } else {
+	    $added_files .= "    -> $file\n" unless (exists($added_files{"$file"}));
 	    $added_files{"$file"}++;
         }
     }
@@ -451,6 +579,31 @@ sub find_line
     }
 
     return 0;                                              # string not found
+}
+
+
+
+# Add filename info to given "changelog" array, unless already done.
+# Also update list of modified files.
+sub fix_fileinfo
+{
+    my $type     = shift;   # type of change (added_new/removed_del/modified_active etc).
+    my $filename = shift;
+
+    unless (exists($printed{$type})) {                         # Filename info already added?
+        $changes{$type} = "   -> File \"$filename\":\n";       # Nope, add it.
+        $printed{$type}++;                                     # So we know it has now been added.
+    }
+
+  # Add filename to list of modified files.
+    $modified_files{$filename}++;
+}
+
+
+
+sub do_backup
+{
+
 }
 
 #### EOF ####
