@@ -17,7 +17,7 @@ sub disable_and_modify_rules($ $ $);
 sub setup_rules_hash($);
 sub find_line($ $);
 sub print_changes($ $);
-sub print_changetype($ $ $);
+sub print_changetype($ $ $ $);
 sub make_backup($ $);
 sub get_modified_files($ $);
 sub get_changes($ $);
@@ -765,49 +765,57 @@ sub print_changes($ $)
   # Print added rules.
     if (exists($$ch_ref{rules}{added})) {
         print "\n[+++]          Added rules:          [+++]\n";
-	print_changetype($PRINT_NEW, \%{$$ch_ref{rules}{added}}, $rh_ref);
+	print_changetype($PRINT_NEW, "Added to",
+                         \%{$$ch_ref{rules}{added}}, $rh_ref);
     }
 
   # Print enabled rules.
     if (exists($$ch_ref{rules}{ena})) {
         print "\n[+++]         Enabled rules:         [+++]\n";
-	print_changetype($PRINT_NEW, \%{$$ch_ref{rules}{ena}}, $rh_ref);
+	print_changetype($PRINT_NEW, "Enabled in",
+                         \%{$$ch_ref{rules}{ena}}, $rh_ref);
     }
 
   # Print enabled + modified rules.
     if (exists($$ch_ref{rules}{ena_mod})) {
         print "\n[+++]  Enabled and modified rules:   [+++]\n";
-	print_changetype($PRINT_BOTH, \%{$$ch_ref{rules}{ena_mod}}, $rh_ref);
+	print_changetype($PRINT_BOTH, "Enabled and modified in",
+                         \%{$$ch_ref{rules}{ena_mod}}, $rh_ref);
     }
 
   # Print modified active rules.
     if (exists($$ch_ref{rules}{mod_act})) {
         print "\n[///]     Modified active rules:     [///]\n";
-	print_changetype($PRINT_BOTH, \%{$$ch_ref{rules}{mod_act}}, $rh_ref);
+	print_changetype($PRINT_BOTH, "Modified active in",
+                         \%{$$ch_ref{rules}{mod_act}}, $rh_ref);
     }
 
   # Print modified inactive rules.
     if (exists($$ch_ref{rules}{mod_ina})) {
         print "\n[///]    Modified inactive rules:    [///]\n";
-	print_changetype($PRINT_BOTH, \%{$$ch_ref{rules}{mod_ina}}, $rh_ref);
+	print_changetype($PRINT_BOTH, "Modified active in",
+                         \%{$$ch_ref{rules}{mod_ina}}, $rh_ref);
     }
 
   # Print disabled + modified rules.
     if (exists($$ch_ref{rules}{dis_mod})) {
         print "\n[---]  Disabled and modified rules:  [---]\n";
-	print_changetype($PRINT_BOTH, \%{$$ch_ref{rules}{dis_mod}}, $rh_ref);
+	print_changetype($PRINT_BOTH, "Disabled and modified in",
+                         \%{$$ch_ref{rules}{dis_mod}}, $rh_ref);
     }
 
   # Print disabled rules.
     if (exists($$ch_ref{rules}{dis})) {
         print "\n[---]         Disabled rules:        [---]\n";
-	print_changetype($PRINT_NEW, \%{$$ch_ref{rules}{dis}}, $rh_ref);
+	print_changetype($PRINT_NEW, "Disabled in",
+                         \%{$$ch_ref{rules}{dis}}, $rh_ref);
     }
 
   # Print removed rules.
     if (exists($$ch_ref{rules}{removed})) {
         print "\n[---]         Removed rules:         [---]\n";
-	print_changetype($PRINT_OLD, \%{$$ch_ref{rules}{removed}}, $rh_ref);
+	print_changetype($PRINT_OLD, "Removed from",
+                         \%{$$ch_ref{rules}{removed}}, $rh_ref);
     }
 
 
@@ -819,7 +827,7 @@ sub print_changes($ $)
         print "\n[+++]      Added non-rule lines:     [+++]\n";
         foreach my $file (sort({uc($a) cmp uc($b)} keys(%{$$ch_ref{other}{added}}))) {
             my $num = $#{$$ch_ref{other}{added}{$file}} + 1;
-            print "\n     -> File $file ($num):\n";
+            print "\n     -> Added to $file ($num):\n";
             foreach my $line (@{$$ch_ref{other}{added}{$file}}) {
                 print "        $line";
             }
@@ -831,7 +839,7 @@ sub print_changes($ $)
         print "\n[---]     Removed non-rule lines:    [---]\n";
         foreach my $file (sort({uc($a) cmp uc($b)} keys(%{$$ch_ref{other}{removed}}))) {
             my $num = $#{$$ch_ref{other}{removed}{$file}} + 1;
-            print "\n     -> File $file ($num):\n";
+            print "\n     -> Removed from $file ($num):\n";
             foreach my $other (@{$$ch_ref{other}{removed}{$file}}) {
 	        print "        $other";
             }
@@ -870,15 +878,16 @@ sub print_changes($ $)
 
 
 # Help-function for print_changes().
-sub print_changetype($ $ $)
+sub print_changetype($ $ $ $)
 {
-    my $type   = shift;
-    my $ch_ref = shift;
-    my $rh_ref = shift;
+    my $type   = shift;   # $PRINT_OLD, $PRINT_NEW or $PRINT_BOTH
+    my $string = shift;   # string to print before filename
+    my $ch_ref = shift;   # reference to rules changes hash
+    my $rh_ref = shift;   # reference to rules hash
 
     foreach my $file (sort({uc($a) cmp uc($b)} keys(%$ch_ref))) {
         my $num = keys(%{$$ch_ref{$file}});
-        print "\n     -> File $file ($num):\n";
+        print "\n     -> $string $file ($num):\n";
         foreach my $sid (keys(%{$$ch_ref{$file}})) {
 	    if ($type == $PRINT_OLD) {
                 print "        $$rh_ref{old}{rules}{$file}{$sid}"
