@@ -123,7 +123,7 @@ print STDERR "Comparing new files to the old ones... "
 FILELOOP:foreach $file (keys(%new_files)) {                      # for each new file
     next FILELOOP if (exists($added_files{$file}));              # skip of its an added file
 
-  # Skip diff if file maches skip_diff regexp, but see if it needs to be updated.
+  # Skip diff if file maches skip_diff regexp.
     if (exists($config{skip_diff})  && $file =~ /$config{skip_diff}/) {
 	$skip_diff_files .= "    -> $file";
 	$skip_diff_files .= " (local copy updated)" unless ($careful);
@@ -325,7 +325,7 @@ sub show_usage
 		 "<dir> is where to put the new rules files. This should be the\n".
                  "directory where you store your snort.org rules.\n".
                  "Note that your current files will be overwritten\n".
-                 "by the new ones if they had been moified.\n".
+                 "by the new ones if they had been modified.\n".
                  "\nOptions:\n".
 		 "-C <cfg>  Use this config file instead of the default $config_file\n".
 		 "-b <dir>  Backup old rules into <dir> if anything had changed\n".
@@ -438,7 +438,7 @@ sub sanity_check
 }
 
 
-
+# Make a few checks on $outfile (the rules archive) and then unpack it.
 sub unpack_rules_archive
 {
     my ($old_dir, $ok_chars, $filename);
@@ -681,7 +681,7 @@ sub do_backup
 
 
 
-# Remove temporary and exit.
+# Remove temporary directory and exit.
 sub clean_exit
 {
     system("rm","-r","-f","$tmpdir")
