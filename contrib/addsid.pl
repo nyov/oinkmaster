@@ -2,8 +2,6 @@
 
 # $Id$ #
 
-# XXX should create a sid map
-
 my $usage   = "usage: $0 <rulesdir> <start sid>\n";
 
 # Set this to the default classtype you want to add, if missing.
@@ -36,7 +34,7 @@ while ($file = readdir(RULESDIR)) {
  	undef($nonrule);
 
       # Start of multi-line rule?
-        if (/^\s*(?:alert|log|pass) .*\\\n$/) {
+        if (/^\s*(?:alert|log|pass) .*\\\s*\n$/) {
             $multi  = $_;
             $single = $_;
 

@@ -24,7 +24,7 @@ while ($file = readdir(RULESDIR)) {
  	undef($nonrule);
 
       # Start of multi-line rule?
-        if (/^\s*(?:alert|log|pass) .*\\\n$/) {
+        if (/^\s*(?:alert|log|pass) .*\\\s*\n$/) {
             $multi  = $_;
             $single = $_;
 
