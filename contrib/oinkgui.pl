@@ -881,7 +881,7 @@ sub clear_messages()
 sub save_messages()
 {
     my $text  = $out_frame->get('1.0', 'end');
-    my $title = 'Save Output Messages';
+    my $title = 'Save output messages';
     my $filename;
 
     my $filetypes = [
@@ -901,7 +901,7 @@ sub save_messages()
 
             print LOG $text;
             close(LOG);
-            logmsg("Successfully saved Output Messages to $filename\n\n", 'MISC');
+            logmsg("Successfully saved output messages to $filename\n\n", 'MISC');
         }
 
     } else {
