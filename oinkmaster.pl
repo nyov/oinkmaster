@@ -713,7 +713,7 @@ sub print_changes($ $)
 
     foreach my $type (sort(keys(%{$$ch_ref{rules}}))) {
         print "\n  $type\n";
-        foreach my $file (keys(%{$$ch_ref{rules}{"$type"}})) {
+        foreach my $file (sort(keys(%{$$ch_ref{rules}{"$type"}}))) {
             print "\n     -> File $file:\n";
             foreach my $sid (keys(%{$$ch_ref{rules}{"$type"}{"$file"}})) {
 
@@ -740,7 +740,7 @@ sub print_changes($ $)
   # Print added non-rule lines.
     if (keys(%{$$ch_ref{other}{added}}) > 0) {
         print "\n  [+++]       Added lines:       [+++]\n";
-        foreach my $file (keys(%{$$ch_ref{other}{added}})) {
+        foreach my $file (sort(keys(%{$$ch_ref{other}{added}}))) {
             print "\n     -> File $file:\n";
             foreach my $other (@{$$ch_ref{other}{added}{$file}}) {
 	        print "        $other";
@@ -751,7 +751,7 @@ sub print_changes($ $)
   # Print removed non-rule lines.
     if (keys(%{$$ch_ref{other}{removed}}) > 0) {
         print "\n  [---]      Removed lines:      [---]\n";
-        foreach my $file (keys(%{$$ch_ref{other}{removed}})) {
+        foreach my $file (sort(keys(%{$$ch_ref{other}{removed}}))) {
             print "\n     -> File $file:\n";
             foreach my $other (@{$$ch_ref{other}{removed}{$file}}) {
 	        print "        $other";
@@ -766,7 +766,7 @@ sub print_changes($ $)
   # Print list of added files.
     if (keys(%{$$ch_ref{added_files}}) > 0) {
         print "\n[*] Files added (consider updating your snort.conf to include them): [*]\n";
-        foreach my $added_file (keys(%{$$ch_ref{added_files}})) {
+        foreach my $added_file (sort(keys(%{$$ch_ref{added_files}}))) {
             print "    -> $added_file\n";
         }
     } else {
@@ -780,7 +780,7 @@ sub print_changes($ $)
         if (keys(%{$$ch_ref{removed_files}}) > 0) {
             print "\n[*] Files possibly removed from the archive ".
                   "(consider removing them from your snort.conf): [*]\n";
-            foreach my $removed_file (keys(%{$$ch_ref{removed_files}})) {
+            foreach my $removed_file (sort(keys(%{$$ch_ref{removed_files}}))) {
                 print "    -> $removed_file\n";
 	    }
         } else {
