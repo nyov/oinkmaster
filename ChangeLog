@@ -6,15 +6,15 @@ o The file rules.ignore has been renamed to oinkmaster.conf, which contains
 o Slightly improved error checking.
 o Better output format (or at least it has changed).
 o Oinkmaster will now also update other files (and print changes in them) than
-  *.rules and classification.conf. It's now *.rules, *.conf, *.config, *.txt
-  and *.map so we also update the MIB and sid-msg.map files for example.
+  *.rules and classification.conf. The default is now *.rules, *.conf, *.config,
+  *.txt and *.map so we also update the MIB and sid-msg.map files for example.
   Files to be updated is defined by a regexp in oinkmaster.conf so this can
   easily be changed.
 o Removed several stupid command line options.
 o Print warning message if two (or more) rules share the same SID.
 o Added option -p to preserve disabled rules in downloaded archive.
 o "file" and "sid" keywords in oinkmaster.conf are now invalid.
-  They are now called "skipfile" and "disablesid" (to avoid confusion
+  They are instead called "skipfile" and "disablesid" (to avoid confusion
   when possibly adding new keywords in the future).
 o Instead of specifying one "disablesid X" per line, you can now also use
   comma-separated lists, e.g. "disablesid 1,2,3,4,42".

@@ -3,34 +3,30 @@
 Installation instructions for Oinkmaster v0.4
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-o Untar/unpack the distribution file in some temporary directory:
-  tar zxvf oinkmaster-version.tar.gz
-  This will create a directory called oinkmaster-version.
-  Move this directory to some suitable location, for example /usr/local/.
+o Untar/unpack the distribution file into some suitable directory, for 
+  example /usr/local. This will create a directory called oinkmaster-version.
 
 o Edit the file oinkmaster.conf. There are some options you may want to
   change. Here you will also tell Oinkmaster which SIDs or files you want to
   disable or ignore. As you will see, a few things are skipped by default.
   See the README file and the notes in oinkmaster.conf for more information.
 
-o Decide in which directory you want to put the new rules. Since you 
-  probably already have Snort up and running, you should use your existing
-  rules directory (you should REALLY consider using a separate directory for
-  the rules from snort.org though, unless you're already doing so, so you 
-  don't accidentaly overwrite any local files).
-
-  If you for example have your Snort rules stored in 
-  /usr/local/snort/snort.org-rules/, you can now update those by running:
-
-  ./oinkmaster.pl -o /usr/local/snort/snort.org-rules/
-
-o That's it!
-  Now you can start figuring out which rules you want to disable (if any at all).
   If you already have several rules commented out (or removed) from your current
   rules, you need to add those SIDs to oinkmaster.conf manually, or they will be
   enabled after the first update. Note that Oinkmaster will enable all rules by
   default, even those that are commented out by default in the rules archive, 
   unless -p is specified.
 
-  You really should check out the README file first.
+o Decide in which directory you want to put the new rules. Since you
+  probably already have Snort up and running, you should use your existing
+  rules directory (you should really consider using a separate directory for
+  the rules from snort.org though, so you don't accidentaly overwrite any local
+  files).
+
+  If you for example have your Snort rules stored in
+  /usr/local/snort/snort.org-rules/, you can now update those by running:
+
+  ./oinkmaster.pl -o /usr/local/snort/snort.org-rules/
+
+  You REALLY should check out the entire README before doing anything though.
   You may also run oinkmaster.pl -h for more usage information and options.
