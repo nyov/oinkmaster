@@ -1,5 +1,15 @@
 v0.9 - 200xxxxx
 ~~~~~~~~~~~~~~~
+o Added ability to use "include <file>" in oinkmaster configuration
+  files. <file> will be parsed (just like a regular oinkmaster.conf) as 
+  soon as the include statement is seen, and then return and continue 
+  parsing the rest of the original file. If an option is re-defined, it 
+  will override the previous value. You can use as many 'include' 
+  statements as you wish, and also include even more files from included 
+  files.
+o Also permit an arbitrary number of "-C" arguments to be specified on
+  command line to load multiple config files. They will be loaded in the
+  order of appearance.
 o Permit https://... in url specification. Only useful if your wget is 
   SSL-enabled and you download from an SSL-enabled site.
 o Permit scp://user@remotehost:/file.tar.gz in url specification.
@@ -8,13 +18,6 @@ o Permit scp://user@remotehost:/file.tar.gz in url specification.
   oinkmaster.conf (or set it in ~/.ssh/config).
 o You can now specify "-i" for interactive mode. You will be asked to 
   approve the changes before Oinkmaster modifies anything.
-o Added ability to use "include <file>" in oinkmaster configuration
-  files. <file> will be parsed (just like a regular oinkmaster.conf) as 
-  soon as the include statement is seen, and then return and continue 
-  parsing the rest of the original file. If an option is re-defined, it 
-  will override the previous value. You can use as many 'include' 
-  statements as you wish, and also include even more files from included 
-  files.
 o Perl is now started with tainting checks enabled by default.
   If you're on Windows with ActivePerl, you'll have to make sure you start 
   oinkmaster by calling "perl -T oinkmaster.pl ..." to avoid getting the 
@@ -24,10 +27,8 @@ o Added 'enablesid' keyword to oinkmaster.conf.
   The order in oinkmaster.conf does not matter. All the
   'modifysid' will be processed first, then 'disablesid' and last 'enablesid'.
 o Slightly improved rules parsing.
-o Look for oinkmaster.conf in /etc/ and /usr/local/etc/ by default.
+o oinkmaster.conf will be searched for in /etc/ and /usr/local/etc/ by default.
 o Added a FAQ.
-o contrib/create-sidmap.pl can now take an arbitrary number of directories
-  as argument.
 
 
 

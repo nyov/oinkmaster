@@ -7,7 +7,7 @@ use File::Basename;
 use File::Copy;
 use File::Spec;
 use File::Path;
-use Getopt::Std;
+use Getopt::Long;
 
 sub show_usage();
 sub parse_cmdline($);
@@ -58,7 +58,7 @@ my $make_backup       = 0;
 my $update_vars       = 0;
 my $config_test_mode  = 0;
 my $interactive       = 0;
-my $preserve_comments = 1;
+my $enable_all        = 0;
 
 
 # Regexp to match the start (the first line) of a possible multi-line rule.
@@ -75,17 +75,12 @@ my $OK_PATH_CHARS = 'a-zA-Z\d\ _\.\-+:\\\/~@,=';
 my $tmp_basedir = $ENV{TMP} || $ENV{TMPDIR} || $ENV{TEMPDIR} || '/tmp';
 
 # Default locations for configuration file.
-my @config_file = qw(
+my @default_config_files = qw(
     /etc/oinkmaster.conf
     /usr/local/etc/oinkmaster.conf
 );
 
-use vars qw(
-    $opt_b $opt_c $opt_C $opt_e $opt_h $opt_i $opt_o
-    $opt_q $opt_Q $opt_r $opt_T $opt_u $opt_U $opt_v $opt_V
-);
-
-my (%config, %includes, $tmpdir, $config_file);
+my (%config, %loaded, $tmpdir, @config_files);
 
 
 
@@ -99,24 +94,28 @@ $| = 1;
 
 my $start_date = scalar(localtime);
 
-# Look for config file in default locations.
-foreach my $config (@config_file) {
-    $config_file = $config if (-e "$config");
-}
-
 # Parse command line arguments and add at least %config{output_dir}.
-# Will exit if something is wrong.
+# Will exit if something is wrong. May set global @config_files.
 parse_cmdline(\%config);
 
-# $config_file must have been defined by now.
-unless (defined($config_file)) {
+# If no config was specified on command line, look for one in default locations.
+if ($#config_files == -1) {
+    foreach my $config (@default_config_files) {
+        if (-e "$config") {
+            push(@config_files, $config);
+            last;
+        }
+    }
+}
+
+# If config is still not defined, we can't continue.
+if ($#config_files == -1) {
     clean_exit("configuration file not found in default locations\n".
-               "(@config_file)\n".
+               "(@default_config_files)\n".
                "Put it there or use the \"-C\" argument.");
 }
 
-# Read in $config_file. Will exit if something is wrong.
-read_config($config_file, \%config);
+read_config($_, \%config) for @config_files;
 
 # Do some basic sanity checking and exit if something fails.
 # A new PATH will be set.
@@ -128,10 +127,8 @@ if ($config_test_mode) {
     clean_exit("");
 }
 
-# Create empty temporary directory.
 $tmpdir = make_tempdir($tmp_basedir);
 
-# Set new umask if one was specified in the config file.
 umask($config{umask}) if exists($config{umask});
 
 # Download the rules archive. Will exit if it fails.
@@ -247,7 +244,8 @@ Options:
 -b <dir>   Backup your old rules into <dir> before overwriting them
 -c         Careful mode - only check for changes and do not update anything
 -C <cfg>   Use this configuration file instead of the default
-           (@config_file)
+           (@default_config_files)
+           May be specified multiple times.
 -e         Re-enable all rules that are disabled by default in the rules
            distribution (they are disabled for a reason, so use with care)
 -h         Show this usage information
@@ -274,52 +272,47 @@ RTFM
 # Parse the command line arguments and exit if we don't like them.
 sub parse_cmdline($)
 {
-    my $cfg_ref    = shift;
-    my $cmdline_ok = getopts('b:cC:ehio:qQrTu:U:vV');
+    my $cfg_ref = shift;
 
-    $config_file          = $opt_C if (defined($opt_C));
-    $$cfg_ref{url}        = $opt_u if (defined($opt_u));
-    $careful              = 1      if (defined($opt_c));
-    $preserve_comments    = 0      if (defined($opt_e));
-    $quiet                = 1      if (defined($opt_q));
-    $interactive          = 1      if (defined($opt_i));
-    $check_removed        = 1      if (defined($opt_r));
-    $config_test_mode     = 1      if (defined($opt_T));
-    $verbose              = 1      if (defined($opt_v));
+    Getopt::Long::Configure("bundling");
 
-    if (defined($opt_Q)) {
-        $quiet       = 1;
-        $super_quiet = 1;
-    }
-
-    if (defined($opt_b)) {
-        $$cfg_ref{backup_dir} = File::Spec->canonpath($opt_b);
-        $make_backup = 1;
-    }
-
-    if (defined($opt_U)) {
-        $$cfg_ref{varfile} = $opt_U;
-        $update_vars = 1;
-    }
-
-    show_usage() if (defined($opt_h));
-
-    if (defined($opt_V)) {
-        print "$VERSION\n";
-        exit(0);
-    }
+    my $cmdline_ok = GetOptions(
+        "b=s" => \$$cfg_ref{backup_dir},
+        "c"   => \$careful,
+        "C=s" => \@config_files,
+        "e"   => \$enable_all,
+        "h"   => \&show_usage,
+        "i"   => \$interactive,
+        "o=s" => \$$cfg_ref{output_dir},
+        "q"   => \$quiet,
+        "Q"   => \$super_quiet,
+        "r"   => \$check_removed,
+        "T"   => \$config_test_mode,
+        "u=s" => \$$cfg_ref{url},
+        "U=s" => \$$cfg_ref{varfile},
+        "v"   => \$verbose,
+        "V"   => sub { print "$VERSION\n"; exit(0) }
+    );
 
     show_usage unless ($cmdline_ok);
 
+    $quiet       = 1 if ($super_quiet);
+    $update_vars = 1 if (defined($$cfg_ref{varfile}));
+
+    if ($$cfg_ref{backup_dir}) {
+        $$cfg_ref{backup_dir} = File::Spec->canonpath($$cfg_ref{backup_dir});
+        $make_backup = 1;
+    }
+
   # -o <dir> is the only required option in normal usage.
-    if (defined($opt_o)) {
-        $$cfg_ref{output_dir} = File::Spec->canonpath($opt_o);
+    if ($$cfg_ref{output_dir}) {
+        $$cfg_ref{output_dir} = File::Spec->canonpath($$cfg_ref{output_dir});
     } else {
         show_usage();
     }
 
-  # Don't accept additional arguments, since they're invalid.
-    $_ = shift(@ARGV) && show_usage();
+  # Mark that url was set on command line (so we don't override it later).
+    $$cfg_ref{cmdline_url} = 1 if ($$cfg_ref{url});
 }
 
 
@@ -339,9 +332,9 @@ sub read_config($ $)
 
   # Basic check to avoid cross-include of files (infinite recursion).
     clean_exit("attempt to load \"$config_file\" twice.")
-      if (exists($includes{$config_file}));
+      if (exists($loaded{$config_file}));
 
-    $includes{$config_file}++;
+    $loaded{$config_file}++;
 
     open(CONF, "<$config_file")
       or clean_exit("could not open configuration file \"$config_file\": $!");
@@ -404,8 +397,8 @@ sub read_config($ $)
 
 	} elsif (/^url\s*=\s*(.*)/i) {          # URL to use
 	    $$cfg_ref{url} = $1
-              unless (defined($opt_u));         # command line wins
-        
+              unless ($$cfg_ref{cmdline_url});  # command line wins
+
 	} elsif (/^path\s*=\s*(.+)/i) {         # $PATH to be used
 	    $$cfg_ref{path} = $1;
 
@@ -452,7 +445,7 @@ sub sanity_check()
 
   # Make sure all required variables are defined in the config file.
     foreach my $param (@req_params) {
-        clean_exit("the required parameter \"$param\" is not defined in $config_file.")
+        clean_exit("the required parameter \"$param\" is not defined in configuration file.")
           unless (exists($config{$param}));
     }
 
@@ -500,8 +493,8 @@ sub sanity_check()
     }
 
   # Make sure $url is defined (either by -u <url> or url=... in the conf).
-    clean_exit("incorrect URL or URL not specified in either $config_file or command line.")
-      unless (exists($config{'url'}) &&
+    clean_exit("incorrect URL or URL not specified in either configuration file or command line.")
+      unless (defined($config{'url'}) &&
         (($config{'url'}) = $config{'url'} =~ /^((?:https*|ftp|file|scp):\/\/.+\.tar\.gz)$/));
 
   # Wget must be found if url is http[s]:// or ftp://.
@@ -524,7 +517,7 @@ sub sanity_check()
     clean_exit("the output directory \"$config{output_dir}\" doesn't exist ".
                "or isn't readable by you.")
       if (!-d "$config{output_dir}" || !-x "$config{output_dir}");
- 
+
   # Make sure the output directory is writable unless running in careful mode.
     clean_exit("the output directory \"$config{output_dir}\" isn't writable by you.")
       if (!$careful && !-w "$config{output_dir}");
@@ -718,7 +711,7 @@ sub process_rules($ $ $ $)
     my %sids;
 
     warn("WARNING: all rules that are disabled by default will be re-enabled\n")
-      if (!$preserve_comments && !$quiet);
+      if ($enable_all && !$quiet);
 
     print STDERR "Disabling rules... "
       unless ($quiet);
@@ -766,7 +759,7 @@ sub process_rules($ $ $ $)
           # Some rules may be commented out by default. 
           # Enable them if -e is specified.
 	    if ($multi =~ /^#/) {
-		unless ($preserve_comments) {
+	        if ($enable_all) {
 		    print STDERR "Enabling disabled rule (SID $sid): $msg\n"
 		      if ($verbose);
                     $multi =~ s/^#*//;
