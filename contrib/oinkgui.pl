@@ -39,7 +39,6 @@ sub logmsg($ $);
 my $version = 'Oinkmaster GUI v1.0';
 
 my @oinkmaster_conf = qw(
-    ./oinkmaster.conf
     /etc/oinkmaster.conf
     /usr/local/etc/oinkmaster.conf
 );
@@ -123,6 +122,7 @@ my %help = (
 my $gui_config_file = "";
 my $perl            = "";
 my $editor          = "";
+my $use_fileop      = 0;
 
 
 #### MAIN ####
@@ -133,9 +133,10 @@ select STDOUT;
 $| = 1;
 
 # Find out if can use Win32::FileOp.
-my $use_fileop = 0;
-$use_fileop = 1 if (eval "require Win32::FileOp");
-
+if ($^O eq 'MSWin32') {
+    BEGIN { $^W = 0 }
+    $use_fileop = 1 if (eval "require Win32::FileOp");
+}
 
 # Find out which oinkmaster.pl file to default to.
 foreach my $dir (File::Spec->path()) {
@@ -497,7 +498,7 @@ logmsg("No oinkmaster configuration file set, please select one above!\n\n", 'ER
   if ($config{oinkmaster_conf} !~ /\S/);
 
 logmsg("Output directory is not set, please select one above!\n\n", 'ERROR')
-if ($config{outdir} !~ /\S/);
+  if ($config{outdir} !~ /\S/);
 
 
 MainLoop;
@@ -805,7 +806,8 @@ sub show_version()
         return;
     }
 
-    unless ($config{oinkmaster} && (-x "$config{oinkmaster}" || $^O eq 'MSWin32')) {
+    unless ($config{oinkmaster} && -f "$config{oinkmaster}" &&
+     (-x "$config{oinkmaster}" || $^O eq 'MSWin32')) {
         logmsg("Location of oinkmaster.pl is not set correctly!\n\n", 'ERROR');
         return;
     }
@@ -831,7 +833,8 @@ sub show_help()
         return;
     }
 
-    unless ($config{oinkmaster} && (-x "$config{oinkmaster}" || $^O eq 'MSWin32')) {
+    unless ($config{oinkmaster} && -f "$config{oinkmaster}" &&
+     (-x "$config{oinkmaster}" || $^O eq 'MSWin32')) {
         logmsg("Location of oinkmaster.pl is not set correctly!\n\n", 'ERROR');
         return;
     }
@@ -991,9 +994,10 @@ sub create_cmdline($)
         return (0);
     }
 
-    unless ($oinkmaster && (-x "$oinkmaster" || $^O eq 'MSWin32')) {
+    unless ($config{oinkmaster} && -f "$config{oinkmaster}" &&
+     (-x "$config{oinkmaster}" || $^O eq 'MSWin32')) {
         logmsg("Location of oinkmaster.pl is not set correctly!\n\n", 'ERROR');
-        return (0);
+        return;
     }
 
     unless ($oinkmaster_conf && -f "$oinkmaster_conf") {
