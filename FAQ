@@ -33,6 +33,9 @@ Q16: If I make a modification directly in a rules file that is updated by
      Oinkmaster, will that change be permanent?
 Q17: Should I run Oinkmaster as root?
 Q18: I get "/usr/bin/perl: bad interpreter" when starting.
+Q19: I've been running Oinkmaster several times and it still says there 
+     are no changes in the rules, how often are the rules tarballs on 
+     www.snort.org updated?
 
 --------------
 
@@ -415,3 +418,24 @@ Q18: I get "/usr/bin/perl: bad interpreter" when starting.
 A18: By default, Oinkmaster assumes that Perl is found as /usr/bin/perl.
      If you get this message, you need to edit oinkmaster.pl and modify 
      the first line so it points to the right location for your system.
+
+
+
+Q19: I've been running Oinkmaster several times and it still says there 
+     are no changes in the rules, how often are the rules tarballs on 
+     www.snort.org updated?
+
+A19: The tarballs are generated from the CVS repository many times a day, 
+     but that does not mean there are always any changes in it.
+     My experience is that the rules are sometimes updated daily, and 
+     sometimes in bursts with several days/weeks apart (also depending on 
+     which rules tarball you use). If you run Oinkmaster for several days 
+     and it still says that nothing has changed, this does not 
+     automatically mean anyting is wrong. You can verify this by doing 
+     some arbitrary modifications in some rules file in your rules 
+     directory and then run Oinkmaster. If those 'arbitrary changes' are 
+     noticed by Oinkmaster, everytying probably works as expected.
+     If you're behind a web proxy, make sure it's not trying to be nice 
+     by caching the rules archive and always give you the old version 
+     instead of actually polling the Snort site for an updated version 
+     (see Q10).
