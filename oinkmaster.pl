@@ -647,9 +647,15 @@ sub download_file($ $)
     my $log       = "$tmpdir/wget.log";
     my $ret;
 
+  # If there seems to be a password in the url, replace it with "*password*"
+  # and use new string when printing the url to screen.
+    my $obfuscated_url = $url;
+    $obfuscated_url = "$1:*password*\@$2"
+      if ($obfuscated_url =~ /^(\S+:\/\/.+?):.+?@(.+)/);
+
   # Use wget if URL starts with "http[s]" or "ftp" and we use external binaries.
     if ($config{use_external_bins} && $url =~ /^(?:https*|ftp)/) {
-        print STDERR "Downloading file from $url... "
+        print STDERR "Downloading file from $obfuscated_url... "
           unless ($config{quiet});
 
         if ($config{verbose}) {
@@ -669,7 +675,7 @@ sub download_file($ $)
 
   # Use LWP if URL starts with "http[s]" or "ftp" and use_external_bins=0.
     } elsif (!$config{use_external_bins} && $url =~ /^(?:https*|ftp)/) {
-        print STDERR "Downloading file from $url... "
+        print STDERR "Downloading file from $obfuscated_url... "
           unless ($config{quiet});
 
         my $ua = LWP::UserAgent->new();
