@@ -1015,6 +1015,7 @@ sub process_rules($ $ $ $ $ $)
         disabled => 0,
         enabled  => 0,
         modified => 0,
+        total    => 0,
     );
 
     warn("WARNING: all rules that are disabled by default will be enabled\n")
@@ -1050,10 +1051,14 @@ sub process_rules($ $ $ $ $ $)
                 multi  => $multi,
             );
 
-          # modify/disable/enable this rule as requested. Possible verbose
-          # messages and warnings will be printed.
-            process_rule($modify_sid_ref, $disable_sid_ref, $enable_sid_ref,
-                         \%rule, $sid, \%stats, 1, basename($file));
+          # modify/disable/enable this rule as requested unless there is a matching
+          # localsid statement. Possible verbose messages and warnings will be printed.
+            unless (exists($$local_sid_ref{$sid})) {
+                process_rule($modify_sid_ref, $disable_sid_ref, $enable_sid_ref,
+                             \%rule, $sid, \%stats, 1, basename($file));
+            }
+
+            $stats{total}++;
 
             $single = $rule{single};
             $multi  = $rule{multi};
@@ -1249,8 +1254,6 @@ sub process_rule($ $ $ $ $ $ $ $)
   # Just for easier access.
     my $single = $$rule_ref{single};
     my $multi  = $$rule_ref{multi};
-
-    $$stats_ref{total}++;
 
   # Some rules may be commented out by default.
   # Enable them if -e is specified (both single-line and multi-line,
