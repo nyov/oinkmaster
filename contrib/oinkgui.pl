@@ -36,7 +36,7 @@ sub execute_oinkmaster(@);
 sub logmsg($ $);
 
 
-my $version = 'Oinkmaster GUI v0.1';
+my $version = 'Oinkmaster GUI v1.0';
 
 my @oinkmaster_conf = qw(
     ./oinkmaster.conf
@@ -72,7 +72,7 @@ my %color = (
 );
 
 my %config = (
-    animate          => 0,
+    animate          => 1,
     careful          => 0,
     enable_all       => 0,
     check_removed    => 0,
@@ -849,8 +849,18 @@ sub show_help()
 sub execute_oinkmaster(@)
 {
     my @cmd = @_;
+    my @obfuscated_cmd;
 
-    logmsg("@cmd:\n", 'EXEC');
+  # Obfuscate possible password in url.
+    foreach my $line (@cmd) {
+        if ($line =~ /^(\S+:\/\/.+?):.+?@(.+)/) {
+            push(@obfuscated_cmd, "$1:*password*\@$2");
+        } else {
+            push(@obfuscated_cmd, $line);
+        }
+    }
+
+    logmsg("@obfuscated_cmd:\n", 'EXEC');
 
     $main->Busy(-recurse => 1);
 
