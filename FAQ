@@ -31,6 +31,7 @@ Q15: When starting Oinkmaster it says my Perl version is too old, or
      gives me errors about "too many arguments for open".
 Q16: If I make a modification directly in a rules file that is updated by
      Oinkmaster, will that change be permanent?
+Q17: Should I run Oinkmaster as root?
 
 
 
@@ -391,3 +392,15 @@ A16: No! Permanent modifications in files that are updated by Oinkmaster
      makesidex.pl /etc/snort/rules >autodisable.conf 2>/dev/null && \
      oinkmaster.pl -C /etc/oinkmaster.conf -C autodisable.conf \
      -o /etc/snort/rules
+
+
+
+Q17: Should I run Oinkmaster as root?
+
+A17: No! You must run Oinkmaster as a user that has read/write access to 
+     your rules directory and all rules files in it, but it should *NOT* 
+     be a privileged user such as root! Never run Oinkmaster as root.
+     Adding a new user to be used for running Oinkmaster is a good idea, 
+     just make sure it has read/write access to your rules.
+     (The user you run Snort as, if different than the Oinkmaster user, 
+     usually only needs read access to the rules.)
