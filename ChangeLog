@@ -1,6 +1,11 @@
 v0.8 - 200xxxxx
 ~~~~~~~~~~~~~~~
 o Experimental multi-line rule support.
+o Make contrib/addsid.pl and contrib/addmsg.pl handle multi-line rules as well.
+o Added create-sidmap.pl to contrib section. It's a script that generates 
+  a SID map from a directory with rules files. (Like snort's regen-sidmap,
+  but this one handles multi-line rules).
+o Added sample systrace policy to contrib section.
 o Temporary directory can now be specified in oinkmaster.conf.
 o deleted.rules is skipped in default oinkmaster.conf ("skipfile deleted.rules")
 o A bunch of Win32/Cygwin fixes, mostly from Ueli Kistler <iuk@gmx.ch>
