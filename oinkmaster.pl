@@ -69,12 +69,12 @@ my $start_date = scalar(localtime);
 # Parse command line arguments. Will exit if something is wrong.
 parse_cmdline();
 
+# Why would anyone want to run as root?
+die("Don't run as root!") if (!$>);
+
 # Create empty temporary directory. Die if we can't create unique filename.
 mkdir("$TMPDIR", 0700)
   or die("Could not create temporary directory $TMPDIR: $!\nExiting");
-
-# Why would anyone want to run as root?
-clean_exit("Don't run as root!") if (!$>);
 
 # Read in $config_file. Will exit if something is wrong.
 read_config($config_file, \%config);
@@ -233,7 +233,8 @@ sub read_config($ $)
     my $cfgref      = shift;
     my $linenum     = 0;
 
-    open(CONF, "<$config_file") or clea_nexit("Could not open $config_file: $!");
+    open(CONF, "<$config_file")
+      or clean_exit("Could not open config file \"$config_file\": $!");
 
     while (<CONF>) {
         $linenum++;
@@ -666,7 +667,7 @@ sub print_changes($ $)
   # Print rules changes.
     print "\n[*] Rules modifications: [*]\n";
 
-    foreach my $type (keys(%{$$ch_ref{rules}})) { # XXX sort the type?
+    foreach my $type (sort(keys(%{$$ch_ref{rules}}))) {
         print "\n  $type\n";
         foreach my $file (keys(%{$$ch_ref{rules}{"$type"}})) {
             print "\n     file -> $file\n";
