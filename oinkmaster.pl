@@ -5,7 +5,6 @@
 use strict;
 use Getopt::Std;
 use File::Copy;
-use POSIX qw(strftime);
 use Cwd;
 
 sub show_usage();
@@ -70,8 +69,12 @@ my $start_date = scalar(localtime);
 # Parse command line arguments. Will exit if something is wrong.
 parse_cmdline();
 
+# Create empty temporary directory. Die if we can't create unique filename.
+mkdir("$TMPDIR", 0700)
+  or die("Could not create temporary directory $TMPDIR: $!\nExiting");
+
 # Why would anyone want to run as root?
-die("Don't run as root!\nExiting") if (!$>);
+clean_exit("Don't run as root!") if (!$>);
 
 # Read in $config_file. Will exit if something is wrong.
 read_config($config_file, \%config);
@@ -79,10 +82,6 @@ read_config($config_file, \%config);
 # Do some basic sanity checking and exit if something fails.
 # A new PATH will be set.
 sanity_check();
-
-# Create empty temporary directory. Die if we can't create unique filename.
-mkdir("$TMPDIR", 0700)
-  or die("Could not create temporary directory $TMPDIR: $!\nExiting");
 
 # Download the rules archive.
 # This will leave us with the file $TMPDIR/$outfile (/tmp/oinkmaster.$$/snortrules.tar.gz).
@@ -155,6 +154,7 @@ if ($something_changed || !$quiet) {
     print_changes(\%changes, \%rh);
 }
 
+# Everything worked. Do a clean exit (without an error message).
 clean_exit("");
 
 # END OF MAIN #
@@ -163,7 +163,7 @@ clean_exit("");
 
 sub show_usage()
 {
-    print STDERR << "EOU";
+    print STDERR << "RTFM";
 
 $VERSION
 
@@ -189,7 +189,7 @@ Options:
 -v         Verbose mode
 -h         Show usage help
 
-EOU
+RTFM
     exit;
 }
 
@@ -207,7 +207,7 @@ sub parse_cmdline()
     $quiet             = 1  if (defined($opt_q));
     $check_removed     = 1  if (defined($opt_r));
     $verbose           = 1  if (defined($opt_v));
-    show_usage              if (defined($opt_h));
+    show_usage()            if (defined($opt_h));
     show_usage unless ($cmdline_ok);
 
     if (defined($opt_o)) {       # -o <dir>, the only required option.
@@ -216,7 +216,7 @@ sub parse_cmdline()
         show_usage();
     }
 
-  # Don't accept additional (invalid) arguments.
+  # Don't accept additional (i.e. invalid) arguments.
     $_ = shift(@ARGV) && show_usage();
 
   # Remove possible trailing slash (just for cosmetic reasons).
@@ -233,7 +233,7 @@ sub read_config($ $)
     my $cfgref      = shift;
     my $linenum     = 0;
 
-    open(CONF, "<$config_file") or die("Could not open $config_file: $!\nExiting");
+    open(CONF, "<$config_file") or clea_nexit("Could not open $config_file: $!");
 
     while (<CONF>) {
         $linenum++;
@@ -291,12 +291,12 @@ sub sanity_check()
    my @req_binaries = qw (which gzip rm tar);  # These binaries are always required.
 
   # Can't use both -q and -v.
-    die("Both quiet mode and verbose mode at the same time doesn't make sense.\nExiting")
+    clean_exit("Both quiet mode and verbose mode at the same time doesn't make sense.")
       if ($quiet && $verbose);
 
   # Make sure all required variables is defined in the config file.
     foreach $_ (@req_config) {
-        die("The required parameter \"$_\" is not defined in $config_file\nExiting")
+        clean_exit("The required parameter \"$_\" is not defined in $config_file")
           unless (exists($config{$_}));
     }
 
@@ -307,31 +307,31 @@ sub sanity_check()
   # Make sure all required binaries can be found.
   # (Wget is not required if user specifies file:// as url. That check is done below.)
     foreach $_ (@req_binaries) {
-        die("\"$_\" binary not found ".
+        clean_exit("\"$_\" binary not found ".
             "(perhaps you must edit $config_file and change 'path')\nExiting")
           if (system("which \"$_\" >/dev/null 2>&1"));
     }
 
   # Make sure $url is defined (either by -u <url> or url=... in the conf).
-    die("Incorrect URL or URL not specified in neither $config_file nor command line.\nExiting")
+    clean_exit("Incorrect URL or URL not specified in neither $config_file nor command line.")
       unless (exists($config{'url'}) && $config{'url'}
         =~ /^(?:http|ftp|file):\/\/\S+.*\.tar\.gz$/);
 
   # Wget must be found if url is http:// or ftp://.
-    die("\"wget\" binary not found ".
+    clean_exit("\"wget\" binary not found ".
         "(perhaps you must edit $config_file and change 'path')\nExiting")
           if ($config{'url'} =~ /^(http|ftp):/ && system("which \"wget\" >/dev/null 2>&1"));
 
   # Make sure the output directory exists and is readable.
-    die("The output directory \"$output_dir\" doesn't exist or isn't readable by you.\nExiting")
+    clean_exit("The output directory \"$output_dir\" doesn't exist or isn't readable by you.")
       if (!-d "$output_dir" || !-x "$output_dir");
 
   # Make sure the output directory is writable unless running in careful mode.
-   die("The output directory \"$output_dir\" isn't writable by you.\nExiting")
+   clean_exit("The output directory \"$output_dir\" isn't writable by you.")
       if (!$careful && !-w "$output_dir");
 
   # Make sure the backup directory exists and is writable, if running with -b.
-    die("The backup directory \"$backup_dir\" doesn't exist or isn't writable by you.\nExiting")
+    clean_exit("The backup directory \"$backup_dir\" doesn't exist or isn't writable by you.")
       if (defined($backup_dir) && (!-d "$backup_dir" || !-w "$backup_dir"));
 }
 
@@ -370,7 +370,7 @@ sub download_rules($ $)
 
   # Make sure the downloaded file is at least non-empty.
     unless (-s "$localfile") {
-        clean_exit("Error: failed to get rules archive: downloaded file $localfile".
+        clean_exit("Error: failed to get rules archive: file $localfile ".
                    "doesn't exist or hasn't non-zero size after download.");
     }
 }
@@ -458,7 +458,7 @@ sub disable_and_modify_rules($ $ @)
     print STDERR "Disabling rules according to $config_file... " unless ($quiet);
     print STDERR "\n" if ($verbose);
 
-    foreach my $file(@newfiles) {
+    foreach my $file (@newfiles) {
         open(INFILE, "<$file")
           or clean_exit("Error: could not open $file for reading: $!");
 	@_ = <INFILE>;
@@ -563,9 +563,9 @@ sub setup_rules_hash($ $ @)
 	    while (<OLDFILE>) {
                 if (/$SNORT_RULE_REGEXP/) {
 		    my $sid = $2;
-		    s/^\s*//;     # remove leading whitespaces
-		    s/\s*\n$/\n/; # remove trailing whitespaces
-		    s/^#+\s*/#/;  # make sure comment syntax is how we like it
+		    s/^\s*//;         # remove leading whitespaces
+		    s/\s*\n$/\n/;     # remove trailing whitespaces
+		    s/^#+\s*/#/;      # make sure comment syntax is how we like it
 		    warn("WARNING: duplicate SID in your local rules in file ".
                          "$file: SID $sid\n")
 	  	      if (exists($$rh_ref{old}{rules}{"$file"}{"$sid"}) && !$quiet);
@@ -667,7 +667,7 @@ sub print_changes($ $)
     print "\n[*] Rules modifications: [*]\n";
 
     foreach my $type (keys(%{$$ch_ref{rules}})) { # XXX sort the type?
-        print "\n*$type:\n";
+        print "\n  $type\n";
         foreach my $file (keys(%{$$ch_ref{rules}{"$type"}})) {
             print "\n     file -> $file\n";
             foreach my $sid (keys(%{$$ch_ref{rules}{"$type"}{"$file"}})) {
@@ -682,46 +682,50 @@ sub print_changes($ $)
 	    # print only the old one if the rule was removed.
 		} elsif ($type =~ /removed/i) {
 	            print "     $rh{old}{rules}{$file}{$sid}"
-	        } else {
-		    print "DEBUG: UNKNOWN TYPE: $type\n";
 		}
   	    }
         }
     }
-
     print "    None.\n" if (keys(%{$$ch_ref{rules}}) < 1);
 
 
+  # Print non-rule changes.
+    print "\n[*] Non-rule changes: [*]\n";
+
   # Print added non-rule lines.
-    print "\n[+] Added non-rule lines: [+]\n";
-    foreach my $file (keys(%{$$ch_ref{other}{added}})) {
-        print "    -> File \"$file\":\n";
-        foreach my $other (@{$$ch_ref{other}{added}{$file}}) {
-	    print "       $other";
+    if (keys(%{$$ch_ref{other}{added}}) > 0) {
+        print "\n  [+++]       Added lines:       [+++]\n\n";
+        foreach my $file (keys(%{$$ch_ref{other}{added}})) {
+            print "    -> File \"$file\":\n";
+            foreach my $other (@{$$ch_ref{other}{added}{$file}}) {
+	        print "       $other";
+            }
         }
     }
-    print "    None.\n" if (keys(%{$$ch_ref{other}{added}}) < 1);
-
 
   # Print removed non-rule lines.
-    print "\n[-] Removed non-rule lines: [-]\n";
-    foreach my $file (keys(%{$$ch_ref{other}{removed}})) {
-        print "    -> File \"$file\":\n";
-        foreach my $other (@{$$ch_ref{other}{removed}{$file}}) {
-	    print "       $other";
+    if (keys(%{$$ch_ref{other}{removed}}) > 0) {
+        print "\n  [---]      Removed lines:      [---]\n";
+        foreach my $file (keys(%{$$ch_ref{other}{removed}})) {
+            print "    -> File \"$file\":\n";
+            foreach my $other (@{$$ch_ref{other}{removed}{$file}}) {
+	        print "       $other";
+            }
         }
     }
-    print "    None.\n" if (keys(%{$$ch_ref{other}{removed}}) < 1);
+
+    print "    None.\n"
+      if (keys(%{$$ch_ref{other}{removed}}) < 1) && (keys(%{$$ch_ref{other}{added}}) < 1);
 
 
   # Print list of added files.
     if (keys(%{$$ch_ref{added_files}}) > 0) {
-        print "\n[+] Added files (consider updating your snort.conf to include them): [+]\n";
+        print "\n[*] Files added (consider updating your snort.conf to include them): [*]\n";
         foreach my $added_file (keys(%{$$ch_ref{added_files}})) {
             print "    -> $added_file\n";
         }
     } else {
-         print "\n[+] Added files: [+]\n" .
+         print "\n[*] Added files: [*]\n" .
                "    None.\n";
     }
 
@@ -729,12 +733,12 @@ sub print_changes($ $)
   # Print list of possibly removed files, if requested.
     if ($check_removed) {
         if (keys(%{$$ch_ref{removed_files}}) > 0) {
-            print "\n[-] Possibly removed files (consider removing them from your snort.conf): [-]\n";
+            print "\n[*] Files possibly removed from the archive (consider removing them from your snort.conf): [*]\n";
             foreach my $removed_file (keys(%{$$ch_ref{removed_files}})) {
                 print "    -> $removed_file\n";
 	    }
         } else {
-             print "\n[-] Removed files: [-]\n" .
+             print "\n[*] Files possibly removed from the archive: [*]\n" .
                    "    None.\n";
         }
     }
@@ -754,7 +758,7 @@ sub get_modified_files($ $)
 
     foreach my $file_w_path (keys(%$new_files_ref)) {
         my $file = $file_w_path;
-            $file =~ s/.*\///;                                       # remove path
+            $file =~ s/.*\///;    # remove path
 
       # Get files with rules changes.
         foreach my $type (keys(%{$changes{rules}})) {
@@ -822,28 +826,28 @@ sub get_changes($ $)
 
 		    unless ($new_rule eq $old_rule) {           # are they identical?
                         if ("#$old_rule" eq $new_rule) {                          # rule disabled?
- 	                    $changes{rules}{"    Disabled"}{$file}{$sid}++;
+ 	                    $changes{rules}{"[---]          Disabled:         [---]"}{$file}{$sid}++;
                         } elsif ($old_rule eq "#$new_rule") {                     # rule enabled?
- 	                    $changes{rules}{"    Enabled"}{$file}{$sid}++;
+ 	                    $changes{rules}{"[+++]          Enabled:          [+++]"}{$file}{$sid}++;
                         } elsif ($old_rule =~ /^\s*#/ && $new_rule !~ /^\s*#/) {  # rule enabled and modified?
- 	                    $changes{rules}{"    Enabled and modified"}{$file}{$sid}++;
+ 	                    $changes{rules}{"[+++]    Enabled and modified:   [+++]"}{$file}{$sid}++;
                         } elsif ($old_rule !~ /^\s*#/ && $new_rule =~ /^\s*#/) {  # rule disabled and modified?
- 	                    $changes{rules}{"    Disabled and modified"}{$file}{$sid}++;
+ 	                    $changes{rules}{"[---]    Disabled and modified:  [---]"}{$file}{$sid}++;
                         } elsif ($old_rule =~ /^\s*#/ && $new_rule =~ /^\s*#/) {  # inactive rule modified?
- 	                    $changes{rules}{"    Modified inactive"}{$file}{$sid}++;
+ 	                    $changes{rules}{"[///]      Modified inactive:    [///]"}{$file}{$sid}++;
                         } else {                                                  # active rule modified?
- 	                    $changes{rules}{"    Modified active"}{$file}{$sid}++;
+ 	                    $changes{rules}{"[///]       Modified active:     [///]"}{$file}{$sid}++;
 	  	        }
 		    }
 	        } else {    # sid not found in old file so it must have been added
-  	            $changes{rules}{"    Added"}{$file}{$sid}++;
+  	            $changes{rules}{"[+++]           Added:           [+++]"}{$file}{$sid}++;
 	        }
         } # foreach sid
 
       # Check for removed rules, i.e. sids that exist in the old file but not in the new one.
         foreach my $sid (keys(%{$rh{old}{rules}{$file}})) {
             unless (exists($rh{new}{rules}{$file}{$sid})) {
-	        $changes{rules}{"    Removed"}{$file}{$sid}++;
+	        $changes{rules}{"[---]          Removed:          [---]"}{$file}{$sid}++;
             }
         }
 
@@ -877,7 +881,7 @@ sub update_rules($ @)
 
     foreach my $file_w_path (@files) {
         my $file = $file_w_path;
-        $file =~ s/.*\///;                                      # remove path
+        $file =~ s/.*\///;    # remove path
         move("$file_w_path", "$output_dir/$file")
           or clean_exit("Error: could not move $file_w_path to $file: $!")
     }
@@ -890,13 +894,13 @@ sub update_rules($ @)
 # as an error message.
 sub clean_exit($)
 {
-    system("rm","-r","-f","$TMPDIR")
+    system("/bin/rm","-r","-f","$TMPDIR")
       and warn("WARNING: unable to remove temporary directory $TMPDIR.\n");
 
     if ($_[0] ne "") {
         $_ = $_[0];
 	chomp;
-        die("$_\nExiting...\n");
+        die("$_\nOink, oink. Exiting...\n");
     } else {
         exit(0);
     }
