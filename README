@@ -1,17 +1,9 @@
 # $Id$ #
 
-README for Oinkmaster v1.1
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Oinkmaster is written by Andreas Östling <andreaso@it.su.se>.
-Feedback is of course appreciated.
-
-Homepage:
-http://oinkmaster.sourceforge.net/
-
-
 Introduction
 ~~~~~~~~~~~~
+Oinkmaster is written by Andreas Östling <andreaso@it.su.se>.
+Homepage: http://oinkmaster.sourceforge.net/
 
 Oinkmaster is simple Perl script released under the BSD license that 
 helps you keep your Snort rules current with little or no user 

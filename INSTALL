@@ -1,7 +1,7 @@
 # $Id$ #
 
-Installation instructions for Oinkmaster v1.1
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Installation instructions for Oinkmaster
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 o Put oinkmaster.pl in some suitable directory, for example 
   /usr/local/bin/. Put oinkmaster.conf in /etc/ or /usr/local/etc/
