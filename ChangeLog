@@ -2,7 +2,7 @@ v0.8 - 200xxxxx
 ~~~~~~~~~~~~~~~
 o Temporary directory can now be specified in oinkmaster.conf.
 o deleted.rules is skipped in default config ("skipfile deleted.rules")
-o A bunch of win32/cygwin fixes from Ueli Kistler <iuk@gmx.ch>
+o A bunch of win32/cygwin fixes, mostly from Ueli Kistler <iuk@gmx.ch>
 
 
 
