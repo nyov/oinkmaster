@@ -562,7 +562,9 @@ sub disable_and_modify_rules($ $ @)
   	            print STDERR "Modifying SID $sid with expression: $mod\n" .
                                  "Before: $line"
 		      if ($verbose);
+
                     $line =~ s/\Q$sub\E/$repl/;
+
   	  	    print STDERR "  After: $line\n"
                       if ($verbose);
 		} else {
@@ -579,11 +581,6 @@ sub disable_and_modify_rules($ $ @)
                 $line = "#$line" unless ($line =~ /^\s*#/);
                 $num_disabled++;
 	    }
-
-	  # Make sure the rule ends with a \n.
-          # (User may have screwed up with a modifysid.)
-	    chomp($line);
-	    $line .= "\n";
 
           # Write rule back to the same rules file.
             print OUTFILE $line;
