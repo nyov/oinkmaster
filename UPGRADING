@@ -1,6 +1,13 @@
 # $Id$ #
 
 Usually just overwrite the old oinkmaster.pl file with the new one.
+Here are a few notes about issues in some specific versions:
+
+
+- When upgrading to v0.8 and you're using the 'modifysid' keyword in v0.7, 
+  you should know that the arguments to 'modifysid' are now regarded as 
+  regular expressions, which may (or may not) mean that you have to adjust 
+  your arguments to reflect this.
 
 
 - When upgrading to v0.7, you should know that oinkmaster.conf will now

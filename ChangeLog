@@ -5,6 +5,9 @@ o Make contrib/addsid.pl and contrib/addmsg.pl handle multi-line rules as well.
 o Added create-sidmap.pl to contrib section. It's a script that generates 
   a SID map from a directory with rules files. (Like snort's regen-sidmap,
   but this one handles multi-line rules).
+o The 'modifysid' keyword now regards the arguments as regular expressions.
+  So if you already use this function, you may have to adjust the arguments.
+  Based on a patch from operator@email.it.
 o Added sample systrace policy to contrib section.
 o The default temporary directory is now the 'tmp' environment variable if set,
   or otherwise "/tmp". You can also override this in oinkmaster.conf.
