@@ -23,13 +23,15 @@ Q8:  I want to copy the rules archive from a remote host to the sensor
 Q9:  How do I setup proxy configuration?
 Q10: Can Oinkmaster be used to update rules from www.whitehats.com?
 Q11: Will Oinkmaster fail when new keywords are introduced in the rules?
-Q12: Under what license are the official Snort rules reeased, and
+Q12: Under what license are the official Snort rules released, and
      can I modify them without violating it?
 Q13: Is there a GUI for Oinkmaster?
 Q14: Oinkmaster says the file in URL does not exist (or it exists but
      doesn't work with my Snort).
 Q15: When starting Oinkmaster it says my Perl version is too old, or 
      gives me errors about "too many arguments for open".
+Q16: If I make a modification directly in a rules file that is updated by
+     Oinkmaster, will that change be permanent?
 
 
 
@@ -320,11 +322,11 @@ Q14: Oinkmaster says the file in URL does not exist (or it exists but
 A14: Check the "url = ..." line in oinkmaster.conf (or argument to "-u" 
      if you specify it on command line). The URL you should use depends 
      on the version of Snort you run. This means that the default URL does
-     not work for everone! So, you must make sure you really use the one 
+     not work for everyone! So, you must make sure you really use the one 
      that is right for you. Visit http://www.snort.org/dl/rules/, read 
      the instructions there, and pick the right URL. As the official Snort 
      rules archives now have version information in the filenames, you 
-     must rememer to update the URL info for Oinkmaster when upgrading to 
+     must remember to update the URL info for Oinkmaster when upgrading to 
      a new major version of Snort. You can also make a tiny wrapper to 
      create the right URL string on the fly by using the output from 
      "snort -V". Keep in mind though that the Snort people can change the 
@@ -350,3 +352,33 @@ A15: Your Perl version needs to be upgraded to at least 5.6.1.
      5.005. There is a more recent Perl version in the ports tree though
      (lang/perl5.8 at the time of writing), so just install that one and 
      execute "/usr/local/bin/use.perl port" to globally enable it.
+
+
+
+Q16: If I make a modification directly in a rules file that is updated by
+     Oinkmaster, will that change be permanent?
+
+A16: No! Permanent modifications in files that are updated by Oinkmaster
+     must be done by editing oinkmaster.conf. If you edit a rules file
+     directly, the next time you run Oinkmaster it will see that the file 
+     is different than the downloaded one, and so your file becomes 
+     overwritten. (Remember that for simplicity, Oinkmaster works with 
+     whole files when updating, it does not try to merge changes by 
+     modifying individual entries.) There is no such thing as "if you edit 
+     a rule, it will be marked as locally customized and therefore 
+     not automatically updated". This may be different than some other 
+     rules updating tools, but it is the expected behavior as Oinkmaster 
+     was designed to work this way. 
+
+     Rules that need to be heavily customized are better kept in 
+     separate files that are not automatically updated (don't forget to 
+     disable the original rule though). For rules that you need to tweak 
+     by modifying them slightly, you can use the "modifysid" statement. 
+     Let's say you need to reverse $HOME_NET and $EXTERNAL_NET in a rule. 
+     You can use "modifysid" for this and still auto-update the rules 
+     file, as the modification will be applied after each download. This 
+     means that if the default version of this rule is later improved 
+     somehow in the new rules archive, you would automatically get the 
+     updated version while your customization, i.e. HOME_NET/EXTERNAL_NET 
+     switch in this case, would still apply (assuming your substitution 
+     expression still matches the new version of the rule, of course).
