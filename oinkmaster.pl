@@ -28,7 +28,7 @@ sub is_in_path($);
 sub clean_exit($);
 
 
-my $VERSION           = 'Oinkmaster v0.7 by Andreas Östling <andreaso@it.su.se>';
+my $VERSION           = 'Oinkmaster v0.8 by Andreas Östling <andreaso@it.su.se>';
 my $TMPDIR            = "/tmp/oinkmaster.$$";
 
 my $PRINT_NEW         = 1;
