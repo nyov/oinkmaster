@@ -819,7 +819,7 @@ sub print_changes($ $)
             print "    -> $added_file\n";
         }
     } else {
-        print "\n[+] Added files: [+]\n    None.\n"
+        print "\n[*] Added files: [*]\n    None.\n"
           unless ($super_quiet);
     }
 
@@ -833,7 +833,7 @@ sub print_changes($ $)
                 print "    -> $removed_file\n";
 	    }
         } else {
-             print "\n[-] Files possibly removed from the archive: [-]\n    None.\n"
+             print "\n[*] Files possibly removed from the archive: [*]\n    None.\n"
                unless ($super_quiet);
         }
     }
