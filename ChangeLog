@@ -7,6 +7,8 @@ o Slightly improved modifysid/template documentation and examples.
   it has a specific revision number, so you can disable a rule
   temporarily and automatically start using it again if it becomes
   updated. Thanks to Russell Fulton for this suggestion.
+o Suppress warnings about non-matching modifysid expressions when
+  running in super quiet mode (-Q).
 
 
 

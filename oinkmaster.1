@@ -95,7 +95,8 @@ rules or if there are errors or warnings.
 Run in super-quiet mode. This is the same as
 .B -q
 but even more quiet when printing the results (the "None." stuff is not 
-printed).
+printed). It will also suppress some other warning messages such as
+those for duplicate SIDs and non-matching modifysid expressions.
 .IP "\fB-r
 Check for rules files that exist in the output directory
 but not in the downloaded rules archive, i.e. files that may have been 

@@ -1275,9 +1275,11 @@ sub process_rule($ $ $ $ $ $ $)
 
             $$stats_ref{modified}++;
         } else {
-            print STDERR "WARNING: SID $sid does not match ".
-                         "modifysid expression \"$subst\", skipping\n"
-              if ($print_messages && !exists($$modify_sid_ref{'*'}));
+            if (!$config{super_quiet} && $print_messages && !exists($$modify_sid_ref{'*'})) {
+                print STDERR "WARNING: SID $sid does not match ".
+                             "modifysid expression \"$subst\", skipping.\n".
+                             "SID $sid: $single\n";
+            }
         }
     }
 
