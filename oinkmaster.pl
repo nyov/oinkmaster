@@ -343,8 +343,8 @@ sub download_rules($ $)
     my $url       = shift;
     my $localfile = shift;
 
-    if ($url =~ /^(?:http|ftp)/) {     # Use wget if URL starts with http:// or ftp://
-        print STDERR "Downloading rules archive from $url... "
+    if ($url =~ /^(?:http|ftp)/) {     # Use wget if URL starts with "http" or "ftp"
+        print STDERR "Downloading rules archive from $url...\n"
           unless ($quiet);
         if ($quiet) {
             clean_exit("Error: unable to download rules.\n".
@@ -365,6 +365,7 @@ sub download_rules($ $)
           unless ($quiet);
         copy("$url", "$localfile")
           or cleann_exit("Error: unable to copy $url to $localfile: $!");
+        print STDERR "done.\n" unless ($quiet);
     }
 
   # Make sure the downloaded file is at least non-empty.
@@ -372,8 +373,6 @@ sub download_rules($ $)
         clean_exit("Error: failed to get rules archive: downloaded file $localfile".
                    "doesn't exist or hasn't non-zero size after download.");
     }
-
-    print STDERR "done.\n" unless ($quiet);
 }
 
 
