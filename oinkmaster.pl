@@ -395,7 +395,7 @@ sub read_config
 	s/^\s*//;
 	s/\s*$//;
 
-        next unless (/\S/);              # skip blank lines
+        next unless (/\S/);   # skip blank lines
 
         if (/^disablesids*\s+(\d.*)/) {                            # disablesid
 	    $args = $1;
@@ -404,7 +404,7 @@ sub read_config
 		  unless (/^\d+$/);
                 $sid_disable_list{$_}++;
 	    }
-        } elsif (/^modifysid\s+(\d+)\s+(.*)/) {                    # modifysid
+        } elsif (/^modifysid\s+(\d+)\s+(.*)/i) {                   # modifysid
             push(@{$sid_modify_list{$1}}, $2);
         } elsif (/^skipfiles*\s+(.*)/) {                           # skipfile
 	    $args = $1;
@@ -612,10 +612,10 @@ sub disable_rules
 
           # Modify rule, if requested.
             foreach $_ (@{$sid_modify_list{$sid}}) {
-	        print STDERR "Modifying sid $sid with expression: $_\n  Before: $line"
+	        print STDERR "Modifying sid $sid with expression: $_\n  Before:$line"
 		  if ($verbose);
 		eval "\$line =~ $_";
-		print STDERR "  After:  $line\n"
+		print STDERR "  After:$line\n"
                   if ($verbose);
 	    }
 
