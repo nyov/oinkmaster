@@ -73,7 +73,7 @@ while (my $file = readdir(RULESDIR)) {
 
 # Print new oinkmaster.conf.
 while ($_ = shift(@config)) {
-    if (/^\s*disablesids*\s+(\d+)\s*$/) {
+    if (/^\s*(?:disable|enable)sids*\s+(\d+)\s*$/) {
 	my $sid = $1;
 	chomp;
 	s/ +/ /g;	
