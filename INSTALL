@@ -3,8 +3,9 @@
 Installation instructions for Oinkmaster v0.7
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-o Put oinkmaster.pl and oinkmaster.conf in some suitable directory/directories.
-  It doesn't really matter where.
+o Put oinkmaster.pl in some suitable directory, for example /usr/local/bin/
+  Put oinkmaster.conf in /usr/local/etc/ (this is where oinkmaster will search
+  for it by default).
 
 o Edit the file oinkmaster.conf. There are some options you may want to
   change before even starting. Here you will then also tell Oinkmaster which
