@@ -65,10 +65,14 @@
     disablesid 288             # POP3 EXPLOIT x86 linux overflow
 
   addmsg.pl will not touch lines that already has a comment in them.
-  It's not able to handle disablesid lists (i.e "disablesid 1,2,3,4,5,...").
+  It's not able to handle disablesid lists (e.g. "disablesid 1,2,3,4,5,...").
 
-  New config file will be printed to standard output, so you
+  The new config file will be printed to standard output, so you
   probably want to redirect the output to a file, for example:
+
   ./addmsg.pl oinkmaster.conf rules/ > oinkmaster.conf.new
+
   If oinkmaster.conf.new looks ok, simply rename it to oinkmaster.conf.
+  Do NOT redirect to the same file you read from, as this will destroy 
+  that file.
 -------------------------------------------------------------------------------
