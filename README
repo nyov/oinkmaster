@@ -42,12 +42,12 @@ rules.
 
 Requirements
 ~~~~~~~~~~~~
-It should work on most UNIX/Linux systems that have Perl, tar, gzip and wget
+It should work on most UNIX-like systems that have Perl, tar, gzip and wget
 (ftp://ftp.gnu.org/gnu/wget/) installed.
 So far it has been successfully tested on OpenBSD, FreeBSD, NetBSD, Linux,
-Solaris and also under Cygwin on Windows XP.
+AIX, Solaris and also under Cygwin on Windows XP.
 Let me know if you manage to run it on an unlisted platform.
-I'm NOT responsible for what it does to your Snort machine.
+
 Again, use it at your own risk!
 
 
