@@ -60,7 +60,7 @@ my $update_vars       = 0;
 my $config_test_mode  = 0;
 my $interactive       = 0;
 my $enable_all        = 0;
-my $use_external_bins = 0;
+my $use_external_bins = 1;
 
 
 # Regexp to match the start of a multi-line rule.
@@ -86,7 +86,7 @@ my @default_config_files = qw(
     /usr/local/etc/oinkmaster.conf
 );
 
-my (%config, %loaded, $tmpdir, @config_files);
+my (%config, %loaded, $tmpdir);
 
 
 
@@ -110,23 +110,23 @@ $use_external_bins = 0 if ($^O eq "MSWin32" || $^O =~ /^Windows/);
 parse_cmdline(\%config);
 
 # If no config was specified on command line, look for one in default locations.
-if ($#config_files == -1) {
+if ($#{$config{config_files}} == -1) {
     foreach my $config (@default_config_files) {
         if (-e "$config") {
-            push(@config_files, $config);
+            push(@{${config{config_files}}}, $config);
             last;
         }
     }
 }
 
 # If config is still not defined, we can't continue.
-if ($#config_files == -1) {
+if ($#{$config{config_files}} == -1) {
     clean_exit("configuration file not found in default locations\n".
                "(@default_config_files)\n".
                "Put it there or use the \"-C\" argument.");
 }
 
-read_config($_, \%config) for @config_files;
+read_config($_, \%config) for @{$config{config_files}};
 
 # If we're told not to use external binaries, load the required modules.
 unless ($use_external_bins) {
@@ -303,7 +303,7 @@ sub parse_cmdline($)
     my $cmdline_ok = GetOptions(
         "b=s" => \$$cfg_ref{backup_dir},
         "c"   => \$careful,
-        "C=s" => \@config_files,
+        "C=s" => \@{$$cfg_ref{config_files}},
         "e"   => \$enable_all,
         "h"   => \&show_usage,
         "i"   => \$interactive,
