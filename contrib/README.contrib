@@ -14,7 +14,7 @@
 * addmsg.pl by Andreas Östling <andreaso@it.su.se>:
 
   A script that will parse your oinkmaster.conf for "disablesid" lines and
-  add to them their SID message. 
+  add to them their SID message as a #comment.
   If your oinkmaster.conf looks like this before addmsg.pl has been run:
 
     disablesid 286
@@ -32,7 +32,7 @@
 
   Usage: ./addmsg.pl <oinkmaster config file> <rules directory>
 
-  New config file will be printed to standard output so you
+  New config file will be printed to standard output, so you
   probably want to redirect the output to a file, for example:
   ./addmsg.pl oinkmaster.conf rules/ > oinkmaster.conf.new
   If oinkmaster.conf.new looks ok, simply rename it to oinkmaster.conf.
