@@ -9,11 +9,11 @@ sub get_next_entry($ $ $ $);
 
 # Regexp to match a snort rule line.
 # We only care about active rules.
-my $SINGLELINE_RULE_REGEXP = '^\s*(?:alert|log|pass)\s.+msg\s*:\s*"(.+?)'.
-                             '"\s*;.*sid\s*:\s*(\d+)\s*;.*\)\s*$'; # ';
+my $SINGLELINE_RULE_REGEXP = '^\s*(?:alert|drop|log|pass|reject|sdrop)\s.+msg\s*:\s*"'.
+                             '(.+?)"\s*;.*sid\s*:\s*(\d+)\s*;.*\)\s*$'; # ';
 
 # Regexp to match the start (the first line) of a possible multi-line rule.
-my $MULTILINE_RULE_REGEXP = '^\s*#*\s*(?:alert|log|pass)\s.*\\\\\s*\n$'; # ';
+my $MULTILINE_RULE_REGEXP  = '^\s*(?:alert|drop|log|pass|reject|sdrop)\s.*\\\\\s*\n$'; # ';
 
 
 
