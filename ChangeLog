@@ -15,6 +15,7 @@ o Added makesidex.pl by Jerry Applebaum <JApplebaum@APTEGRITY.com>
 o Added addmsg.pl (by myself) to contrib section.
   It's a script that will parse your oinkmaster.conf for "disablesid" lines
   and add to them their SID message.
+o Fixed bug related to deleted rules printout.
 o A few minor cleanups.
 
 
