@@ -19,7 +19,7 @@ my $USAGE = "usage: $0 <rulesdir> [rulesdir2, ...]\n";
 
 my $verbose  = 1;
 
-my (%sidmap, %allsids);
+my %sidmap;
 
 my @rulesdirs = @ARGV;
 
