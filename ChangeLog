@@ -12,8 +12,8 @@ o Suppress warnings about non-matching modifysid expressions when
 o As requested by a few poeple, permit filename as argument to
   modifysid (and use_template) to apply a substitution expression on all
   rules in the specified files(s).
-o The FAQ has been updated with Q23 on how to update the rules from 
-  multiple sources and how to handle the sid-msg.map file.
+o Many updates to the FAQ, especially regarding how to update rules 
+  from multiple sources.
 o Process modifysid/use_template statements of all types in the exact
   order as specified in the config file. Previously, all the wildcards
   were processed last.
