@@ -262,7 +262,7 @@ sub read_config($ $)
   	        if (/^\d+$/) {
                     $$cfgref{sid_disable_list}{$_}++;
 	        } else {
-                    warn("WARNING: line $linenum in $config_file is invalid, ignoring\n")
+                    warn("WARNING: line $linenum in $config_file is invalid, ignoring\n");
 	        }
 	    }
         } elsif (/^modifysid\s+(\d+)\s+(.*)/i) {         # modifysid <SID> <regexp>
@@ -274,7 +274,7 @@ sub read_config($ $)
                     $verbose && print STDERR "Adding file to ignore list: $_.\n";
                     $$cfgref{file_ignore_list}{$_}++;
 		} else {
-                    warn("WARNING: line $linenum in $config_file is invalid, ignoring\n")
+                    warn("WARNING: line $linenum in $config_file is invalid, ignoring\n");
 		}
 	    }
 	} elsif (/^url\s*=\s*(.*)/i) {                   # URL to use
@@ -285,10 +285,10 @@ sub read_config($ $)
 	} elsif (/^update_files\s*=\s*(.*)/i) {          # regexp of files to be updated
 	    $$cfgref{update_files} = $1;
         } else {                                         # invalid line
-            warn("WARNING: line $linenum in $config_file is invalid, ignoring\n")
+            warn("WARNING: line $linenum in $config_file is invalid, ignoring\n");
         }
     }
-    close(CONF)
+    close(CONF);
 }
 
 
