@@ -548,7 +548,8 @@ sub disable_and_modify_rules($ $ $)
 		} else {
 		    print STDERR "Enabling disabled rule (SID $sid): $msg\n"
 		      if ($verbose);
-		    $multi =~ s/^#*//; # XXX remove comments from all lines
+                    $multi =~ s/^#*//;
+                    $multi =~ s/\n#*/\n/g;   # XXX verify
 		}
 	    }
 
