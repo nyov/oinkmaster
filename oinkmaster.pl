@@ -558,12 +558,12 @@ sub download_rules($ $)
 sub unpack_rules_archive($)
 {
     my $archive  = shift;
-    my $ok_lead  = 'a-zA-Z\d_\.';       # allowed leading char in filenames
-    my $ok_chars = 'a-zA-Z\d_~\.\-/';   # allowed chars in filenames
+    my $OK_LEAD  = 'a-zA-Z\d_\.';           # allowed leading char in filenames
+    my $OK_CHARS = 'a-zA-Z\d\ _\.\-+:\/~';  # allowed chars in filenames
 
     my $old_dir = getcwd or clean_exit("could not get current directory: $!");
     $old_dir = untaint_path($old_dir);
-    
+
     my $dir = dirname($archive);
     chdir("$dir") or clean_exit("could not change directory to \"$dir\": $!");
 
@@ -597,14 +597,14 @@ sub unpack_rules_archive($)
        chomp($filename);
 
       # Make sure the leading char is valid (not an absolute path, for example).
-        clean_exit("forbidden leading character in filename in tar archive. ".
+        clean_exit("illegal leading character in filename in tar archive. ".
                    "Offending file/line:\n$filename")
-          unless ($filename =~ /^[$ok_lead]/);
+          unless ($filename =~ /^[$OK_LEAD]/);
 
       # We don't want to have any weird characters anywhere in the filename.
-        clean_exit("forbidden characters in filename in tar archive. ".
+        clean_exit("illegal characters in filename in tar archive. ".
                    "Offending file/line:\n$filename")
-          if ($filename =~ /[^$ok_chars]/);
+          if ($filename =~ /[^$OK_CHARS]/);
 
       # We don't want to unpack any "../../" junk.
         clean_exit("filename in tar archive contains \"..\".\n".
@@ -1533,16 +1533,16 @@ sub parse_mod_expr($ $ $ $)
 
 
 # Untaint a path. Die if it contains illegal chars.
-# Just return the argument untouched if we aren't in tainted mode.
+# Just return the argument untouched if tainting checks are disabled.
 sub untaint_path($)
 {
     my $path          = shift;
     my $orig_path     = $path;
-    my $OK_PATH_CHARS = 'a-zA-Z\d\ _\.\-+:\\\/~';
+    my $OK_PATH_CHARS = 'a-zA-Z\d\ _\.\-+:\\\/~@,=';
 
     if ($taint_mode) {
         (($path) = $path =~ /^([$OK_PATH_CHARS]+)$/)
-          or clean_exit("illegal characterss in path/filename \"$orig_path\", allowed are $OK_PATH_CHARS");
+          or clean_exit("illegal characterss in path/filename \"$orig_path\", allowed are $OK_PATH_CHARS\n");
     }
 
     return ($path);

@@ -9,7 +9,8 @@ o The 'modifysid' keyword now regards the arguments as regular expressions.
   So if you already use this function, you may have to adjust the arguments.
   Based on a patch from operator@email.it.
 o Added sample systrace policy to contrib section.
-o You can now start Perl with tainting checks enabled you like.
+o You can now start Perl with tainting checks enabled if you like
+  (not done by default yet).
 o The default temporary directory will be checked for in the environment
   variables TMP, TMPDIR and TEMPDIR. "/tmp" will be used if none was set.
   You can override this by setting tmpdir in oinkmaster.conf.
@@ -21,7 +22,7 @@ o Better check for duplicate SIDs. Check is done across all files now, and
   duplicate SIDs in downloaded archive are discarded (only first one is 
   kept) and not copied to the local files. This will avoid some annoying 
   warning messages about duplicates in the local files that won't go away 
-  until the files gets updated again.
+  until the files gets updated again. Pointed out by elof@sentor.se.
 o Slightly modified format when printing results 
   (hopefully easier to read when there are a large number of changes).
 o New options in oinkmaster.conf: min_files and min_rules.
