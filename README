@@ -46,12 +46,16 @@ rules.
 
 Requirements
 ~~~~~~~~~~~~
-It should work on most UNIX-like systems containing Perl 5, tar, gzip and 
-wget (ftp://ftp.gnu.org/gnu/wget/).
+It should work on most UNIX-like systems with a recent version of Perl 5.
+You also need either tar, gzip and wget, or the Perl modules
+Archive::Tar, IO::Zlib and LWP::UserAgent. (See oinkmaster.conf for more
+information about this.)
+
 So far it has been successfully tested on OpenBSD, FreeBSD, NetBSD, Linux,
 AIX, Solaris and Mac OS X. You can also run it under Windows with
 either Cygwin or ActivePerl (see README.win32 for more information about 
-that). Let me know if you manage to run it on an unlisted platform.
+that). Let me know if you do or don't manage to run it on an unlisted 
+platform.
 
 Again, use it at your own risk!
 
