@@ -75,6 +75,9 @@ Q26: How do I keep my sid-msg.map up-to-date?
 Q27: How to I make Snort reload the new rules without stopping the current 
      Snort process?
 
+Q28: Sourcefire changed the license of the rules in March 2005, how do I 
+     handle this in Oinkmaster?
+
 
 --------------
 
@@ -84,19 +87,9 @@ Q1:  Oinkmaster says the file in URL does not exist (or it exists but
 
 A1:  Check the "url = ..." line in oinkmaster.conf (or argument to "-u" 
      if you specify it on command line). The URL you should use depends 
-     on the version of Snort you run. This means that the default URL does
-     not work for everyone! So, you must make sure you really use the one 
-     that is right for you. Visit http://www.snort.org/dl/rules/, read 
-     the instructions there, and pick the right URL. As the official Snort 
-     rules archives now have version information in the filenames, you 
-     must remember to update the URL info for Oinkmaster when upgrading to 
-     a new major version of Snort. You can also make a tiny wrapper to 
-     create the right URL string on the fly by using the output from 
-     "snort -V". Keep in mind though that the Snort people can change the 
-     download layout again at any time, so if you experience problems, go 
-     to the Snort web site and see if anything is mentioned there.
+     on the version of Snort you run. See Q28 for more information.
 
-     If you are absolutely sure you're using the right rules for your
+     If you are absolutely sure you are using the right rules for your
      version of Snort but still have problems, you may need to read the
      Snort manual because it is likely that your local configuration is
      broken. For example, the new rules maybe contains new variables that
@@ -643,7 +636,7 @@ A23: The best way is to simply run Oinkmaster once for each URL and with
      you must make sure that your SID message map file (sid-msg.map) is 
      up-to-date and contains entries from all those sources, including 
      your local rules if any. This procedure is described elsewhere in 
-    this FAQ.
+     this FAQ.
 
 
 
@@ -695,14 +688,15 @@ A25: It happens when you run Barnyard with a sid-msg.map file that is not
 
 Q26: How do I keep my sid-msg.map up-to-date?
 
-A26: When using Barnyard, it's important that the sid-msg.map file is 
-     always up-to-date, or you will end up with alerts like "Snort Alert 
-     [1:123456:0]" instead of getting the rule's real msg string. There 
-     are several ways to do this.
+A26: When using Barnyard and the like, it's important that the 
+     sid-msg.map file is always up-to-date, or you will end up with 
+     alerts like "Snort Alert [1:123456:0]" instead of getting the 
+     rule's real msg string. There are several ways to do this.
 
-     One way is to assume that an updated sid map file is included in each 
-     rules archive and to update those along with the rules, and then 
-     merge them into a new file which you then feed to Barnyard/whatever.
+     One way is to assume that an updated sid map file is included in 
+     each rules archive and to update those along with the rules, and 
+     then merge them into a new file which you then feed to 
+     Barnyard/whatever.
 
      Another way (which I think is much better) is to ignore the SID map 
      files in all the rules archives and instead generate it yourself 
@@ -739,7 +733,7 @@ A26: When using Barnyard, it's important that the sid-msg.map file is
 Q27: How to I make Snort reload the new rules without stopping the current 
      Snort process?
 
-A28: This is not really an Oinkmaster question so you may want to check 
+A27: This is not really an Oinkmaster question so you may want to check 
      the Snort documentation for the most current information. 
      Basically, the answer to the question is that you can't do it. You'll 
      have to restart the Snort process to reload the rules. If you don't 
@@ -750,3 +744,53 @@ A28: This is not really an Oinkmaster question so you may want to check
      that's not true as that will simply make Snort stop and restart 
      itself. Also, this requires that you run Snort as root and 
      non-chrooted. Don't do that.
+
+
+
+Q28: Sourcefire changed the license of the rules in March 2005, how do 
+     I handle this in Oinkmaster?
+
+A28: First of all, note that the Oinkmaster author has nothing do do 
+     with the new rules license. If you have any questions or comments 
+     regarding this, please contact Sourcefire, not me.
+     More information can be found at http://www.snort.org/rules/.
+
+     There are currently two different types of public rules tarballs 
+     on http://www.snort.org/. The Sourcefire VRT Certified Rules, 
+     which you must register to get access to (it's free), and the 
+     Community Rules, released under GPL. The good news is that you 
+     can update both of them using Oinkmaster. 
+
+     - How to update the Sourcefire VRT Certified Rules:
+     1) Go to http://www.snort.org/ and register.
+        You will receive a password in your mail shortly after.
+     2) Go to the Snort site and login, and choose to edit your user 
+        profile.
+     3) You will find the most current instructions under
+        "Oinkmaster Download Codes" on that page. Basically add the IP
+        address of the host(s) you're going to run Oinkmaster on (or 
+        more correctly, the IP address(es) that will be used to poll 
+        the Snort site). This will generate a code looking 
+        something like "5a081649c06a277e1022e1284bdc8fabda70e2a4".
+        Then construct the url like this:
+        http://www.snort.org/pub-bin/oinkmaster.cgi/<oinkcode>/<filename>
+        The filename depends on which version of Snort you use, so you must
+        remember to always use the right one, as usual.
+        If you use Snort 2.3, the url would look like this (without wrap):
+        http://www.snort.org/pub-bin/oinkmaster.cgi/5a081649c06a277e1022e1284b
+        dc8fabda70e2a4/snortrules-snapshot-2.3.tar.gz
+        You can add this url as "url = ..." to your oinkmaster.conf, or 
+        specify it with -u ... on the command line.
+
+     - How to update the Community Rules:
+       No registration is required, so just point to the right url
+       (currently http://www.snort.org/pub-bin/downloads.cgi/
+       Download/comm_rules/Community-Rules.tar.gz).
+
+     Note that when updating from multiple sources, e.g. both the 
+     Sourcefire VRT Certified Rules and the Community Rules, and you 
+     use a program such as Barnyard that requires a sid-msg.map file, 
+     you must handle this somehow. More information about this can be 
+     found elsewhere in this FAQ. As of Oinkmaster v1.2, you can 
+     specify multiple URLs to grab multiple rules archives at the same 
+     time.
