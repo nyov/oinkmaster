@@ -1130,13 +1130,13 @@ sub get_changes($ $)
 sub get_new_filenames($ $)
 {
     my $new_files_ref = shift;
-    my $rules_dir     = shift;
+    my $new_rules_dir = shift;
 
-    opendir(NEWRULES, "$rules_dir")
-      or clean_exit("could not open directory $rules_dir: $!");
+    opendir(NEWRULES, "$new_rules_dir")
+      or clean_exit("could not open directory $new_rules_dir: $!");
 
     while ($_ = readdir(NEWRULES)) {
-        $new_files{"$rules_dir/$_"}++
+        $new_files{"$new_rules_dir/$_"}++
           if (/$config{update_files}/ && !exists($config{file_ignore_list}{$_}));
     }
     closedir(NEWRULES);
@@ -1339,7 +1339,7 @@ get_new_vars($ $ $)
     my @local_conf = <LOCAL_CONF>;
 
     foreach $_ (@local_conf) {
-        $old_vars{$1}++
+        $old_vars{lc($1)}++
           if (/$var_regexp/i);
     }
 
@@ -1352,7 +1352,7 @@ get_new_vars($ $ $)
 
     while ($_ = <DIST_CONF>) {
         push(@new_vars, $_)
-          if (/$var_regexp/i && !exists($old_vars{$1}));
+          if (/$var_regexp/i && !exists($old_vars{lc($1)}));
     }
 
     close(DIST_CONF);
@@ -1404,7 +1404,7 @@ add_new_vars($ $)
 # Convert msdos style path to cygwin style.
 sub msdos_to_cygwin_path($)
 {
-    my $path_ref  = shift;
+    my $path_ref = shift;
 
     if ($$path_ref =~ /^([a-zA-Z]):[\/\\](.*)/) {
         my ($drive, $dir) = ($1, $2);
