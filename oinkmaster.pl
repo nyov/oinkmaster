@@ -5,9 +5,10 @@
 use strict;
 use File::Basename;
 use File::Copy;
-use File::Spec;
 use File::Path;
+use File::Spec;
 use Getopt::Long;
+use File::Temp qw(tempdir);
 
 sub show_usage();
 sub parse_cmdline($);
@@ -26,7 +27,6 @@ sub get_new_filenames($ $);
 sub update_rules($ @);
 sub is_in_path($);
 sub get_next_entry($ $ $ $ $ $);
-sub make_tempdir($);
 sub get_new_vars($ $ $);
 sub add_new_vars($ $);
 sub write_new_vars($ $);
@@ -61,9 +61,13 @@ my $interactive       = 0;
 my $enable_all        = 0;
 
 
-# Regexp to match the start (the first line) of a possible multi-line rule.
+# Regexp to match the start of a multi-line rule.
 my $MULTILINE_RULE_REGEXP  = '^\s*#*\s*(?:alert|drop|log|pass|reject|sdrop)'.
                              '\s.*\\\\\s*\n$'; # ';
+
+# Regexp to match a single-line rule.
+my $SINGLELINE_RULE_REGEXP = '^\s*#*\s*(?:alert|drop|log|pass|reject|sdrop)'.
+                             '\s.+;\s*\)\s*$';
 
 # Match var line where var name goes into $1.
 my $VAR_REGEXP = '^\s*var\s+(\S+)\s+\S+';
@@ -127,7 +131,8 @@ if ($config_test_mode) {
     clean_exit("");
 }
 
-$tmpdir = make_tempdir($tmp_basedir);
+$tmpdir = tempdir("oinkmaster.XXXXXXXXXX", DIR => $tmp_basedir)
+  or clean_exit("could not create temporary directory: $!");
 
 umask($config{umask}) if exists($config{umask});
 
@@ -234,9 +239,9 @@ sub show_usage()
 
 $VERSION
 
-Usage: $progname -o <output dir> [options]
+Usage: $progname -o <outdir> [options]
 
-<output dir> is where to put the new files.
+<outdir> is where to put the new files.
 This should be the directory where you store the snort rules.
 
 Options:
@@ -650,14 +655,14 @@ sub unpack_rules_archive($)
                "file in URL not in gzip format?).")
       unless (-e  "$archive");
 
-  # Read output from "tar tf $archive" into @tar_test, unless we're on Windows.
+  # Read output from "tar tfP $archive" into @tar_test, unless we're on Windows.
     my @tar_test;
 
     unless ($^O eq "MSWin32" || $^O =~ /^Windows/) {
         if (open(TAR,"-|")) {
             @tar_test = <TAR>;
         } else {
-            exec("tar","tf","$archive");
+            exec("tar","tfP","$archive");
         }
         close(TAR);
     }
@@ -666,6 +671,11 @@ sub unpack_rules_archive($)
   # sanity checks.
     foreach my $filename (@tar_test) {
        chomp($filename);
+
+      # We don't want absolute filename.
+        clean_exit("archive contains absolute filenames. ".
+                   "Offending file/line:\n$filename")
+          if ($filename =~ /^\//);
 
       # We don't want to have any weird characters anywhere in the filename.
         clean_exit("illegal characters in filename in tar archive. ".
@@ -677,6 +687,7 @@ sub unpack_rules_archive($)
                    "Offending file/line:\n$filename")
           if ($filename =~ /\.\./);
     }
+
 
   # Looks good. Now we can untar it.
     print STDERR "Archive successfully downloaded, unpacking... "
@@ -1445,22 +1456,6 @@ sub get_next_entry($ $ $ $ $ $)
 
 
 
-# Create empty temporary directory inside the directory given as argument.
-# Will die if we can't create it.
-# If successful, the name of the created directory is returned.
-sub make_tempdir($)
-{
-    my $base   = shift;
-    my $tmpdir = "$base/oinkmaster.$$";
-
-    mkdir("$tmpdir", 0700)
-      or clean_exit("could not create temporary directory $tmpdir: $!");
-
-    return ($tmpdir);
-}
-
-
-
 # Look for variables that exist in dist snort.conf but not in local snort.conf.
 sub get_new_vars($ $ $)
 {
@@ -1639,7 +1634,7 @@ sub parse_singleline_rule($ $ $)
     my $msg_ref = shift;
     my $sid_ref = shift;
 
-    if ($line =~ /^\s*#*\s*(?:alert|drop|log|pass|reject|sdrop)\s.+;\s*\)\s*$/oi) {
+    if ($line =~ /$SINGLELINE_RULE_REGEXP/oi) {
 
         if ($line =~ /msg\s*:\s*"(.+?)"\s*;/oi) {
             $$msg_ref = $1;
