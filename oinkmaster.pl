@@ -17,7 +17,7 @@ sub sanity_check();
 sub download_rules($ $);
 sub unpack_rules_archive($);
 sub process_rules($ $ $ $);
-sub setup_rules_hash($);
+sub setup_rules_hash($ $);
 sub get_first_only($ $ $);
 sub print_changes($ $);
 sub print_changetype($ $ $ $);
@@ -190,7 +190,7 @@ clean_exit("not enough rules in downloaded archive (is it broken?)\n".
   if ($num_rules < $config{min_rules});
 
 # Setup rules hash.
-my %rh = setup_rules_hash(\%new_files);
+my %rh = setup_rules_hash(\%new_files, $config{output_dir});
 
 # Compare the new rules to the old ones.
 my %changes = get_changes(\%rh, \%new_files);
@@ -320,9 +320,9 @@ sub parse_cmdline($)
         "u=s" => \$$cfg_ref{url},
         "U=s" => \$$cfg_ref{varfile},
         "v"   => \$$cfg_ref{verbose},
-        "V"   => sub { 
+        "V"   => sub {
                      print "$VERSION\n";
-                     exit(0)
+                     exit(0);
                  }
     );
 
@@ -958,9 +958,11 @@ sub process_rules($ $ $ $)
 # Format for rules will be:     rh{old|new}{rules{filename}{sid} = rule
 # Format for non-rules will be: rh{old|new}{other}{filename}     = array of lines
 # List of added files will be stored as rh{added_files}{filename}
-sub setup_rules_hash($)
+sub setup_rules_hash($ $)
 {
     my $new_files_ref = shift;
+    my $output_dir    = shift;
+
     my (%rh, %old_sids);
 
     print STDERR "Setting up rules structures... "
@@ -990,9 +992,9 @@ sub setup_rules_hash($)
 
 	# Also read in old file if it exists.
         # We do a sid dup check in these files.
-        if (-f "$config{output_dir}/$file") {
-            open(OLDFILE, "<", "$config{output_dir}/$file")
-              or clean_exit("could not open $config{output_dir}/$file for reading: $!");
+        if (-f "$output_dir/$file") {
+            open(OLDFILE, "<", "$output_dir/$file")
+              or clean_exit("could not open $output_dir/$file for reading: $!");
 	    my @oldfile = <OLDFILE>;
             close(OLDFILE);
 
@@ -1055,7 +1057,9 @@ sub make_backup($ $)
     my $date = sprintf("%4d%02d%02d-%02d%02d%02d",
                        $year + 1900, $mon + 1, $mday, $hour, $min, $sec);
 
-    my $backup_tmp_dir = "$tmpdir/rules-backup-$date";
+    my $backup_tarball = "rules-backup-$date.tar";
+    my $backup_tmp_dir = File::Spec->catdir("$tmpdir", "rules-backup-$date");
+    my $dest_file      = File::Spec->catfile("$dest_dir", "$backup_tarball.gz");
 
     print STDERR "Creating backup of old rules..."
       unless ($config{quiet});
@@ -1092,10 +1096,13 @@ sub make_backup($ $)
 
     if ($config{use_external_bins}) {
         clean_exit("tar command did not exit with status 0 when archiving backup files.\n")
-          if (system("tar","cf","rules-backup-$date.tar","rules-backup-$date"));
+          if (system("tar","cf","$backup_tarball","rules-backup-$date"));
 
         clean_exit("gzip command did not exit with status 0 when compressing backup file.\n")
-          if (system("gzip","rules-backup-$date.tar"));
+          if (system("gzip","$backup_tarball"));
+
+        $backup_tarball .= ".gz";
+
     } else {
         my $tar = Archive::Tar->new;
         opendir(RULES, "rules-backup-$date")
@@ -1108,7 +1115,9 @@ sub make_backup($ $)
 
         closedir(RULES);
 
-        $tar->write("rules-backup-$date.tar.gz", 1)
+        $backup_tarball .= ".gz";
+
+        $tar->write("$backup_tarball", 1)
           or clean_exit("could not create backup archive: ".
                         $tar->error());
     }
@@ -1118,11 +1127,10 @@ sub make_backup($ $)
     chdir("$old_dir")
       or clean_exit("could not change directory back to $old_dir: $!");
 
-    copy("$tmpdir/rules-backup-$date.tar.gz", "$dest_dir/")
-      or clean_exit("unable to copy $backup_tmp_dir/rules-backup-$date.tar.gz ".
-                    "to $dest_dir/: $!\n");
+    copy("$tmpdir/$backup_tarball", "$dest_file")
+      or clean_exit("unable to copy $tmpdir/$backup_tarball to $dest_file/: $!\n");
 
-    print STDERR " saved as $dest_dir/rules-backup-$date.tar.gz.\n"
+    print STDERR " saved as $dest_file.\n"
       unless ($config{quiet});
 }
 
@@ -1139,9 +1147,9 @@ sub print_changes($ $)
 
   # Print new variables.
     if ($config{update_vars}) {
-       if ($#{$changes{new_vars}} > -1) {
+       if ($#{$$ch_ref{new_vars}} > -1) {
             print "\n[*] New variables: [*]\n";
-            foreach my $var (@{$changes{new_vars}}) {
+            foreach my $var (@{$$ch_ref{new_vars}}) {
                 print "    $var";
             }
         } else {
@@ -1464,10 +1472,10 @@ sub is_in_path($)
     my $file = shift;
 
     foreach my $dir (File::Spec->path()) {
-        if (-x "$dir/$file" || -x "$dir/$file.exe") {
+        if ((-f "$dir/$file" && -x "$dir/$file") || (-f "$dir/$file.exe" && -x "$dir/$file.exe")) {
             print STDERR "Found $file binary in $dir\n"
               if ($config{verbose});
-            return (1) 
+            return (1);
         }
     }
 
@@ -1705,7 +1713,7 @@ sub msdos_to_cygwin_path($)
 
 
 
-# Parse and process a modifysid expression. 
+# Parse and process a modifysid expression.
 # Return 1 if valid, or otherwise 0.
 sub parse_mod_expr($ $ $ $)
 {
