@@ -146,7 +146,8 @@ if ($#modified_files > -1) {
 my $something_changed = 0;
 
 $something_changed = 1
-  if ($#modified_files > -1 || exists($changes{removed_files}));
+  if ($#modified_files > -1 ||
+      keys(%{$changes{added_files}}) > 0 || keys(%{$changes{removed_files}}) > 0);
 
 if ($something_changed || !$quiet) {
     print "\nNote: Oinkmaster is running in careful mode - not updating/adding anything.\n"
@@ -215,7 +216,7 @@ sub parse_cmdline()
         show_usage();
     }
 
-  # Don't accept additional (unknown) arguments.
+  # Don't accept additional (invalid) arguments.
     $_ = shift(@ARGV) && show_usage();
 
   # Remove possible trailing slash (just for cosmetic reasons).
@@ -784,42 +785,42 @@ sub get_changes($ $)
 
 		    unless ($new_rule eq $old_rule) {           # are they identical?
                         if ("#$old_rule" eq $new_rule) {                          # rule disabled?
- 	                    $changes{rules}{"removed (disabled)"}{$file}{$sid}++;
+ 	                    $changes{rules}{removed_dis}{$file}{$sid}++;
                         } elsif ($old_rule eq "#$new_rule") {                     # rule enabled?
- 	                    $changes{rules}{"added (enabled)"}{$file}{$sid}++;
+ 	                    $changes{rules}{added_ena}{$file}{$sid}++;
                         } elsif ($old_rule =~ /^\s*#/ && $new_rule !~ /^\s*#/) {  # rule enabled and modified?
- 	                    $changes{rules}{"added (enabled) and modified"}{$file}{$sid}++;
+ 	                    $changes{rules}{added_ena_mod}{$file}{$sid}++;
                         } elsif ($old_rule !~ /^\s*#/ && $new_rule =~ /^\s*#/) {  # rule disabled and modified?
- 	                    $changes{rules}{"removed (disabled) and modified"}{$file}{$sid}++;
+ 	                    $changes{rules}{removed_dis_mod}{$file}{$sid}++;
                         } elsif ($old_rule =~ /^\s*#/ && $new_rule =~ /^\s*#/) {  # inactive rule modified?
- 	                    $changes{rules}{"modified inactive"}{$file}{$sid}++;
+ 	                    $changes{rules}{modified_inactive}{$file}{$sid}++;
                         } else {                                                  # active rule modified?
- 	                    $changes{rules}{"modified active"}{$file}{$sid}++;
+ 	                    $changes{rules}{modified_active}{$file}{$sid}++;
 	  	        }
 		    }
 	        } else {    # sid not found in old file so it must have been added
-  	            $changes{rules}{"added (new)"}{$file}{$sid}++;
+  	            $changes{rules}{added_new}{$file}{$sid}++;
 	        }
         } # foreach sid
 
       # Check for removed rules, i.e. sids that exist in the old file but not in the new one.
         foreach my $sid (keys(%{$rh{old}{rules}{$file}})) {
             unless (exists($rh{new}{rules}{$file}{$sid})) {
-	        $changes{rules}{"removed (deleted)"}{$file}{$sid}++;
+	        $changes{rules}{removed_del}{$file}{$sid}++;
             }
         }
 
       # Check for added non-rule lines.
         foreach my $other_added (@{$rh{new}{other}{$file}}) {
             unless (find_line($other_added, @{$rh{old}{other}{"$file"}})) {
-	        push(@{$changes{other}{"added other"}{$file}}, $other_added);
+	        push(@{$changes{other}{other_added}{$file}}, $other_added);
             }
         }
 
       # Check for removed non-rule lines.
         foreach my $other_removed (@{$rh{old}{other}{$file}}) {
             unless (find_line($other_removed, @{$rh{new}{other}{"$file"}})) {
-	        push(@{$changes{other}{"removed other"}{$file}}, $other_removed);
+	        push(@{$changes{other}{other_removed}{$file}}, $other_removed);
             }
         }
     } # foreach new file
