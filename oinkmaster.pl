@@ -581,9 +581,13 @@ sub disable_and_modify_rules($ $ $)
             if (exists($$disable_sid_ref{"$sid"})) {
                 print STDERR "Disabling SID $sid: $msg\n"
                   if ($verbose);
-                $multi = "#$multi" unless ($multi =~ /^\s*#/);
-                $multi =~ s/\n(.+)/\n#$1/g;
-                $num_disabled++;
+
+               unless ($multi =~ /\s*#/) {
+                   $multi = "#$multi";
+                   $multi =~ s/\n(.+)/\n#$1/g;
+	       }
+
+               $num_disabled++;
 	    }
 
           # Write rule back to the same rules file.
