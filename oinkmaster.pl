@@ -496,6 +496,7 @@ sub download_rules
         }
     } else {                           # Grab file from local filesystem.
         $url =~ s/^file:\/\///;        # Remove file://, the rest is the actual filename.
+	clean_exit("The file $url does not exist.\n")       unless (-e "$url");
         print STDERR "Copying rules archive from $url...\n" unless ($quiet);
         copy("$url", "$tmpdir/$outfile") or clean_exit("Unable to copy $url to $tmpdir/$outfile: $!");
     }
