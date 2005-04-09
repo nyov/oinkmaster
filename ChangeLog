@@ -22,10 +22,11 @@ o Because of the license change, no url is activated in the default
 o modifysid/use_template statements of all types will now be processed
   in the exact order as specified in the config file. Previously, all
   the wildcards were processed last.
-o You can now download multiple rules archives from different URLs,
-  either by specifying several -u <url> on the command line or by using
-  several url=<url> directives in the Oinkmaster configuration file(s).
-  See the default oinkmaster.conf and the FAQ for more information.
+o You can now download multiple rules archives from different URLs at
+  the same time, either by specifying several -u <url> on the command
+  line or by using several url=<url> directives in the Oinkmaster
+  configuration file(s). See the default oinkmaster.conf and the FAQ
+  for more information.
 
 
 
