@@ -1,6 +1,6 @@
 # $Id$ #
 
-Oinkmaster v1.2 - 200xxxxx
+Oinkmaster v1.2 - 20050415
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 o Slightly improved modifysid/template documentation and examples.
   For example, added a new template to disable a SID but only if it has 
