@@ -1601,8 +1601,12 @@ sub print_changes($ $)
     my $ch_ref = shift;
     my $rh_ref = shift;
 
-    print "\n[***] Results from Oinkmaster started " .
-          scalar(localtime) . " [***]\n";
+    my ($sec, $min, $hour, $mday, $mon, $year) = (localtime)[0 .. 5];
+
+    my $date = sprintf("%4d%02d%02d %02d:%02d:%02d",
+                       $year + 1900, $mon + 1, $mday, $hour, $min, $sec);
+
+    print "\n[***] Results from Oinkmaster started $date [***]\n";
 
   # Print new variables.
     if ($config{update_vars}) {
