@@ -2029,6 +2029,9 @@ sub get_next_entry($ $ $ $ $ $)
     my $disabled = 0;
     my $broken   = 0;
 
+    chomp($line);
+    $line .= "\n";
+
   # Possible beginning of multi-line rule?
     if ($line =~ /$MULTILINE_RULE_REGEXP/oi) {
         $$single_ref = $line;
