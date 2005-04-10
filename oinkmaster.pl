@@ -749,15 +749,19 @@ sub sanity_check()
         next if (/^\.\.?$/ || exists($config{file_ignore_list}{$_}));
 
         if (/$config{update_files}/) {
-            clean_exit("no read permission on \"$config{output_dir}/$_\"\n".
-                       "(Read permission is required on all rules files ".
-                       "inside the output directory.)\n")
-              unless (-r "$config{output_dir}/$_");
+            unless (-r "$config{output_dir}/$_") {
+                closedir(OUTDIR);
+                clean_exit("no read permission on \"$config{output_dir}/$_\"\n".
+                           "(Read permission is required on all rules files ".
+                           "inside the output directory.)\n")
+            }
 
-            clean_exit("no write permission on \"$config{output_dir}/$_\"\n".
-                       "(Write permission is required on all rules files ".
-                       "inside the output directory.)\n")
-              if (!$config{careful} && !-w "$config{output_dir}/$_");
+            if (!$config{careful} && !-w "$config{output_dir}/$_") {
+                closedir(OUTDIR);
+                clean_exit("no write permission on \"$config{output_dir}/$_\"\n".
+                           "(Write permission is required on all rules files ".
+                           "inside the output directory.)\n")
+            }
 	}
     }
 
@@ -917,19 +921,25 @@ sub join_tmp_rules_dirs($ $ @)
         while ($_ = readdir(URL_TMPDIR)) {
             next if (/^\.\.?$/ || exists($config{file_ignore_list}{$_}) || !/$config{update_files}/);
 
-            clean_exit("a file called \"$_\" exists in multiple rules archives")
-              if (exists($rules_files{$_}));
+            if (exists($rules_files{$_})) {
+                closedir(URL_TMPDIR);
+                clean_exit("a file called \"$_\" exists in multiple rules archives")
+            }
 
           # Make sure it's a regular file.
-            clean_exit("downloaded \"$_\" is not a regular file.")
-              unless (-f "$url_tmpdir/$_" && !-l "$url_tmpdir/$_");
+            unless (-f "$url_tmpdir/$_" && !-l "$url_tmpdir/$_") {
+                closedir(URL_TMPDIR);
+                clean_exit("downloaded \"$_\" is not a regular file.")
+            }
 
             $rules_files{$_} = 1;
             $$new_files_ref{"$rules_dir/$_"} = 1;
 
             my $src_file = untaint_path("$url_tmpdir/$_");
-            copy("$src_file", "$rules_dir")
-              or clean_exit("could not copy \"$src_file\" to \"$rules_dir\": $!");
+            unless (copy("$src_file", "$rules_dir")) {
+                closedir(URL_TMPDIR);
+                clean_exit("could not copy \"$src_file\" to \"$rules_dir\": $!");
+            }
         }
 
         closedir(URL_TMPDIR);
