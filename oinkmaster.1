@@ -160,15 +160,19 @@ URLs are specified and one of them is broken, Oinkmaster will exit
 immediately without further processing. This can be good or bad, depending
 on the situation.
 .IP "\fB-U \fIfile\fP
-Variables that exist in downloaded snort.conf but not in
+Variables (i.e. "var foo bar" lines) that exist in downloaded snort.conf
+but not in
 .I file
 will be added to this one, right after any other variables it may contain. 
-Modified existing variables are not merged, only new ones. This is usually
-your production copy of snort.conf (which should not be a file that is
-updated by Oinkmaster the normal way). This feature is to prevent Snort
-from breaking in case there are new variables added in the downloaded
-rules, as Snort can not start if the rules use variables that
-aren't defined anywhere.
+Modified existing variables are not merged, only new ones. 
+.I file
+is normally your production copy of snort.conf (which should not be a
+file that is updated by Oinkmaster the normal way).
+This feature is to prevent Snort from breaking in case there are new
+variables added in the downloaded rules, as Snort can not start if the
+rules use variables that aren't defined anywhere. If you download from
+multiple URLs, Oinkmaster will look for a snort.conf in each downloaded
+rules archive.
 .IP "\fB-v
 Run in verbose mode.
 .IP "\fB-V

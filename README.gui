@@ -29,34 +29,34 @@ information.
 
 The GUI is written in Perl and requires the Perl Tk module.
 If you're on UNIX and don't have the Tk module already, install the 
-latest version from http://www.cpan.org/authors/id/NI-S/. At the time of 
-writing, http://www.cpan.org/authors/id/NI-S/Tk-800.024.tar.gz is probably 
-the one you'll want. Unpack it and run "perl Makefile.pl && make && make 
-install" and you should then be able to start the GUI by executing 
-oinkgui.pl. If you're on *BSD, it's probably better to install the 
-/usr/ports/*/p5-Tk/ port instead.
+latest version from http://www.cpan.org/authors/id/NI-S/. 
+Unpack it and run "perl Makefile.pl && make && make install".
+If you're on *BSD, it's probably better to install the 
+/usr/ports/*/p5-Tk/ port instead. There are probably packages out there 
+for most Linux dists as well.
 
 If you're on Windows with ActivePerl, you do not need any extra module
 since everything is probably installed already. Should the Tk module be 
 missing, you can install it with the command "ppm install Tk" in a DOS
 shell. If you want a non-ugly interface when browsing for directories, 
-you need to install the Win32::FileOp module. This is strongly recommended 
-and is as simple as typing "ppm install Win32::FileOp" in a DOS shell.
+you need to install the Win32::FileOp module. This is strongly 
+recommended and is as simple as typing "ppm install Win32::FileOp" in a 
+DOS shell.
 
 After you've made sure you have the Tk module installed, simply execute
 oinkgui.pl (it's found in Oinkmaster's contrib directory, and you may
-want to copy it to some better location first). You don't have to be in a 
-DOS shell / UNIX shell to start it - you can create a shortcut for it on 
-your desktop if you like.
+want to copy it to some better location first). You don't have to be in 
+a DOS shell / UNIX shell to start it - you can create a shortcut for it 
+on your desktop if you like.
 
 
 
 Usage
 ~~~~~~
 
-When you start the GUI for the first time, all required files/directories 
-will not be automatically set (although some of them may be).
-All entries under the "Required files and directories" tab must 
+When you start the GUI for the first time, all required 
+files/directories will not be automatically set (although some of them 
+may be). All entries under the "Required files and directories" tab must 
 be set correctly or you will not be able to do anything. When they are 
 set correctly (i.e. when all the labels have turned green), you are ready 
 to go. The files/directories under the "Optional files and directories" 
