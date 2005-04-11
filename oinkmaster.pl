@@ -83,7 +83,7 @@ sub clean_exit($);
 my $VERSION            = 'Oinkmaster v1.2, Copyright (C) 2001-2005 Andreas Östling <andreaso@it.su.se>';
 my $OUTFILE            = 'snortrules.tar.gz';
 my $RULES_DIR          = 'rules';
-my $DIST_SNORT_CONF    = "$RULES_DIR/snort.conf";
+my $DIST_SNORT_CONF    = 'snort.conf';
 
 my $PRINT_NEW          = 1;
 my $PRINT_OLD          = 2;
@@ -257,8 +257,8 @@ my %rh = setup_rules_hash(\%new_files, $config{output_dir});
 # Compare the new rules to the old ones.
 my %changes = get_changes(\%rh, \%new_files, $RULES_DIR);
 
-# Check for variables that exist in dist snort.conf but not in local snort.conf.
-get_new_vars(\%changes, $config{varfile}, "$tmpdir/$DIST_SNORT_CONF")
+# Check for variables that exist in dist snort.conf(s) but not in local snort.conf.
+get_new_vars(\%changes, $config{varfile}, \@url_tmpdirs)
   if ($config{update_vars});
 
 
@@ -349,7 +349,7 @@ Options:
 -u <url>  Download from this URL instead of URL(s) in the configuration file
           (http://, https://, ftp://, file:// or scp:// ... .tar.gz|.gz)
           May be specified multiple times to grab multiple rules archives
--U <file> Merge new variables from downloaded snort.conf into <file>
+-U <file> Merge new variables from downloaded snort.conf(s) into <file>
 -v        Verbose mode (debug)
 -V        Show version and exit
 
@@ -2154,22 +2154,35 @@ sub get_next_entry($ $ $ $ $ $)
 # Look for variables that exist in dist snort.conf but not in local snort.conf.
 sub get_new_vars($ $ $)
 {
-    my $ch_ref     = shift;
-    my $local_conf = shift;
-    my $dist_conf  = shift;
+    my $ch_ref          = shift;
+    my $local_conf      = shift;
+    my $url_tmpdirs_ref = shift;
+
     my @new_vars;
     my %old_vars;
 
-    unless (-e "$dist_conf") {
-        $_ = basename($dist_conf);
-        warn("WARNING: no $_ found in downloaded archive, ".
-             "aborting check for new variables\n");
-        return;
+    my $confs_found = 0;
+
+    foreach my $dir (@$url_tmpdirs_ref) {
+        if (-e "$dir/$DIST_SNORT_CONF") {
+            $confs_found++;
+        }
     }
 
-    print STDERR "Looking for new variables... "
-      unless ($config{quiet});
+    my $base_conf = basename($DIST_SNORT_CONF);
+    unless ($confs_found) {
+        unless ($config{quiet}) {
+            warn("WARNING: no $base_conf found in downloaded archive(s), ".
+                 "aborting check for new variables\n");
+            return;
+        }
+    }
 
+    unless ($config{quiet}) {
+        print STDERR "Found $confs_found $DIST_SNORT_CONF file";
+        print STDERR "s" if ($confs_found > 1);
+        print STDERR ", checking for new variables... ";
+    }
 
   # Read in variable names from old file.
     open(LOCAL_CONF, "<", "$local_conf")
@@ -2184,16 +2197,30 @@ sub get_new_vars($ $ $)
     close(LOCAL_CONF);
 
 
-  # Read in variables from new file.
-    open(DIST_CONF, "<", "$dist_conf")
-      or clean_exit("could not open $dist_conf for reading: $!");
+  # Read in variables from new files.
+    foreach my $dir (@$url_tmpdirs_ref) {
+        my $conf = "$dir/$DIST_SNORT_CONF";
+        if (-e "$conf") {
 
-    while ($_ = <DIST_CONF>) {
-        push(@new_vars, $_)
-          if (/$VAR_REGEXP/i && !exists($old_vars{lc($1)}));
+            open(DIST_CONF, "<", "$conf")
+              or clean_exit("could not open $conf for reading: $!");
+
+            while ($_ = <DIST_CONF>) {
+                s/^\s*//;
+
+                if (/$VAR_REGEXP/i && !exists($old_vars{lc($1)})) {
+                    if (/\\\n/) {
+                        warn("\nWARNING: can not handle variables split over multiple lines\n")
+                          unless ($config{quiet});
+                    } else {
+                        push(@new_vars, $_)
+                    }
+                }
+            }
+
+            close(DIST_CONF);
+        }
     }
-
-    close(DIST_CONF);
 
     @{$$ch_ref{new_vars}} = @new_vars;
 
