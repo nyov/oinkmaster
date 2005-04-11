@@ -12,31 +12,31 @@ o Put oinkmaster.pl in some suitable directory, for example
   copy the man page (oinkmaster.1) to something like /usr/local/man/man1/.
 
 
-o Edit oinkmaster.conf. Most defaults should be fine for most users, 
+o Edit oinkmaster.conf. The defaults should be fine for most users, 
   although one thing you must change is "url = ...", which specifies 
-  the location of the rules archive. What URL to use depends on which 
+  the location of the rules archive. The URL to use depends on which 
   version of Snort you run and also what type of rules you want to use. 
   Some may require registration. See Q28 in the FAQ for more 
   information.
 
-  In oinkmaster.conf you will then also tell Oinkmaster which SIDs 
-  or files you want to disable/enable/modify/ignore. If you already have 
-  several rules commented out (or removed) in your current rules, you 
-  must add the SIDs of those to oinkmaster.conf so they don't get 
-  re-enabled after each update (there is a help script for that, see 
-  makesidex.pl in the contrib directory). Remember that after switching 
-  to Oinkmaster for updating the rules, all permanent modifications to 
-  the rules must be done by editing oinkmaster.conf, not by editing the 
-  rules files directly.
+  In oinkmaster.conf you will then also tell Oinkmaster things like 
+  which SIDs or files you want to disable/enable/modify/ignore. If you 
+  already have several rules commented out (or removed) in your current 
+  rules, you must add the SIDs of those to oinkmaster.conf so they 
+  don't get re-enabled after each update (there is a help script for 
+  that, see makesidex.pl in the contrib directory). Remember that after 
+  switching to Oinkmaster for updating the rules, all permanent 
+  modifications to the rules must be done by editing oinkmaster.conf, 
+  not by editing the rules files directly.
 
 
 o Decide in which directory you want to put the new rules. Since you 
   probably have Snort up and running already, you should use the 
-  directory where you keep the official rules. It's a very good idea to 
-  create a backup of it first. You must run Oinkmaster as a user that has 
-  read/write access to your rules directory and all rules files in it. It 
-  should however *NOT* be a privileged user such as root! Never run
-  Oinkmaster as root.
+  directory where you keep the rules. It's a very good idea to create a 
+  backup of it first. You must run Oinkmaster as a user that has 
+  read/write access to your rules directory and all rules files in it. 
+  It should however *NOT* be a privileged user such as root!
+  Never run Oinkmaster as root.
 
 
 o Done! 
