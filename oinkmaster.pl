@@ -817,7 +817,7 @@ sub download_file($ $)
 
         if ($config{verbose}) {
             print STDERR "\n";
-            clean_exit("could not download from $url")
+            clean_exit("could not download from $obfuscated_url")
               if (system("wget", "-v", "-O", "$localfile", "$url"));
         } else {
             if (system("wget", "-v", "-o", "$log", "-O", "$localfile", "$url")) {
@@ -825,7 +825,7 @@ sub download_file($ $)
                   or clean_exit("could not open $log for reading: $!");
                 my @log = <LOG>;
                 close(LOG);
-                clean_exit("could not download from $url. Output from wget follows:\n\n @log");
+                clean_exit("could not download from $obfuscated_url. Output from wget follows:\n\n @log");
             }
             print STDERR "done.\n" unless ($config{quiet});
         }
@@ -840,7 +840,7 @@ sub download_file($ $)
 	my $request = HTTP::Request->new(GET => $url);
 	my $response = $ua->request($request, $localfile);
 
-        clean_exit("could not download from $url: " . $response->status_line)
+        clean_exit("could not download from $obfuscated_url: " . $response->status_line)
           unless $response->is_success;
 
         print "done.\n" unless ($config{quiet});
