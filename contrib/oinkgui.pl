@@ -51,8 +51,6 @@ use Tk::ROText;
 
 use constant CSIDL_DRIVES => 17;
 
-sub test_config();
-sub show_version();
 sub update_rules();
 sub clear_messages();
 sub create_cmdline($);
@@ -78,10 +76,10 @@ my @oinkmaster_conf = qw(
 
 # List of URLs that will show up in the URL BrowseEntry.
 my @urls = qw(
-    http://www.snort.org/dl/rules/snortrules-snapshot-2_0.tar.gz
-    http://www.snort.org/dl/rules/snortrules-snapshot-2_1.tar.gz
-    http://www.snort.org/dl/rules/snortrules-snapshot-2_2.tar.gz
-    http://www.snort.org/dl/rules/snortrules-snapshot-CURRENT.tar.gz
+    http://www.bleedingsnort.com/bleeding.rules.tar.gz
+    http://www.snort.org/pub-bin/downloads.cgi/Download/comm_rules/Community-Rules.tar.gz
+    http://www.snort.org/pub-bin/oinkmaster.cgi/<oinkcode>/snortrules-snapshot-CURRENT.tar.gz
+    http://www.snort.org/pub-bin/oinkmaster.cgi/<oinkcode>/snortrules-snapshot-2.3.tar.gz
 );
 
 my %color = (
@@ -458,16 +456,6 @@ $left_frame->Label(
 # Create action buttons.
 
 $balloon->attach(
-  create_actionbutton($left_frame, "Show version", \&show_version),
-  -statusmsg => $help{version}
-);
-
-$balloon->attach(
-  create_actionbutton($left_frame, "Test configuration", \&test_config),
-  -statusmsg => $help{test}
-);
-
-$balloon->attach(
   create_actionbutton($left_frame, "Update rules!", \&update_rules),
   -statusmsg => $help{update}
 );
@@ -828,27 +816,6 @@ sub logmsg($ $)
 
 
 
-sub show_version()
-{
-    $config{oinkmaster} =~ s/^\s+//;
-    $config{oinkmaster} =~ s/\s+$//;
-
-    unless ($config{oinkmaster} && -f "$config{oinkmaster}" &&
-     (-x "$config{oinkmaster}" || $^O eq 'MSWin32')) {
-        logmsg("Location of oinkmaster.pl is not set correctly!\n\n", 'ERROR');
-        return;
-    }
-
-    my $cmd = "$config{perl} $config{oinkmaster} -V";
-    logmsg("$cmd:\n", 'EXEC');
-    $main->Busy(-recurse => 1);
-    my $output = `$cmd 2>&1` || "Could not execute $config{oinkmaster}: $!\n";
-    $main->Unbusy;
-    logmsg("$output", 'OUTPUT');
-    logmsg("$version\n\n", 'OUTPUT');
-}
-
-
 
 sub execute_oinkmaster(@)
 {
@@ -888,18 +855,6 @@ sub execute_oinkmaster(@)
 
     $main->Unbusy;
     logmsg("done.\n\n", 'EXEC');
-}
-
-
-
-sub test_config()
-{
-    my @cmd;
-
-    create_cmdline(\@cmd) || return;
-
-    push(@cmd, "-T");
-    execute_oinkmaster(@cmd);
 }
 
 
@@ -970,6 +925,10 @@ sub create_cmdline($)
   # Assume file:// if url prefix is missing.
     if ($url) {
         $url = "file://$url" unless ($url =~ /(?:http|ftp|file|scp):\/\//);
+        if ($url =~ /.+<oinkcode>.+/) {
+            logmsg("You must replace <oinkcode> with your real oinkcode, see the FAQ!\n\n", 'ERROR');
+            return (0);
+        }
     }
 
     $oinkmaster = File::Spec->rel2abs($oinkmaster)
