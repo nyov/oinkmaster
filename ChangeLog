@@ -27,6 +27,8 @@ o modifysid/use_template statements of all types will now be processed
   in the exact order as specified in the config file. Previously, all
   the wildcards were processed last.
 o Slightly improved error handling when running under Windows.
+o Removed some useless buttons and changed default URL list in the GUI.
+o Misc other minor fixes.
 
 
 
