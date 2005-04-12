@@ -61,13 +61,8 @@ be set correctly or you will not be able to do anything. When they are
 set correctly (i.e. when all the labels have turned green), you are ready 
 to go. The files/directories under the "Optional files and directories" 
 tab are not required, and if you leave a field empty, that option will
-simply not be used.
-
-When all required fields are set, it's recommended to push the 
-"Test configuration" button. This will execute Oinkmaster and make it 
-test its configuration and then exit. If the configuration test is 
-successful, you should be ready to update the rules by pushing the
-"Update rules!" button.
+simply not be used. When all required fields are set, you should be ready
+to update the rules by pushing the "Update rules!" button.
 
 When you're happy with all the filename entries and options, you probably 
 want to push the "Save config" button. All GUI settings will then be 
