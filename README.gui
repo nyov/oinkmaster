@@ -3,12 +3,13 @@
 Intro
 ~~~~~
 
-Oinkmaster GUI is my very first attempt at creating a graphical user 
-interface in Perl/Tk. It was written just for fun and the result is not 
-the prettiest interface you've seen, but it actually works. It runs on 
-UNIX systems and also on Windows with ActivePerl. It's not well-written 
-and may not be a high priority for me in the future, so use at your own 
-risk. Send feedback to Andreas Östling <andreaso@it.su.se>.
+The Oinkmaster GUI is my very first attempt at creating a graphical 
+user interface in Perl/Tk. It was written just for fun and the result 
+is not the prettiest interface you've seen, but it actually works. It 
+runs on UNIX systems and also on Windows with ActivePerl. It's not 
+well-written and may not be a high priority for me in the future, so 
+use at your own risk. Send feedback to Andreas Östling 
+<andreaso@it.su.se>.
 
 
 
@@ -20,11 +21,11 @@ directory. If you're lucky, you can just execute it right away.
 Minimum screen resolution required is 1024x800.
 
 The GUI is simply a front-end used to create the right command line and
-then execute Oinkmaster with it. In other words, oinkmaster.pl can be run 
-without the GUI but the GUI can not be run without oinkmaster.pl.
-It may be easiest if you make sure you have Oinkmaster (without the GUI) 
-up and running first, although it's not required. See Oinkmaster's own
-INSTALL and README (and README.win32 of you're on Windows) for more 
+then execute Oinkmaster with it. In other words, oinkmaster.pl can be 
+run without the GUI but the GUI can not be run without oinkmaster.pl.
+It may be easiest if you make sure you have Oinkmaster (without the 
+GUI) up and running first, although it's not required. See Oinkmaster's 
+own INSTALL and README (and README.win32 of you're on Windows) for more 
 information. 
 
 The GUI is written in Perl and requires the Perl Tk module.
@@ -56,20 +57,22 @@ Usage
 
 When you start the GUI for the first time, all required 
 files/directories will not be automatically set (although some of them 
-may be). All entries under the "Required files and directories" tab must 
-be set correctly or you will not be able to do anything. When they are 
-set correctly (i.e. when all the labels have turned green), you are ready 
-to go. The files/directories under the "Optional files and directories" 
-tab are not required, and if you leave a field empty, that option will
-simply not be used. When all required fields are set, you should be ready
-to update the rules by pushing the "Update rules!" button.
+may be). All entries under the "Required files and directories" tab 
+must be set correctly or you will not be able to do anything. When they 
+are set correctly (i.e. when all the labels have turned green), you are 
+ready to go. The files/directories under the "Optional files and 
+directories" tab are not required, and if you leave a field empty, that 
+option will simply not be used. When all required fields are set, you 
+should be ready to update the rules by pushing the "Update rules!" 
+button.
 
-When you're happy with all the filename entries and options, you probably 
-want to push the "Save config" button. All GUI settings will then be 
-saved to a configuration file (~/.oinkguirc) which you can load later 
-with the "Load config" button. It's also loaded automatically on startup.
+When you're happy with all the filename entries and options, you 
+probably want to push the "Save config" button. All GUI settings will 
+then be saved to a configuration file (~/.oinkguirc) which you can load 
+later with the "Load config" button. It's also loaded automatically on 
+startup.
 
-Hint: Place the mouse pointer over a button or filename entry and 
-a short help message will be displayed under the big black output window.
+Hint: Place the mouse pointer over a button or filename entry and a 
+short help message will be displayed under the big black output window.
 
 To find out more about Oinkmaster, consult its own documentation.

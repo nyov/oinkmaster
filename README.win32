@@ -11,8 +11,9 @@ There are three known ways to run Oinkmaster under Windows:
 
 Which method you choose is mostly a matter of taste, although I'd
 say that ActivePerl is the best way to go for most people.
-You can find installation/usage instructions for each one of these below,
-but first a few general useful notes about Oinkmaster and Windows.
+You can find installation/usage instructions for each one of these 
+below, but first a few general useful notes about Oinkmaster and 
+Windows.
 
 
 
@@ -22,27 +23,27 @@ A few useful notes about Oinkmaster and Windows
 o You must always specify the -C argument and point to your 
   oinkmaster.conf since it's looked for in a UNIX directory by default.
 
-o When using Cygwin (standalone or from within a Cygwin shell) you should
-  be able to use both msdos style paths (e.g. c:\foo) or Cygwin style
-  paths (e.g. /cygdrive/c/foo) everywhere, but remember that backslashes
-  needs to be quoted ("c:\foo") or escaped (c:\\foo) when starting from a 
-  Cygwin shell. 
+o When using Cygwin (standalone or from within a Cygwin shell) you 
+  should be able to use both msdos style paths (e.g. c:\foo) or Cygwin 
+  style paths (e.g. /cygdrive/c/foo) everywhere, but remember that 
+  backslashes needs to be quoted ("c:\foo") or escaped (c:\\foo) when 
+  starting from a Cygwin shell. 
 
 o Remember that filenames/directories with spaces specified on the 
   command line need to be quoted, e.g.
   -C "c:\some directory\oinkmaster.conf"
 
-o Depending on your Perl installation, you may or may not be able to call
-  oinkmaster.pl directly. If .pl files are not associated with Perl
-  on your system, you must run "perl oinkmaster.pl ..." instead of just 
-  "oinkmaster.pl ...".
+o Depending on your Perl installation, you may or may not be able to 
+  call oinkmaster.pl directly. If .pl files are not associated with 
+  Perl on your system, you must run "perl oinkmaster.pl ..." instead of 
+  just "oinkmaster.pl ...".
 
 o Oinkmaster usually requires a few external binaries (tar, gzip and 
-  wget). As of Oinkmaster v1.0 though, you don't need them if you have the 
-  Perl modules Archive::Tar, IO::Zlib and LWP::UserAgent. The good news is 
-  that ActivePerl 5.8.1+ comes with these modules and that Oinkmaster uses
-  them by default on Windows. See the default oinkmaster.conf for more 
-  information about this.
+  wget). As of Oinkmaster v1.0 though, you don't need them if you have 
+  the Perl modules Archive::Tar, IO::Zlib and LWP::UserAgent. The good 
+  news is that ActivePerl 5.8.1+ comes with these modules and that 
+  Oinkmaster uses them by default on Windows. See the default 
+  oinkmaster.conf for more information about this.
 
 
 
@@ -51,8 +52,8 @@ ActivePerl
 
 - If you don't have ActivePerl installed already, get the most recent 
   version from http://www.activestate.com/Products/ActivePerl/.
-  ActivePerl 5.8.1 and later contains all required Perl modules (even for 
-  the Oinkmaster GUI), no external binaries are required. If your 
+  ActivePerl 5.8.1 and later contains all required Perl modules (even 
+  for the Oinkmaster GUI), no external binaries are required. If your 
   ActivePerl is older than 5.8.1 and you for some reason don't want to 
   upgrade to a more recent version, you need to execute the command 
   "ppm install IO::Zlib" from a command shell. This is not required on 
@@ -124,8 +125,8 @@ without first starting a Cygwin shell.
 - Done!
 
 Now you should be able to run Oinkmaster. (You probably want to start a 
-cmd.exe shell first so you see what's going on.)
-For example, if Cygwin is installed in c:\cygwin and Oinkmaster and the 
-rules directory is in c:\oink\, you can run:
+cmd.exe shell first so you see what's going on.) For example, if Cygwin 
+is installed in c:\cygwin and Oinkmaster and the rules directory is in 
+c:\oink\, you can run:
 
 c:\cygwin\bin\perl c:\oink\oinkmaster.pl -C c:\oink\oinkmaster.conf -o c:\oink\rules

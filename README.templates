@@ -9,9 +9,10 @@ define the (often complex) modifysid expression once, and then call the
 template by name every time you want to use it instead of repeating the 
 modifysid expression. For more information about modifysid, see the 
 default oinkmaster.conf file. Basically, a modifysid expression is 
-simply a substitution expression that will be applied on specified rules 
-after each update, so that you can make some tweaks to the rules. Lots 
-of template examples can be found in the template-examples.conf file.
+simply a substitution expression that will be applied on specified 
+rules or files after each update, so that you can make some tweaks to 
+the rules. Lots of template examples can be found in the 
+template-examples.conf file.
 
 
 
@@ -36,11 +37,11 @@ It is simply passed to a s/modifythis/withthis/ statement in Perl.
 The syntax to use a template is:
 use_template <name> <sid> [ "arg1" "arg2" ... ]
 
-You can also use the wildcard ("*") or a comma-separated list of SIDs 
-as <sid>, just as with a regular modifysid expression. Everything after 
-<sid> is optional, unless you require arguments in your template 
-definition (keep reading). The arguments must be quoted strings,
-separated with space.
+As <sid>, you can also specify the wildcard ("*"), a comma-separated 
+list of SIDs or even one or more filenames, just as with a regular 
+modifysid expression. Everything after <sid> is optional, unless you 
+require arguments in your template definition (keep reading). The 
+arguments must be quoted strings, separated with space.
 
 The "modifythis" | "withthis" stuff in define_template works just like 
 in a regular modifysid, but it has one more useful feature. The 
@@ -69,10 +70,10 @@ Usage hints
 -----------
 When adding new stuff to rules using templates (or regular modifysid 
 expressions) it usually doesn't matter where in the rule you put it 
-(unless it affects the way Snort parses and optimizes the rules). The 
+unless it affects the way Snort parses and optimizes the rules. The 
 important thing is to write the substitution expression so that it
-will continue to work even if the regular rule becomes updated somehow. 
-Imagine this rule:
+will continue to work even if the original rule becomes updated 
+somehow. Imagine this rule:
 
 alert tcp any any -> any any (msg: "foo"; flow:established; sid: 123;)
 
@@ -90,8 +91,9 @@ remember that a SID statement can be written as
 
 As use_template statements are simply translated into modifysid 
 statements, you can use multiple use_template for the same SID. They 
-will be processed in order of appearance in the config file, just like 
-regular modifysid statements.
+will be processed in order of appearance in the config file.
+Also remember that they apply both on active and inactive (disabled) 
+rules. 
 
 
 
