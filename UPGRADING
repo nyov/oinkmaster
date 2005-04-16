@@ -12,18 +12,6 @@ require some attention.
 
 
 
-1.1 -> 1.2
-----------
-You can now download multiple rules archives from different locations, 
-either by specifying several -u <url> on the command line or by using
-several url=<url> lines in the Oinkmaster configuration file(s).
-Previously, any repeated url=<url> line overrided possible previous 
-url=<url> lines, but now each such statement is added to a list.
-If -u <url> is specified on the command line, it overrides any URLs 
-specified in the configuration file(s), just like before.
-
-
-
 0.9 -> 1.0
 ----------
 You can now run without external binaries if you set use_external_bins 
