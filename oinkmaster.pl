@@ -80,7 +80,7 @@ sub catch_sigint();
 sub clean_exit($);
 
 
-my $VERSION            = 'Oinkmaster v1.2, Copyright (C) 2001-2005 Andreas Östling <andreaso@it.su.se>';
+my $VERSION            = 'Oinkmaster v1.3, Copyright (C) 2001-2005 Andreas Östling <andreaso@it.su.se>';
 my $OUTFILE            = 'snortrules.tar.gz';
 my $RULES_DIR          = 'rules';
 my $DIST_SNORT_CONF    = 'snort.conf';
@@ -427,6 +427,9 @@ sub read_config($ $)
     clean_exit("configuration file \"$config_file\" does not exist.\n")
       unless (-e "$config_file");
 
+    clean_exit("\"$config_file\" is not a file.\n")
+      unless (-f "$config_file");
+
     print STDERR "Loading $config_file\n"
       unless ($config{quiet});
 
@@ -639,7 +642,7 @@ sub sanity_check()
 
   # Make sure all required variables are defined in the config file.
     foreach my $param (@req_params) {
-        clean_exit("the required parameter \"$param\" is not defined in configuration file.")
+        clean_exit("the required parameter \"$param\" is not defined in the configuration file.")
           unless (exists($config{$param}));
     }
 
