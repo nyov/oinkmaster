@@ -65,6 +65,7 @@ sub print_summary_change($ $);
 sub make_backup($ $);
 sub get_changes($ $ $);
 sub update_rules($ @);
+sub copy_rules($ $);
 sub is_in_path($);
 sub get_next_entry($ $ $ $ $ $);
 sub get_new_vars($ $ $);
@@ -220,8 +221,14 @@ foreach my $url (@{$config{url}}) {
     my $url_tmpdir = tempdir("url.XXXXXXXXXX", DIR => $tmpdir)
       or clean_exit("could not create temporary directory in $tmpdir: $!");
     push(@url_tmpdirs, "$url_tmpdir/$RULES_DIR");
-    download_file($url, "$url_tmpdir/$OUTFILE");
-    unpack_rules_archive("$url", "$url_tmpdir/$OUTFILE", $RULES_DIR);
+    if ($url =~ /^dir:\/\/(.+)/) {
+        mkdir("$url_tmpdir/$RULES_DIR")
+          or clean_exit("Could not create $url_tmpdir/$RULES_DIR");
+        copy_rules($1, "$url_tmpdir/$RULES_DIR");
+    } else {
+        download_file($url, "$url_tmpdir/$OUTFILE");
+        unpack_rules_archive("$url", "$url_tmpdir/$OUTFILE", $RULES_DIR);
+    }
 }
 
 # Copy all rules files from the tmp dirs into $RULES_DIR in the tmp directory.
@@ -235,7 +242,7 @@ clean_exit("not enough rules files in downloaded rules archive(s).\n".
            "Number of rules files is $num_files but minimum is set to $config{min_files}.")
   if ($num_files < $config{min_files});
 
-# For possible localized rules.
+# This is to read in possible 'localsid' rules.
 my %rh_tmp = setup_rules_hash(\%new_files, $config{output_dir});
 
 # Disable/modify/clean downloaded rules.
@@ -251,7 +258,7 @@ clean_exit("not enough rules in downloaded archive(s).\n".
            "Number of rules is $num_rules but minimum is set to $config{min_rules}.")
   if ($num_rules < $config{min_rules});
 
-# Setup a hash containing the content of all rules files.
+# Setup a hash containing the content of all processed rules files.
 my %rh = setup_rules_hash(\%new_files, $config{output_dir});
 
 # Compare the new rules to the old ones.
@@ -347,7 +354,7 @@ Options:
 -s        Leave out details in rules results, just print SID, msg and filename
 -T        Config test - just check configuration file(s) for errors/warnings
 -u <url>  Download from this URL instead of URL(s) in the configuration file
-          (http://, https://, ftp://, file:// or scp:// ... .tar.gz|.gz)
+          (http|https|ftp|file|scp:// ... .tar.gz|.gz, or dir://<dir>)
           May be specified multiple times to grab multiple rules archives
 -U <file> Merge new variables from downloaded snort.conf(s) into <file>
 -v        Verbose mode (debug)
@@ -686,6 +693,9 @@ sub sanity_check()
         clean_exit("variable file \"$config{varfile}\" does not exist.")
           unless (-e "$config{varfile}");
 
+        clean_exit("variable file \"$config{varfile}\" is not a file.")
+          unless (-f "$config{varfile}");
+
         clean_exit("variable file \"$config{varfile}\" is not writable by you.")
           if (!$config{careful} && !-w "$config{varfile}");
     }
@@ -710,8 +720,22 @@ sub sanity_check()
     $#{$config{url}} = -1;
     foreach my $url (@urls) {
         clean_exit("incorrect URL: \"$url\"")
-          unless ($url =~ /^((?:https*|ftp|file|scp):\/\/.+\.(?:tar\.gz|tgz))$/);
-        push(@{$config{url}}, $1);
+          unless ($url =~ /^((?:https*|ftp|file|scp):\/\/.+\.(?:tar\.gz|tgz))$/
+            || $url =~ /^(dir:\/\/.+)/);
+        my $ok_url = $1;
+
+        if ($ok_url =~ /^dir:\/\/(.+)/) {
+            my $dir = untaint_path($1);
+            clean_exit("\"$dir\" does not exist or is not a directory")
+              unless (-d $dir);
+
+          # Simple check if the output dir is specified as url (probably a mistake).
+            if (File::Spec->canonpath(File::Spec->rel2abs($dir))
+              eq File::Spec->canonpath(File::Spec->rel2abs($config{output_dir}))) {
+                clean_exit("Download directory can not be same as output directory");
+            }
+        }
+        push(@{$config{url}}, $ok_url);
     }
 
   # Wget must be found if url is http[s]:// or ftp://.
@@ -813,6 +837,10 @@ sub download_file($ $)
     $obfuscated_url = "$1:*password*\@$2"
       if ($obfuscated_url =~ /^(\S+:\/\/.+?):.+?@(.+)/);
 
+  # Ofbuscate oinkcode as well.
+    $obfuscated_url = "$1*oinkcode*$2"
+      if ($obfuscated_url =~ /^(\S+:\/\/.+\.cgi\/)[0-9a-z]{32,64}(\/.+)/i);
+
   # Use wget if URL starts with "http[s]" or "ftp" and we use external binaries.
     if ($config{use_external_bins} && $url =~ /^(?:https*|ftp)/) {
         print STDERR "Downloading file from $obfuscated_url... "
@@ -824,11 +852,18 @@ sub download_file($ $)
               if (system("wget", "-v", "-O", "$localfile", "$url"));
         } else {
             if (system("wget", "-v", "-o", "$log", "-O", "$localfile", "$url")) {
+                my $log_output;
                 open(LOG, "<", "$log")
                   or clean_exit("could not open $log for reading: $!");
-                my @log = <LOG>;
+                # Sanitize oinkcode in wget's log (password is automatically sanitized).
+                while (<LOG>) {
+                    $_ = "$1*oinkcode*$2"
+                      if (/(\S+:\/\/.+\.cgi\/)[0-9a-z]{32,64}(\/.+)/i);
+                    $log_output .= $_;
+                }
                 close(LOG);
-                clean_exit("could not download from $obfuscated_url. Output from wget follows:\n\n @log");
+                clean_exit("could not download from $obfuscated_url. ".
+                           "Output from wget follows:\n\n $log_output");
             }
             print STDERR "done.\n" unless ($config{quiet});
         }
@@ -1759,8 +1794,6 @@ sub print_changes($ $)
           unless ($config{super_quiet} || $config{summary_output});
     }
 
-
-
   # Print list of possibly removed files if requested.
     if ($config{check_removed}) {
         if (keys(%{$$ch_ref{removed_files}})) {
@@ -1880,7 +1913,7 @@ sub get_changes($ $ $)
 
         while ($_ = readdir(OLDRULES)) {
             next if (/^\.\.?$/);
-            $changes{removed_files}{"$_"}++
+            $changes{removed_files}{"$_"} = 1
               if (/$config{update_files}/ && 
                 !exists($config{file_ignore_list}{$_}) &&
                 !-e "$tmpdir/$rules_dir/$_");
@@ -1983,6 +2016,43 @@ sub update_rules($ @)
     }
 
     print STDERR "done.\n"
+      if (!$config{quiet} || $config{interactive});
+}
+
+
+# Simply copy rules files from one dir to another.
+# Links are not allowed.
+sub copy_rules($ $)
+{
+    my $src_dir = shift;
+    my $dst_dir = shift;
+
+    print STDERR "Copying rules from $src_dir... "
+      if (!$config{quiet} || $config{interactive});
+
+    opendir(SRC_DIR, $src_dir)
+      or clean_exit("could not open directory $src_dir: $!");
+
+    my $num_files = 0;
+    while ($_ = readdir(SRC_DIR)) {
+        next if (/^\.\.?$/ || exists($config{file_ignore_list}{$_}) || !/$config{update_files}/);
+
+      # Make sure it's a regular file.
+        unless (-f "$src_dir/$_" && !-l "$src_dir/$_") {
+            closedir(SRC_DIR);
+            clean_exit("\"$src_dir/$_\" is not a regular file.")
+        }
+
+        unless (copy("$src_dir/$_", $dst_dir)) {
+            closedir(SRC_DIR);
+            clean_exit("could not copy \"$src_dir/$_\" to \"$dst_dir\"/: $!");
+        }
+        $num_files++;
+    }
+
+    closedir(SRC_DIR);
+
+    print STDERR "$num_files files copied.\n"
       if (!$config{quiet} || $config{interactive});
 }
 
