@@ -81,7 +81,8 @@ sub catch_sigint();
 sub clean_exit($);
 
 
-my $VERSION            = 'Oinkmaster v1.3, Copyright (C) 2001-2005 Andreas Östling <andreaso@it.su.se>';
+my $VERSION            = 'Oinkmaster v1.3, Copyright (C) 2001-2005 '.
+                         'Andreas Östling <andreaso@it.su.se>';
 my $OUTFILE            = 'snortrules.tar.gz';
 my $RULES_DIR          = 'rules';
 my $DIST_SNORT_CONF    = 'snort.conf';
@@ -459,21 +460,29 @@ sub read_config($ $)
     LINE:while ($_ = shift(@conf)) {
         $linenum++;
 
-      # Remove leading whitespaces and comment-only lines unless
-      # we're in the middle of reading a multi-line rule.
         unless ($multi) {
             s/^\s*//;
             s/^#.*//;
         }
 
-      # Multi-line start/continuation?
+      # Multi-line start/continuation.
         if (/\\\s*\n$/) {
             s/\\\s*\n$//;
+            s/^\s*#.*//;
+
+          # Be strict about removing #comments in modifysid/define_template statements, as
+          # they may contain other '#' chars.
+            if (defined($multi) && ($multi =~ /^modifysid/i || $multi =~ /^define_template/i)) {
+                s/#.*// if (/^\s*\d+[,\s\d]+#/);
+            } else {
+                s/\s*\#.*// unless (/^modifysid/i || /^define_template/i);
+            }
+
             $multi .= $_;
             next LINE;
         }
 
-      # Last line of multi-line directive?
+      # Last line of multi-line directive.
         if (defined($multi)) {
             $multi .= $_;
             $_ = $multi;
@@ -549,7 +558,8 @@ sub read_config($ $)
   	        if ($sid =~ /^\d+$/) {
                     $$cfg_ref{sid_disable_list}{$sid}++;
 	        } else {
-                    warn("WARNING: line $linenum in $config_file is invalid, ignoring\n");
+                    warn("WARNING: line $linenum in $config_file: ".
+                         "\"$sid\" is not a valid SID, ignoring\n");
 	        }
 	    }
 
@@ -560,7 +570,8 @@ sub read_config($ $)
   	        if ($sid =~ /^\d+$/) {
                     $$cfg_ref{sid_local_list}{$sid}++;
 	        } else {
-                    warn("WARNING: line $linenum in $config_file is invalid, ignoring\n");
+                    warn("WARNING: line $linenum in $config_file: ".
+                         "\"$sid\" is not a valid SID, ignoring\n");
 	        }
 	    }
 
@@ -571,7 +582,8 @@ sub read_config($ $)
   	        if ($sid =~ /^\d+$/) {
                     $$cfg_ref{sid_enable_list}{$sid}++;
 	        } else {
-                    warn("WARNING: line $linenum in $config_file is invalid, ignoring\n");
+                    warn("WARNING: line $linenum in $config_file: ".
+                         "\"$sid\" is not a valid SID, ignoring\n");
 	        }
 	    }
 
@@ -1333,9 +1345,8 @@ sub process_rules($ $ $ $ $ $)
         }
     }
 
-  # Print warnings on attempt at modifysid'ing non-existent stuff in all modes
-  # except super quiet, as they are usually more important.
-    unless ($config{super_quiet}) {
+  # Print warnings on attempt at modifysid'ing non-existent stuff, unless quiet mode.
+    unless ($config{quiet}) {
         my %new_files;
         foreach my $file (sort(keys(%$newfiles_ref))) {
             $new_files{basename($file)} = 1;
@@ -2035,17 +2046,20 @@ sub copy_rules($ $)
 
     my $num_files = 0;
     while ($_ = readdir(SRC_DIR)) {
-        next if (/^\.\.?$/ || exists($config{file_ignore_list}{$_}) || !/$config{update_files}/);
+        next if (/^\.\.?$/ || exists($config{file_ignore_list}{$_})
+          || !/$config{update_files}/);
+
+      my $src_file = untaint_path("$src_dir/$_");
 
       # Make sure it's a regular file.
-        unless (-f "$src_dir/$_" && !-l "$src_dir/$_") {
+        unless (-f "$src_file" && !-l "$src_file") {
             closedir(SRC_DIR);
-            clean_exit("\"$src_dir/$_\" is not a regular file.")
+            clean_exit("\"$src_file\" is not a regular file.")
         }
 
-        unless (copy("$src_dir/$_", $dst_dir)) {
+        unless (copy($src_file, $dst_dir)) {
             closedir(SRC_DIR);
-            clean_exit("could not copy \"$src_dir/$_\" to \"$dst_dir\"/: $!");
+            clean_exit("could not copy \"$src_file\" to \"$dst_dir\"/: $!");
         }
         $num_files++;
     }
@@ -2370,6 +2384,8 @@ sub parse_mod_expr($ $ $ $)
     my $subst        = shift;  # regexp to look for
     my $repl         = shift;  # regexp to replace it with
 
+    my @tmp_mod_list;
+
     $sid_arg_list =~ s/\s+$//;
 
     foreach my $sid_arg (split(/\s*,\s*/, $sid_arg_list)) {
@@ -2394,7 +2410,13 @@ sub parse_mod_expr($ $ $ $)
             return (0);
         }
 
-        push(@$mod_list_ref, [$subst, $repl_qq, $type, $sid_arg]);
+        push(@tmp_mod_list, [$subst, $repl_qq, $type, $sid_arg]);
+    }
+
+  # If we come this far, all sids and the regexp were parsed successfully, so
+  # append them to real mod list array.
+    foreach my $mod_entry (@tmp_mod_list) {
+        push(@$mod_list_ref, $mod_entry);
     }
 
     return (1);
