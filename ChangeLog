@@ -2,10 +2,13 @@
 
 Oinkmaster v1.3 - 200xxxxx
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
-o Obfuscate the oinkcode when printing URLs, if not running in verbose
+o Obfuscate the oinkcode when printing URLs, unless running in verbose
   mode.
 o Added ability to grab rules files from a local directory by specifying 
-  dir://<dir> as URL.
+  dir://<directory> as URL.
+o Suppress warnings about using modifysid on non-existent SIDs when 
+  running in quiet mode.
+o Misc improvements of the config file parser.
 
 
 
