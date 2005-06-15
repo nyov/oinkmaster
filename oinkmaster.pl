@@ -2311,12 +2311,6 @@ sub get_new_vars($ $ $ $)
         }
     }
 
-    unless ($config{quiet}) {
-        print STDERR "Found $confs_found variable file";
-        print STDERR "s" if ($confs_found > 1);
-        print STDERR ", checking for new variables... ";
-    }
-
   # Read in variable names from old (target) var file.
     open(LOCAL_VAR_FILE, "<", "$local_var_file")
       or clean_exit("could not open $local_var_file for reading: $!");
@@ -2336,8 +2330,9 @@ sub get_new_vars($ $ $ $)
         foreach my $dist_var_file (@$dist_var_files_ref) {
             my $conf = "$dir/$dist_var_file";
             if (-e "$conf") {
-                print STDERR "Checking \"$dist_var_file\" for new variables\n"
-                  if ($config{verbose});
+                my $num_new = 0;
+                print STDERR "Checking downloaded $dist_var_file for new variables... "
+                  unless ($config{quiet});
 
                 open(DIST_CONF, "<", "$conf")
                   or clean_exit("could not open $conf for reading: $!");
@@ -2356,11 +2351,14 @@ sub get_new_vars($ $ $ $)
                                      "times in downloaded files\n");
                             }
                             $new_vars{$varname} = $varval;
+                            $num_new++;
                         }
                     }
                 }
 
                 close(DIST_CONF);
+                print STDERR "$num_new new found.\n"
+                  unless ($config{quiet});
             }
         }
     }
@@ -2368,9 +2366,6 @@ sub get_new_vars($ $ $ $)
     foreach my $varname (keys(%new_vars)) {
         push(@{$$ch_ref{new_vars}}, "var $varname $new_vars{$varname}\n");
     }
-
-    print STDERR "done.\n"
-      unless ($config{quiet});
 }
 
 
