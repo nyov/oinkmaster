@@ -181,7 +181,7 @@ if ($#{$config{dist_var_files}} == -1) {
 if ($#{$config{config_files}} == -1) {
     clean_exit("configuration file not found in default locations\n".
                "(@DEFAULT_CONFIG_FILES)\n".
-               "Put it there or use the \"-C\" argument.");
+               "Put it there or use the \"-C <file>\" argument.");
 }
 
 read_config($_, \%config) for @{$config{config_files}};
@@ -352,7 +352,7 @@ This should be the directory where you store your Snort rules.
 Options:
 -b <dir>  Backup your old rules into <dir> before overwriting them
 -c        Careful mode (dry run) - check for changes but do not update anything
--C <cfg>  Use this configuration file instead of the default
+-C <file> Use this configuration file instead of the default
           May be specified multiple times to load multiple files
 -e        Enable all rules that are disabled by default
 -h        Show this usage information
