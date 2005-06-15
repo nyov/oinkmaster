@@ -320,7 +320,7 @@ if ($something_changed) {
       if ($config{make_backup} && !$config{quiet});
 }
 
-print "\nNote: Oinkmaster is running in careful mode - not updating anything.\n"
+print "\nOinkmaster is running in careful mode - not updating anything.\n"
   if ($something_changed && $config{careful});
 
 print_changes(\%changes, \%rh)
@@ -2380,6 +2380,9 @@ sub add_new_vars($ $)
 
     return unless ($#{$changes{new_vars}} > -1);
 
+    print STDERR "Adding new variables to $varfile... "
+      unless ($config{quiet});
+
     open(OLD_LOCAL_CONF, "<", "$varfile")
       or clean_exit("could not open $varfile for reading: $!");
     my @old_content = <OLD_LOCAL_CONF>;
@@ -2406,6 +2409,9 @@ sub add_new_vars($ $)
 
     clean_exit("could not copy $tmp_varfile to $varfile: $!")
       unless (copy("$tmp_varfile", "$varfile"));
+
+    print STDERR "done.\n"
+      unless ($config{quiet});
 }
 
 
