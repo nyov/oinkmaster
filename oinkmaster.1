@@ -127,6 +127,15 @@ updated. Example output when running with
             306 - EXPLOIT VQServer admin (exploit.rules)
 .fi
 .PP
+.IP "\fB-S \fIfile\fP
+Used in conjuction with with
+.B -U
+to specify which file(s) in the downloaded archive(s) to search
+for new variables. When not specified, snort.conf is checked.
+You may specify multiple
+.B -S
+.I file
+to search for new variables in multiple files.
 .IP "\fB-T
 Check the configuration file(s) for fatal errors and then exit.
 Possible warning messages are printed as well.
@@ -136,12 +145,13 @@ Download the rules archive from
 instead of the location specified in the configuration file.
 It must start with file://, ftp://, http://, https:// or scp:// and end 
 with ".tar.gz" or ".tgz". The file must be a gzipped tarball containing 
-a directory named "rules", holding all the rules files. You can also 
-point to a local directory with dir://<directory>. For the official 
-Snort rules, the URL to use depends on the version of Snort you run and 
-it might also require registration. Visit the rules download section at 
-the Snort web site to find the right URL and more information. Remember 
-to update the URL when upgrading to a new major version of Snort.
+a directory named "rules", holding all the rules files. It must not
+contain any symlinks. You can also point to a local directory with
+dir://<directory>. For the official Snort rules, the URL to use depends
+on the version of Snort you run and it might also require registration.
+Visit the rules download section at the Snort web site to find the
+right URL and more information. Remember to update the URL when
+upgrading to a new major version of Snort.
 
 You may specify multiple
 .B -u
@@ -163,18 +173,32 @@ on the situation.
 Variables (i.e. "var foo bar" lines) that exist in downloaded snort.conf
 but not in
 .I file
-will be added to this one, right after any other variables it may contain. 
+will be added to
+.I file
+right after any other variables it may contain. 
 Modified existing variables are not merged, only new ones. 
 .I file
 is normally your production copy of snort.conf (which should not be a
 file that is updated by Oinkmaster the normal way).
 This feature is to prevent Snort from breaking in case there are new
 variables added in the downloaded rules, as Snort can not start if the
-rules use variables that aren't defined anywhere. If you download from
-multiple URLs, Oinkmaster will look for a snort.conf in each downloaded
-rules archive.
+rules use variables that aren't defined anywhere. By default when using
+.B -U
+, the file snort.conf in the downloaded archive is search for new
+variables but you can override this with the
+.B -S
+.I file
+argument. If you download from multiple URLs, Oinkmaster will look for
+a snort.conf in each downloaded rules archive. Note that variable
+definitions that span over multiple lines are currently not supporeted.
 .IP "\fB-v
-Run in verbose/debug mode.
+Run in verbose/debug mode. Should probably only be used in case you need
+to debug your settings, like verifying complex modifysid statements.
+It will also tell you if you try to use "disablesid" on non-existent
+SIDs. Warnings about using enablesid/localsid/modifysid on non-existent
+SIDs are always printed unless running in quiet mode, as those are
+usually more important (using "disablesid" on a non-existent rule is
+a NOOP anyway).
 .IP "\fB-V
 Show version and exit.
 .SH EXAMPLES
@@ -197,11 +221,21 @@ there were updates, and send output by e-mail. (Note however that if you
 plan on distributing files with Oinkmaster that could be considered 
 sensitive, such as Snort configuration files containing database 
 passwords, you should of course not send the output by e-mail without 
-first encrypting the content.) 
+first encrypting the content.):
 .PP
 .nf
 \fB    oinkmaster.pl -o /etc/snort/rules -b /etc/snort/backup 2>&1 | \fP\\
 \fB    mail -s "subject" user@example.com
+.fi
+.PP
+Grab three different rules archives and merge variables that exist in
+downloaded snort.conf and foo.conf but not in local
+/etc/snort/snort.conf:
+.PP
+.nf
+\fB    oinkmaster.pl -u file:///tmp/foo.rules.tar.gz \fP\\
+\fB    -u http://somewhere/rules.tar.gz -u https://blah/rules.tar.gz \fP\\
+\fB    -o /etc/rules -S snort.conf -S foo.conf -U /etc/snort/snort.conf
 .fi
 .PP
 Load settings from two different files, use scp to download rules archive 

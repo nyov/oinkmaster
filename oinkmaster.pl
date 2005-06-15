@@ -68,7 +68,7 @@ sub update_rules($ @);
 sub copy_rules($ $);
 sub is_in_path($);
 sub get_next_entry($ $ $ $ $ $);
-sub get_new_vars($ $ $);
+sub get_new_vars($ $ $ $);
 sub add_new_vars($ $);
 sub write_new_vars($ $);
 sub msdos_to_cygwin_path($);
@@ -85,7 +85,6 @@ my $VERSION            = 'Oinkmaster v1.3, Copyright (C) 2001-2005 '.
                          'Andreas Östling <andreaso@it.su.se>';
 my $OUTFILE            = 'snortrules.tar.gz';
 my $RULES_DIR          = 'rules';
-my $DIST_SNORT_CONF    = 'snort.conf';
 
 my $PRINT_NEW          = 1;
 my $PRINT_OLD          = 2;
@@ -125,7 +124,7 @@ my $SINGLELINE_RULE_REGEXP = '^\s*#*\s*(?:%ACTIONS%)'.
                              '\s.+;\s*\)\s*$'; # ';
 
 # Match var line where var name goes into $1.
-my $VAR_REGEXP = '^\s*var\s+(\S+)\s+\S+';
+my $VAR_REGEXP = '^\s*var\s+(\S+)\s+(\S+)';
 
 # Allowed characters in misc paths/filenames, including the ones in the tarball.
 my $OK_PATH_CHARS = 'a-zA-Z\d\ _\(\)\[\]\.\-+:\\\/~@,=';
@@ -134,6 +133,10 @@ my $OK_PATH_CHARS = 'a-zA-Z\d\ _\(\)\[\]\.\-+:\\\/~@,=';
 my @DEFAULT_CONFIG_FILES = qw(
     /etc/oinkmaster.conf
     /usr/local/etc/oinkmaster.conf
+);
+
+my @DEFAULT_DIST_VAR_FILES = qw(
+  snort.conf
 );
 
 my (%loaded, $tmpdir);
@@ -164,6 +167,13 @@ if ($#{$config{config_files}} == -1) {
             push(@{${config{config_files}}}, $config);
             last;
         }
+    }
+}
+
+# If no dist var file was specified on command line, set to default file(s).
+if ($#{$config{dist_var_files}} == -1) {
+    foreach my $var_file (@DEFAULT_DIST_VAR_FILES) {
+        push(@{${config{dist_var_files}}}, $var_file);
     }
 }
 
@@ -266,7 +276,7 @@ my %rh = setup_rules_hash(\%new_files, $config{output_dir});
 my %changes = get_changes(\%rh, \%new_files, $RULES_DIR);
 
 # Check for variables that exist in dist snort.conf(s) but not in local snort.conf.
-get_new_vars(\%changes, $config{varfile}, \@url_tmpdirs)
+get_new_vars(\%changes, \@{$config{dist_var_files}}, $config{varfile}, \@url_tmpdirs)
   if ($config{update_vars});
 
 
@@ -353,6 +363,9 @@ Options:
 -r        Check for rules files that exist in the output directory
           but not in the downloaded rules archive
 -s        Leave out details in rules results, just print SID, msg and filename
+-S <file> Look for new variables in this file in the downloaded archive instead
+          of the default (@DEFAULT_DIST_VAR_FILES). Used in conjunction with -U.
+          May be specified multiple times to search multiple files.
 -T        Config test - just check configuration file(s) for errors/warnings
 -u <url>  Download from this URL instead of URL(s) in the configuration file
           (http|https|ftp|file|scp:// ... .tar.gz|.gz, or dir://<dir>)
@@ -385,8 +398,9 @@ sub parse_cmdline($)
         "o=s" => \$$cfg_ref{output_dir},
         "q"   => \$$cfg_ref{quiet},
         "Q"   => \$$cfg_ref{super_quiet},
-        "r"   => \$$cfg_ref{check_removed},
+         "r"   => \$$cfg_ref{check_removed},
         "s"   => \$$cfg_ref{summary_output},
+        "S=s" => \@{$$cfg_ref{dist_var_files}},
         "T"   => \$$cfg_ref{config_test_mode},
         "u=s" => \@{$$cfg_ref{url}},
         "U=s" => \$$cfg_ref{varfile},
@@ -397,6 +411,7 @@ sub parse_cmdline($)
                  }
     );
 
+
     show_usage unless ($cmdline_ok && $#ARGV == -1);
 
     $$cfg_ref{quiet}       = 1 if ($$cfg_ref{super_quiet});
@@ -405,6 +420,12 @@ sub parse_cmdline($)
     if ($$cfg_ref{backup_dir}) {
         $$cfg_ref{backup_dir} = File::Spec->canonpath($$cfg_ref{backup_dir});
         $$cfg_ref{make_backup} = 1;
+    }
+
+  # Cannot specify dist var files without specifying var target file.
+    if (@{$$cfg_ref{dist_var_files}} && !$$cfg_ref{update_vars}) {
+        clean_exit("You can not specify distribution variable file(s) without ".
+                   "specifying file to merge into");
     }
 
   # -o <dir> is the only required option in normal usage.
@@ -710,6 +731,19 @@ sub sanity_check()
 
         clean_exit("variable file \"$config{varfile}\" is not writable by you.")
           if (!$config{careful} && !-w "$config{varfile}");
+
+      # Make sure dist var files don't contain [back]slashes
+      # (probably means user confused it with local var file).
+        my %dist_var_files;
+        foreach my $dist_var_file (@{${config{dist_var_files}}}) {
+            clean_exit("variable file \"$dist_var_file\" specified multiple times")
+              if (exists($dist_var_files{$dist_var_file}));
+            $dist_var_files{$dist_var_file} = 1;
+            clean_exit("variable file \"$dist_var_file\" contains slashes or backslashes ".
+                       "but it must be specified as a filename (without path) ".
+                       "that exists in the downloaded rules, e.g. \"snort.conf\"")
+              if ($dist_var_file =~ /\// || $dist_var_file =~ /\\/);
+        }
     }
 
   # Make sure all required binaries can be found, unless
@@ -2238,78 +2272,102 @@ sub get_next_entry($ $ $ $ $ $)
 
 
 
-# Look for variables that exist in dist snort.conf but not in local snort.conf.
-sub get_new_vars($ $ $)
+# Look for variables that exist in dist var files but not in local var file.
+sub get_new_vars($ $ $ $)
 {
-    my $ch_ref          = shift;
-    my $local_conf      = shift;
-    my $url_tmpdirs_ref = shift;
+    my $ch_ref             = shift;
+    my $dist_var_files_ref = shift;
+    my $local_var_file     = shift;
+    my $url_tmpdirs_ref    = shift;
 
-    my @new_vars;
-    my %old_vars;
-
+    my %new_vars;
+    my (%old_vars, %dist_var_files, %found_dist_var_files);
     my $confs_found = 0;
 
+
+  # Warn in case we can't find a specified dist file.
     foreach my $dir (@$url_tmpdirs_ref) {
-        if (-e "$dir/$DIST_SNORT_CONF") {
-            $confs_found++;
+        foreach my $dist_var_file (@$dist_var_files_ref) {
+            if (-e "$dir/$dist_var_file") {
+                $found_dist_var_files{$dist_var_file} = 1;
+                $confs_found++;
+            }
         }
     }
 
-    my $base_conf = basename($DIST_SNORT_CONF);
+    foreach my $dist_var_file (@$dist_var_files_ref) {
+        unless (exists($found_dist_var_files{$dist_var_file})) {
+            warn("WARNING: did not find variable file \"$dist_var_file\" in ".
+                 "downloaded archive(s)\n")
+              unless($config{quiet});
+        }
+    }
+
     unless ($confs_found) {
         unless ($config{quiet}) {
-            warn("WARNING: no $base_conf found in downloaded archive(s), ".
+            warn("WARNING: no variable files found in downloaded archive(s), ".
                  "aborting check for new variables\n");
             return;
         }
     }
 
     unless ($config{quiet}) {
-        print STDERR "Found $confs_found $DIST_SNORT_CONF file";
+        print STDERR "Found $confs_found variable file";
         print STDERR "s" if ($confs_found > 1);
         print STDERR ", checking for new variables... ";
     }
 
-  # Read in variable names from old file.
-    open(LOCAL_CONF, "<", "$local_conf")
-      or clean_exit("could not open $local_conf for reading: $!");
+  # Read in variable names from old (target) var file.
+    open(LOCAL_VAR_FILE, "<", "$local_var_file")
+      or clean_exit("could not open $local_var_file for reading: $!");
 
-    my @local_conf = <LOCAL_CONF>;
+    my @local_var_conf = <LOCAL_VAR_FILE>;
 
-    foreach $_ (@local_conf) {
+    foreach $_ (@local_var_conf) {
         $old_vars{lc($1)}++ if (/$VAR_REGEXP/i);
     }
 
-    close(LOCAL_CONF);
+    close(LOCAL_VAR_FILE);
 
+    print STDERR "\n" if ($config{verbose});
 
-  # Read in variables from new files.
+  # Read in variables from new file(s).
     foreach my $dir (@$url_tmpdirs_ref) {
-        my $conf = "$dir/$DIST_SNORT_CONF";
-        if (-e "$conf") {
+        foreach my $dist_var_file (@$dist_var_files_ref) {
+            my $conf = "$dir/$dist_var_file";
+            if (-e "$conf") {
+                print STDERR "Checking \"$dist_var_file\" for new variables\n"
+                  if ($config{verbose});
 
-            open(DIST_CONF, "<", "$conf")
-              or clean_exit("could not open $conf for reading: $!");
+                open(DIST_CONF, "<", "$conf")
+                  or clean_exit("could not open $conf for reading: $!");
 
-            while ($_ = <DIST_CONF>) {
-                s/^\s*//;
+                while ($_ = <DIST_CONF>) {
+                    s/^\s*//;
 
-                if (/$VAR_REGEXP/i && !exists($old_vars{lc($1)})) {
-                    if (/\\\n/) {
-                        warn("\nWARNING: can not handle variables split over multiple lines\n")
-                          unless ($config{quiet});
-                    } else {
-                        push(@new_vars, $_)
+                   if (/$VAR_REGEXP/i && !exists($old_vars{lc($1)})) {
+                        if (/\\\n/) {
+                            warn("\nWARNING: can not handle variables split over multiple lines\n")
+                              unless ($config{quiet});
+                        } else {
+                            my ($varname, $varval) = ($1, $2);
+                            if (exists($new_vars{$varname})) {
+                                warn("\nWARNING: new variable \"$varname\" is defined multiple ".
+                                     "times in downloaded files\n");
+                            }
+                            $new_vars{$varname} = $varval;
+                        }
                     }
                 }
-            }
 
-            close(DIST_CONF);
+                close(DIST_CONF);
+            }
         }
     }
 
-    @{$$ch_ref{new_vars}} = @new_vars;
+    foreach my $varname (keys(%new_vars)) {
+        push(@{$$ch_ref{new_vars}}, "var $varname $new_vars{$varname}\n");
+    }
 
     print STDERR "done.\n"
       unless ($config{quiet});
@@ -2338,7 +2396,7 @@ sub add_new_vars($ $)
     my @old_vars = grep(/$VAR_REGEXP/i, @old_content);
 
 
-  # If any vars exist in old file, find last one before inserting new ones.
+  # If any vars exist in old file, put new vars right after them.
     if ($#old_vars > -1) {
         while ($_ = shift(@old_content)) {
             print NEW_LOCAL_CONF $_;

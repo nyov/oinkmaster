@@ -2,13 +2,21 @@
 
 Oinkmaster v1.3 - 200xxxxx
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
+o When using the -U argument to merge new variables, you can now also 
+  specify -S <file> to specify which files in the downloaded rules 
+  archive(s) to search for new variables. If -S is not specified, only 
+  snort.conf is searched, just like before. As usual, no variable 
+  merge is done unless -U is specified. You may specify multiple
+  -S <file> arguments to search for variables in multiple files, e.g. 
+  "... -S snort.conf -S foo.conf ...".
 o Obfuscate the oinkcode when printing URLs, unless running in verbose
   mode.
-o Added ability to grab rules files from a local directory by specifying 
-  dir://<directory> as URL.
+o Added ability to grab rules files from a local directory by 
+  specifying dir://<directory> as URL.
 o Suppress warnings about using modifysid on non-existent SIDs when 
   running in quiet mode.
-o Misc improvements of the config file parser.
+o Misc improvements to the config file parser.
+o Make contrib/addmsg.pl handle some multi-line statements.
 
 
 
