@@ -9,6 +9,7 @@ o When using the -U argument to merge new variables, you can now also
   merge is done unless -U is specified. You may specify multiple
   -S <file> arguments to search for variables in multiple files, e.g. 
   "... -S snort.conf -S foo.conf ...".
+o Handle multi-line variable definitions when merging variables.
 o Obfuscate the oinkcode when printing URLs, unless running in verbose
   mode.
 o Added ability to grab rules files from a local directory by 

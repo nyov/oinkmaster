@@ -76,6 +76,7 @@ sub parse_mod_expr($ $ $ $);
 sub untaint_path($);
 sub approve_changes();
 sub parse_singleline_rule($ $ $);
+sub join_multilines($);
 sub minimize_diff($ $);
 sub catch_sigint();
 sub clean_exit($);
@@ -2317,13 +2318,11 @@ sub get_new_vars($ $ $ $)
 
     my @local_var_conf = <LOCAL_VAR_FILE>;
 
-    foreach $_ (@local_var_conf) {
+    foreach $_ (join_multilines(\@local_var_conf)) {
         $old_vars{lc($1)}++ if (/$VAR_REGEXP/i);
     }
 
     close(LOCAL_VAR_FILE);
-
-    print STDERR "\n" if ($config{verbose});
 
   # Read in variables from new file(s).
     foreach my $dir (@$url_tmpdirs_ref) {
@@ -2336,23 +2335,18 @@ sub get_new_vars($ $ $ $)
 
                 open(DIST_CONF, "<", "$conf")
                   or clean_exit("could not open $conf for reading: $!");
+                my @dist_var_conf = <DIST_CONF>;
+                close(DIST_CONF);
 
-                while ($_ = <DIST_CONF>) {
-                    s/^\s*//;
-
-                   if (/$VAR_REGEXP/i && !exists($old_vars{lc($1)})) {
-                        if (/\\\n/) {
-                            warn("\nWARNING: can not handle variables split over multiple lines\n")
-                              unless ($config{quiet});
-                        } else {
-                            my ($varname, $varval) = ($1, $2);
-                            if (exists($new_vars{$varname})) {
-                                warn("\nWARNING: new variable \"$varname\" is defined multiple ".
-                                     "times in downloaded files\n");
-                            }
-                            $new_vars{$varname} = $varval;
-                            $num_new++;
+                foreach $_ (join_multilines(\@dist_var_conf)) {
+                    if (/$VAR_REGEXP/i && !exists($old_vars{lc($1)})) {
+                        my ($varname, $varval) = (lc($1), $2);
+                        if (exists($new_vars{$varname})) {
+                            warn("\nWARNING: new variable \"$varname\" is defined multiple ".
+                                 "times in downloaded files\n");
                         }
+                        $new_vars{$varname} = $varval;
+                        $num_new++;
                     }
                 }
 
@@ -2647,6 +2641,22 @@ sub parse_singleline_rule($ $ $)
     }
 
     return (0);
+}
+
+
+
+# Merge multiline directives in an array by simply removing traling backslashes.
+sub join_multilines($)
+{
+    my $multiline_conf_ref = shift;
+    my $joined_conf;
+
+    foreach $_ (@$multiline_conf_ref) {
+        s/\\\s*\n$//;
+        $joined_conf .= $_;
+    }
+
+    return (split/\n/, $joined_conf);
 }
 
 
