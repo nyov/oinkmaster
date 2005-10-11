@@ -18,6 +18,9 @@ o Suppress warnings about using modifysid on non-existent SIDs when
   running in quiet mode.
 o Misc improvements to the config file parser.
 o Make contrib/addmsg.pl handle some multi-line statements.
+o contrib/create-sidmap.pl:
+  - don't ignore rules that are commented out
+  - ignore the file deleted.rules by default (you don't use it, do you?!)
 
 
 
