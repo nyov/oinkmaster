@@ -43,6 +43,10 @@ use strict;
 sub get_next_entry($ $ $ $ $ $);
 sub parse_singleline_rule($ $ $);
 
+# Files to ignore.
+my %skipfiles = (
+    'deleted.rules' => 1,
+);
 
 # Regexp to match the start of a multi-line rule.
 # %ACTIONS% will be replaced with content of $config{actions} later.
@@ -53,11 +57,10 @@ my $MULTILINE_RULE_REGEXP  = '^\s*#*\s*(?:%ACTIONS%)'.
 my $SINGLELINE_RULE_REGEXP = '^\s*#*\s*(?:%ACTIONS%)'.
                              '\s.+;\s*\)\s*$'; # ';
 
-
 my $USAGE = << "RTFM";
 
-Parse active rules in *.rules in one or more directories and create a SID 
-map. Result is sent to standard output, which can be redirected to a 
+Parse active rules in *.rules in one or more directories and create a SID
+map. Result is sent to standard output, which can be redirected to a
 sid-msg.map file.
 
 Usage: $0 <rulesdir> [rulesdir2, ...]
@@ -85,6 +88,7 @@ foreach my $rulesdir (@rulesdirs) {
 
     while (my $file = readdir(RULESDIR)) {
         next unless ($file =~ /\.rules$/);
+        next if ($skipfiles{$file});
 
         open(FILE, "$rulesdir/$file") or die("could not open \"$rulesdir/$file\": $!\n");
         my @file = <FILE>;
@@ -94,9 +98,6 @@ foreach my $rulesdir (@rulesdirs) {
 
         while (get_next_entry(\@file, \$single, \$multi, \$nonrule, \$msg, \$sid)) {
             if (defined($single)) {
-
-            # Don't care about inactive rules.
-                next if ($single =~ /^\s*#/);
 
                 warn("WARNING: duplicate SID: $sid (discarding old)\n")
                   if (exists($sidmap{$sid}));
