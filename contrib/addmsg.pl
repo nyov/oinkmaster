@@ -117,18 +117,24 @@ foreach my $rulesdir (@rulesdirs) {
 
 # Print new oinkmaster.conf.
 while ($_ = shift(@config)) {
-    if (/^\s*(?:disable|enable)sids*\s+(\d+)\s*$/) {
+    if (/^\s*(?:disable|enable|local)sid\s+(\d+)\s*$/ || /^\s*(\d+)\s*,\s*\\$/ || /^\s*(\d+)\s*$/) {
 	my $sid = $1;
+        my $is_multiline = 0;
 	chomp;
-	s/ +/ /g;	
-	tr/\t/ /;
+
+        if (/\\$/) {
+           $is_multiline = 1;
+           s/\\$//;
+        }
+
 	$_ = sprintf("%-25s", $_);
 	if (exists($sidmsgmap{$sid})) {
-            print "$_  # $sidmsgmap{$sid}\n";
+            print "$_  # $sidmsgmap{$sid}";
 	} else {
-            print "$_\n";
-	    print STDERR "WARNING: SID $sid not found\n";
+            print "$_";
         }
+        print " \\" if ($is_multiline);
+        print "\n";
     } else {
 	print;
     }
