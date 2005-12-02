@@ -1923,7 +1923,7 @@ sub print_summary_change($ $)
         my @rule = $sidmap{$sid}{rule};
         my $file = $sidmap{$sid}{file};
 	get_next_entry(\@rule, undef, undef, undef, \(my $msg), undef);
-        printf("%8d - %s ($file)\n", $sid, $msg);
+        printf("%8d - %s (%s)\n", $sid, $msg, $file);
     }
 
     print "\n";
