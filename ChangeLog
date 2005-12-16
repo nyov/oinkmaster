@@ -17,6 +17,10 @@ o Added ability to grab rules files from a local directory by
 o Suppress warnings about using modifysid on non-existent SIDs when 
   running in quiet mode.
 o Misc improvements to the config file parser.
+o You can now set the HTTP User-Agent header string for Oinkmaster by
+  specifying "user_agent = ..." in oinkmaster.conf. The default
+  User-Agent string is unchanged, i.e. the string that LWP or wget set
+  it to by default. Based on patch from Derek Edwards.
 o Make contrib/addmsg.pl handle some multi-line statements.
 o contrib/create-sidmap.pl:
   - don't ignore rules that are commented out
