@@ -655,6 +655,9 @@ sub read_config($ $)
         } elsif (/^use_path_checks\s*=\s*([01])/i) {
             $$cfg_ref{use_path_checks} = $1;
 
+        } elsif (/^user_agent\s*=\s*(.+)/i) {
+            $$cfg_ref{user_agent} = $1;
+
         } elsif (/^include\s+(\S+.*)/i) {
              my $include = $1;
              read_config($include, $cfg_ref);
@@ -888,6 +891,9 @@ sub download_file($ $)
     $obfuscated_url = "$1*oinkcode*$2"
       if ($obfuscated_url =~ /^(\S+:\/\/.+\.cgi\/)[0-9a-z]{32,64}(\/.+)/i);
 
+    my @user_agent_opt;
+    @user_agent_opt = ("-U", $config{user_agent}) if (exists($config{user_agent}));
+
   # Use wget if URL starts with "http[s]" or "ftp" and we use external binaries.
     if ($config{use_external_bins} && $url =~ /^(?:https*|ftp)/) {
         print STDERR "Downloading file from $obfuscated_url... "
@@ -895,10 +901,13 @@ sub download_file($ $)
 
         if ($config{verbose}) {
             print STDERR "\n";
+            my @wget_cmd = ("wget", "-v", "-O", $localfile, $url, @user_agent_opt);
             clean_exit("could not download from $obfuscated_url")
-              if (system("wget", "-v", "-O", "$localfile", "$url"));
+              if (system(@wget_cmd));
+
         } else {
-            if (system("wget", "-v", "-o", "$log", "-O", "$localfile", "$url")) {
+            my @wget_cmd = ("wget", "-v", "-o", $log, "-O", $localfile, $url, @user_agent_opt);
+            if (system(@wget_cmd)) {
                 my $log_output;
                 open(LOG, "<", "$log")
                   or clean_exit("could not open $log for reading: $!");
@@ -920,7 +929,10 @@ sub download_file($ $)
         print STDERR "Downloading file from $obfuscated_url... "
           unless ($config{quiet});
 
-        my $ua = LWP::UserAgent->new();
+        my %lwp_opt;
+        $lwp_opt{agent} = $config{user_agent} if (exists($config{user_agent}));
+
+        my $ua = LWP::UserAgent->new(%lwp_opt);
         $ua->env_proxy;
 	my $request = HTTP::Request->new(GET => $url);
 	my $response = $ua->request($request, $localfile);
