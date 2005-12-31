@@ -2,7 +2,7 @@
 
 # $Id$ #
 
-# Copyright (c) 2001-2005 Andreas Östling <andreaso@it.su.se>
+# Copyright (c) 2001-2006 Andreas Östling <andreaso@it.su.se>
 # All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or
@@ -82,7 +82,7 @@ sub catch_sigint();
 sub clean_exit($);
 
 
-my $VERSION            = 'Oinkmaster v1.3, Copyright (C) 2001-2005 '.
+my $VERSION            = 'Oinkmaster v1.3, Copyright (C) 2001-2006 '.
                          'Andreas Östling <andreaso@it.su.se>';
 my $OUTFILE            = 'snortrules.tar.gz';
 my $RULES_DIR          = 'rules';
