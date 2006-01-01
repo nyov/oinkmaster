@@ -350,6 +350,13 @@ o Oinkmaster never deletes any rules files from your system.
   rules distribution, and will therefore be regarded as removed every 
   time.
 
+o Remember that there are many ways to stop alerts from firing, and
+  disabling the rule is not always the best way. For example, if all
+  you want is to stop the alert from/to a particular host, you should
+  not disable the rule completely. Instead, check the Snort manual on
+  how to use BPF filters, suppressing and pass rules and choose the
+  best method for the situation.
+
 o Don't depend too much on this script for the rules updating process.
   It's just intended to be a small help and you should always keep an 
   eye on it. Manual reviewing of all your rules and configuration 
