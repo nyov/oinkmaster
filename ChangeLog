@@ -16,6 +16,7 @@ o Added ability to grab rules files from a local directory by
   specifying dir://<directory> as URL.
 o Suppress warnings about using modifysid on non-existent SIDs when 
   running in quiet mode.
+o Minor documentation updates.
 o Misc improvements to the config file parser.
 o You can now set the HTTP User-Agent header string for Oinkmaster by
   specifying "user_agent = ..." in oinkmaster.conf. The default
