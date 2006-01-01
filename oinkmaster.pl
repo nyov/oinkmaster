@@ -2665,7 +2665,7 @@ sub parse_singleline_rule($ $ $)
 sub join_multilines($)
 {
     my $multiline_conf_ref = shift;
-    my $joined_conf;
+    my $joined_conf = "";
 
     foreach $_ (@$multiline_conf_ref) {
         s/\\\s*\n$//;
