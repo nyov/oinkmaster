@@ -8,11 +8,10 @@ at the Oinkmaster web site, http://oinkmaster.sourceforge.net/
 Oinkmaster FAQ
 --------------
 
-Q1:  Oinkmaster says the file in URL does not exist (or it exists but
-     doesn't work with my Snort).
+Q1:  What URL should I download the Snort signatures (rules) from?
 
-Q2:  Can I use an external utility to download the rules archive rather
-     than one of the built-in methods?
+Q2:  Oinkmaster says the file in URL does not exist (or it exists but
+     doesn't work with my Snort).
 
 Q3:  Can Oinkmaster be useful for distributing rules and configurations
      locally to my sensors?
@@ -80,8 +79,8 @@ Q26: How do I keep my sid-msg.map up-to-date?
 Q27: How to I make Snort reload the new rules without stopping the current 
      Snort process?
 
-Q28: Sourcefire changed the license of the rules in March 2005, how do I 
-     handle this in Oinkmaster?
+Q28: Can I use an external utility to download the rules archive rather
+     than one of the built-in methods?
 
 Q29: I update from multiple URLs at the same time and get the error 
      "a file called 'sid-msg.map' exists in multiple rules archives"
@@ -91,18 +90,87 @@ Q30: I get this error when running Oinkmaster:
      "URL not specified. Specify at least one 'url=<url>' in the
      Oinkmaster configuration file or use the '-u <url>' argument"
 
+Q31: How do I add a new classification when using Oinkmaster?
+
 
 --------------
 
 
-Q1:  Oinkmaster says the file in URL does not exist (or it exists but
+Q1:  What URL should I download the Snort signatures (rules) from?
+
+A1:  Quick instructions if you want to update using the official free 
+     Snort signatures:
+
+     1) Go to http://www.snort.org/ and register.
+        You will receive a password in your mail shortly after.
+
+     2) Go to the Snort site and login, and choose to edit your user 
+        profile.
+
+     3) You will find the most current instructions under
+        "Oinkmaster Download Codes" on that page. Basically press the
+        "Get Code" button to generate a code.
+        This will generate a code looking something like
+        "5a081649c06a277e1022e1284bdc8fabda70e2a4".
+        Then construct the URL like this:
+        http://www.snort.org/pub-bin/oinkmaster.cgi/<oinkcode>/<filename>
+        The filename depends on which version of Snort you use, so you must
+        remember to always use the right one.
+        If you for example use Snort 2.4, the url would look like this 
+        (without wrap):
+        http://www.snort.org/pub-bin/oinkmaster.cgi/5a081649c06a277e1022e1284b
+        dc8fabda70e2a4/snortrules-snapshot-2.4.tar.gz
+
+     You can now specify this URL as "url = <url>" in oinkmaster.conf
+     or use the "-u <url>" command line argument.
+
+
+     Here is some more information about downloading Snort signatures.
+     Oinkmaster can be used to update Snort signatures from many different 
+     places, like the official ones at www.snort.org or the
+     "Bleeding Snort" ones from www.bleedingsnort.com. Here follows 
+     information about the official Snort signatures at www.snort.org 
+     Third party rules sources should have their own instructions.
+     Remember that you should never ever update the Snort signatures
+     from an untrusted source!
+
+     In March 2005, Sourcefire changed the license of the Snort 
+     signatures. There are currently two different types of free rules 
+     tarballs on the official Snort site. The first one is the 5-day 
+     delayed Sourcefire VRT Certified Rules which you must register to 
+     get access to It's free to register, but to get them without the 
+     5-day delay you must pay Sourcefire. The second type is the Community 
+     Rules released under GPL. See http://www.snort.org/rules/ 
+     for details about the different types of rules. The good news is that 
+     you can update all of them using Oinkmaster.
+
+     To download the Sourcefire VRT licensed rules, see the instructions 
+     above. For the Community rules, no registration is required, so just 
+     point to the right URL (currently 
+     http://www.snort.org/pub-bin/downloads.cgi/
+     Download/comm_rules/Community-Rules.tar.gz).
+
+     As of Oinkmaster v1.2, you can specify multiple URLs to grab 
+     multiple rules archives at the same time. Note that when updating 
+     from multiple sources, e.g. both the Sourcefire VRT Certified 
+     Rules and the Community Rules, and you use a program such as 
+     Barnyard that requires a sid-msg.map file, you must handle this 
+     somehow. More information about this can be found elsewhere in 
+     this FAQ. It's generally recommended to use the Sourcefire 
+     VRT licensed rules as a minimum and other rules sources as a 
+     complement if requested.
+
+
+
+Q2:  Oinkmaster says the file in URL does not exist (or it exists but
      doesn't work with my Snort).
 
-A1:  Check the "url = ..." line in oinkmaster.conf (or argument to "-u" 
+A2:  Check the "url = ..." line in oinkmaster.conf (or argument to "-u" 
      if you specify it on command line). The URL you should use depends 
-     on the version of Snort you run. If Snort complains about unknown
-     keywords, you are probably trying to use rules that aren't 
-     compatible with your Snort version. See Q28 for more information.
+     on the version of Snort you run (check with snort -V). If Snort 
+     complains about unknown keywords, you are probably trying to use 
+     rules that aren't compatible with your Snort version. See Q1 for 
+     more information.
 	
      If you are absolutely sure you are using the right rules for your
      version of Snort but still have problems, you may need to read the
@@ -113,16 +181,6 @@ A1:  Check the "url = ..." line in oinkmaster.conf (or argument to "-u"
      the rules with automatic Snort restart is bad unless you are 
      careful). These issues are often mentioned on the Snort mailing 
      lists.
-
-
-
-Q2:  Can I use an external utility to download the rules archive rather
-     than one of the built-in methods?
-
-A2:  Yes, use whatever program you want and download the rules archive 
-     to the local filesystem first, and then run Oinkmaster and point to 
-     that file using file://<filename> as URL specification (url=<url> 
-     in oinkmaster.conf or -u <url> on the command line).
 
 
 
@@ -754,54 +812,13 @@ A27: This is not really an Oinkmaster question so you may want to check
 
 
 
-Q28: How do I update the official snort rules with Oinkmaster after 
-     Sourcefire changed the license of the rules in March 2005?
+Q2:  Can I use an external utility to download the rules archive rather
+     than one of the built-in methods?
 
-A28: First of all, note that the Oinkmaster author has nothing do do 
-     with the new rules license. If you have any questions or comments 
-     regarding this, please contact Sourcefire, not me.
-
-     There are currently two different types of free rules tarballs on 
-     the official Snort site. The 5-day delayed Sourcefire VRT 
-     Certified Rules which you must register to get access to, and the 
-     Community Rules released under GPL. See http://www.snort.org/rules/ 
-     for details. The good news is that you can update both of them 
-     using Oinkmaster. You can also pay to get the Sourcefire VRT 
-     Certified Rules without the 5-day delay but I don't know how that 
-     works.
-
-     - How to update the Sourcefire VRT Certified Rules:
-     1) Go to http://www.snort.org/ and register. If you accept the license
-        you will receive a password in your mail shortly after.
-     2) Go to the Snort site and login, and choose to edit your user 
-        profile.
-     3) You will find the most current instructions under
-        "Oinkmaster Download Codes" on that page. Basically press the
-        "Get Code" button to generate a code.
-        This will generate a code looking something like
-        "5a081649c06a277e1022e1284bdc8fabda70e2a4".
-        Then construct the url like this:
-        http://www.snort.org/pub-bin/oinkmaster.cgi/<oinkcode>/<filename>
-        The filename depends on which version of Snort you use, so you must
-        remember to always use the right one, as usual.
-        If you use Snort 2.3, the url would look like this (without wrap):
-        http://www.snort.org/pub-bin/oinkmaster.cgi/5a081649c06a277e1022e1284b
-        dc8fabda70e2a4/snortrules-snapshot-2.3.tar.gz
-        You can then add this url as "url = ..." to your 
-        oinkmaster.conf, or specify it with -u ... on the command line.
-
-     - How to update the Community Rules:
-       No registration is required, so just point to the right url
-       (currently http://www.snort.org/pub-bin/downloads.cgi/
-       Download/comm_rules/Community-Rules.tar.gz).
-
-     As of Oinkmaster v1.2, you can specify multiple URLs to grab 
-     multiple rules archives at the same time. Note that when updating 
-     from multiple sources, e.g. both the Sourcefire VRT Certified 
-     Rules and the Community Rules, and you use a program such as 
-     Barnyard that requires a sid-msg.map file, you must handle this 
-     somehow. More information about this can be found elsewhere in 
-     this FAQ. 
+A2:  Yes, use whatever program you want and download the rules archive 
+     to the local filesystem first, and then run Oinkmaster and point to 
+     that file using file://<filename> as URL specification (url=<url> 
+     in oinkmaster.conf or -u <url> on the command line).
 
 
 
@@ -830,3 +847,17 @@ A30: The error message explains it all - you did not tell Oinkmaster
      where to get the rules archive. Look in the default oinkmaster.conf 
      for more information. As of v1.2, no URL is specified by default in 
      the distribution oinkmaster.conf, so you must add at least one.
+
+
+
+Q31: How do I add a new classification when using Oinkmaster?
+
+Q31: It's often convenient to add new classifications for local 
+     signatures that you create. You can not however put 
+     those classification definitions in the regular classifications.conf 
+     file that is updated by Oinkmaster, as those modifications would be 
+     lost after an update. Instead, you can for example put your local 
+     classification definitions in a file called local-classification.conf 
+     and include that file with
+     "include /path/to/local-classifications.conf" from your snort.conf, 
+     just like you also include the regular classification.conf file.
