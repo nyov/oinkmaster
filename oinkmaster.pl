@@ -426,7 +426,7 @@ sub parse_cmdline($)
   # Cannot specify dist var files without specifying var target file.
     if (@{$$cfg_ref{dist_var_files}} && !$$cfg_ref{update_vars}) {
         clean_exit("You can not specify distribution variable file(s) without ".
-                   "specifying file to merge into");
+                   "also specifying local file to merge into");
     }
 
   # -o <dir> is the only required option in normal usage.
