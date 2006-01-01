@@ -33,6 +33,8 @@ define_template <name> "modifythis" | "withthis"
 The "modifythis" is a Perl regular expression that will match the 
 pattern you want to replace with the "withthis" expression.
 It is simply passed to a s/modifythis/withthis/ statement in Perl.
+This means that you must escape special characters to match them
+as strings.
 
 The syntax to use a template is:
 use_template <name> <sid> [ "arg1" "arg2" ... ]
