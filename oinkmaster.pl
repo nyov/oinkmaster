@@ -1146,6 +1146,11 @@ sub unpack_rules_archive($ $ $)
 
             my $content = $tar->get_content($file);
 
+          # Symlinks in the archive will make get_content return undef.
+            clean_exit("could not get content from file \"$file\" in downloaded archive, ".
+                       "make sure it is a regular file\n")
+              unless (defined($content));
+
             open(RULEFILE, ">", "$file")
               or clean_exit("could not open \"$file\" for writing: $!\n");
             print RULEFILE $content;
