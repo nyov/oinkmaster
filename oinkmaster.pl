@@ -1253,7 +1253,8 @@ sub process_rules($ $ $ $ $ $)
 
           # Is it a dup? If so, see if this seems to be more recent (higher rev).
             if (exists($sids{$sid})) {
-                warn("\nWARNING: duplicate SID in downloaded archive, SID=$sid\n")
+                warn("\nWARNING: duplicate SID in downloaded archive, SID=$sid, ".
+                     "only keeping rule with highest 'rev'\n")
                   unless($config{super_quiet});
 
                 my ($old_rev) = ($sids{$sid}{single} =~ /\brev\s*:\s*(\d+)\s*;/);
