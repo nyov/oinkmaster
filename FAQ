@@ -92,6 +92,8 @@ Q30: I get this error when running Oinkmaster:
 
 Q31: How do I add a new classification when using Oinkmaster?
 
+Q32: What Perl modules do I need to be able to set use_external_bins = 0?
+
 
 --------------
 
@@ -861,3 +863,15 @@ Q31: It's often convenient to add new classifications for local
      and include that file with
      "include /path/to/local-classifications.conf" from your snort.conf, 
      just like you also include the regular classification.conf file.
+
+
+
+Q32: What Perl modules do I need to be able to set use_external_bins = 0?
+
+A32: To use pure Perl instead and not use any external binaries (except 
+     when using scp do download the rules), you need the Perl modules 
+     Archive::Tar, IO::Zlib and LWP::UserAgent. You can get them from 
+     http://search.cpan.org. If you're on *BSD, they're most likely also 
+     available in the ports tree. On OpenBSD they're called 
+     p5-Archive-Tar, p5-IO-Zlib and p5-libwww. On Windows with 
+     ActivePerl, all those modules are included and used by default.
