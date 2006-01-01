@@ -829,15 +829,15 @@ sub sanity_check()
             unless (-r "$config{output_dir}/$_") {
                 closedir(OUTDIR);
                 clean_exit("no read permission on \"$config{output_dir}/$_\"\n".
-                           "(Read permission is required on all rules files ".
-                           "inside the output directory.)\n")
+                           "Read permission is required on all rules files ".
+                           "inside the output directory.\n")
             }
 
             if (!$config{careful} && !-w "$config{output_dir}/$_") {
                 closedir(OUTDIR);
                 clean_exit("no write permission on \"$config{output_dir}/$_\"\n".
-                           "(Write permission is required on all rules files ".
-                           "inside the output directory.)\n")
+                           "Write permission is required on all rules files ".
+                           "inside the output directory.\n")
             }
 	}
     }
