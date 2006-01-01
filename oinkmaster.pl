@@ -2363,6 +2363,8 @@ sub get_new_vars($ $ $ $)
                             warn("\nWARNING: new variable \"$varname\" is defined multiple ".
                                  "times in downloaded files\n");
                         }
+                        s/^\s*//;
+                        push(@{$$ch_ref{new_vars}}, "$_\n");
                         $new_vars{$varname} = $varval;
                         $num_new++;
                     }
@@ -2373,10 +2375,6 @@ sub get_new_vars($ $ $ $)
                   unless ($config{quiet});
             }
         }
-    }
-
-    foreach my $varname (keys(%new_vars)) {
-        push(@{$$ch_ref{new_vars}}, "var $varname $new_vars{$varname}\n");
     }
 }
 
