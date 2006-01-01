@@ -1103,7 +1103,8 @@ sub unpack_rules_archive($ $ $)
  # use_external_bins=0
     } else {
         $tar = Archive::Tar->new($archive, 1);
-        clean_exit("$url: could not read $archive\n")
+        clean_exit("$url: failed to read $archive (file transfer failed or ".
+                   "file in URL not in tar'ed gzip format?).")
           unless (defined($tar));
         @tar_content = $tar->list_files();
     }
