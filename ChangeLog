@@ -1,6 +1,6 @@
 # $Id$ #
 
-Oinkmaster v1.3 - 200xxxxx
+Oinkmaster v1.3 - 20060210
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 o When using the -U argument to merge new variables, you can now also 
   specify -S <file> to specify which files in the downloaded rules 
