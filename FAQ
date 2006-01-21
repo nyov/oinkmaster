@@ -94,6 +94,10 @@ Q31: How do I add a new classification when using Oinkmaster?
 
 Q32: What Perl modules do I need to be able to set use_external_bins = 0?
 
+Q33: Can I tell Oinkmaster to disable all rules by default, and only
+     enable and update specific ones?
+
+
 
 --------------
 
@@ -875,3 +879,42 @@ A32: To use pure Perl instead and not use any external binaries (except
      available in the ports tree. On OpenBSD they're called 
      p5-Archive-Tar, p5-IO-Zlib and p5-libwww. On Windows with 
      ActivePerl, all those modules are included and used by default.
+
+
+
+Q33: Can I tell Oinkmaster to disable all rules by default, and only
+     enable and update specific ones?
+
+A33: Yes. This may be convenient if you for example want to update 
+     rules from a third party, but you do not want to use their new 
+     rules by default - you only want to use some specific SIDs
+     and keep those updated automatically. This can be achieved with
+     a 'modifysid' expression to disable all (or some) rules first,
+     and then specify 'enablesid <sid>' to activate the rules you know 
+     you want to use.
+
+     Let's say there are a few specific rules you like from the 
+     Bleeding Snort project, but you don't care about their other
+     rules. You could copy those rules into some local rules file
+     but that way they would not get updated if the Bleeding Snort
+     project makes updates to their versions of the rules.
+     The Oinkmaster way is better. First, use a 'modifysid'
+     statement to disable all rules containing the "BLEEDING-EDGE"
+     tag:
+
+     modifysid * "^(.*BLEEDING\-EDGE.*)$" | "#${1}"
+     
+     Now, as 'enablesid' statements are processed after the
+     'modifysid' statements, we can override them and reenable the 
+     rules we like, for example:
+
+     enablesid 2000566, 2000567, 2000568
+
+     Now only the Bleeding Snort rules with SID 2000566, 2000567
+     and 2000568 will be enabled and you can keep them automatically 
+     updated. Oinkmaster will still update the other rules but they 
+     will stay disabled (commented out), and changes in those will show 
+     up as "Modified inactive rules". Remember that if you find a new 
+     rule you want to use, you must add an 'enablesid' statement for it 
+     as all added rules will be disabled by default.
+
