@@ -1,7 +1,8 @@
 # $Id$ #
 
-Oinkmaster v1.3 - 20060210
+Oinkmaster v2.0 - 20060210
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
+o Major version bump to celebrate Oinkmaster's 5th birthday!
 o When using the -U argument to merge new variables, you can now also 
   specify -S <file> to specify which files in the downloaded rules 
   archive(s) to search for new variables. If -S is not specified, only 
