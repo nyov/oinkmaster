@@ -1,15 +1,12 @@
 # $Id$ #
 
-Installation instructions for Oinkmaster
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Quick installation instructions for Oinkmaster
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 1) Put oinkmaster.pl in some suitable directory, for example 
    /usr/local/bin/. Put oinkmaster.conf in /etc/ or /usr/local/etc/
-   (this is where Oinkmaster will search for it by default). If you want 
-   to have oinkmaster.conf in some other directory, you must run 
-   Oinkmaster with the -C argument. Make sure that the 
-   ownership/permission on the above files are suitable for your 
-   environment. You may also want to copy the man page (oinkmaster.1) to 
+   (this is where Oinkmaster will search for it by default).
+   You may also want to copy the man page (oinkmaster.1) to 
    something like /usr/local/man/man1/.
 
 
@@ -17,18 +14,8 @@ Installation instructions for Oinkmaster
    be fine for most users, although one thing you must change is
    "url = <url>", which specifies the location of the rules archive.
    The URL to use depends on which version of Snort you run and also what 
-   type of rules you want to use. Some may require registration. See Q1 in 
-   the FAQ for more information.
-
-   In oinkmaster.conf you will then also tell Oinkmaster things like 
-   which SIDs or files you want to disable/enable/modify/ignore. If you 
-   already have several rules commented out (or removed) in your current 
-   rules, you must add the SIDs of those to oinkmaster.conf so they 
-   don't get re-enabled after each update (there is a help script for 
-   that, see makesidex.pl in the contrib directory). Remember that after 
-   switching to Oinkmaster for updating the rules, all permanent 
-   modifications to the rules must be done by editing oinkmaster.conf, 
-   not by editing the rules files directly.
+   type of rules you want to use. Some may require registration. See Q1 
+   in the FAQ for more information.
 
 
 3) Decide in which directory you want to put the new rules. If you 
@@ -40,14 +27,32 @@ Installation instructions for Oinkmaster
    Never run Oinkmaster as root.
 
 
-o Done! 
-  Assuming your rules directory is /etc/snort/rules/, you can now update 
-  those rules by running:
+Done! 
+Assuming your rules directory is /etc/snort/rules/, you can now update 
+those rules by running:
 
   oinkmaster.pl -o /etc/snort/rules
 
-  You should really check out the entire FAQ and README before doing 
-  anything though. You may also run oinkmaster.pl -h to list all 
-  available command line options. They are described in more detail in 
-  the Oinkmaster manual page. See the FAQ if you need to setup proxy 
-  configuration.
+
+
+Extra installation notes
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you're new to Oinkmaster, it's recommended that you read the entire 
+README and FAQ. You may also run oinkmaster.pl -h to list all available 
+command line options. They are described in more detail in the Oinkmaster 
+manual page. See the FAQ if you need to setup proxy configuration.
+
+In oinkmaster.conf you will tell Oinkmaster things like which rules or 
+files you want to disable/enable/modify/ignore. If you already have 
+several rules commented out (or removed) in your current rules files, you
+must add "disablesid" statements for those SIDs to oinkmaster.conf so 
+they don't get re-enabled after updating the rules (there is a help 
+script for that, see makesidex.pl in the contrib directory). Remember 
+that after switching to Oinkmaster for updating the rules, all permanent 
+modifications to the rules must be done by editing oinkmaster.conf, not 
+by editing the rules files directly.
+
+If you need more help, see the documentation at http://oinkmaster.sf.net/ 
+or ask on the Oinkmaster mailing list.
+
