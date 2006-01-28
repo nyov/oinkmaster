@@ -3,12 +3,12 @@
 Intro
 ~~~~~
 
-The Oinkmaster GUI is my very first attempt at creating a graphical 
+The Oinkmaster GUI was my very first attempt at creating a graphical 
 user interface in Perl/Tk. It was written just for fun and the result 
-is not the prettiest interface you've seen, but it actually works. It 
-runs on UNIX systems and also on Windows with ActivePerl. It's not 
-well-written and may not be a high priority for me in the future, so 
-use at your own risk. Send feedback to Andreas Östling 
+is not the prettiest interface you've seen, but it kind of works. It 
+runs on most Unix-like systems and also on Windows with ActivePerl.
+It's not well-written and may not be a high priority for me in the
+future, so use at your own risk. Send feedback to Andreas Östling 
 <andreaso@it.su.se>.
 
 
@@ -31,12 +31,12 @@ information.
 The GUI is written in Perl and requires the Perl Tk module.
 If you're on UNIX and don't have the Tk module already, install the 
 latest version from http://www.cpan.org/authors/id/NI-S/. 
-Unpack it and run "perl Makefile.pl && make && make install".
+Unpack it and run "perl Makefile.pl && make && sudo make install".
 If you're on *BSD, it's probably better to install the 
 /usr/ports/*/p5-Tk/ port instead. There are probably packages out there 
-for most Linux dists as well.
+for most Linux distributions as well.
 
-If you're on Windows with ActivePerl, you do not need any extra module
+If you're on Windows with ActivePerl, you do not need any extra modules
 since everything is probably installed already. Should the Tk module be 
 missing, you can install it with the command "ppm install Tk" in a DOS
 shell. If you want a non-ugly interface when browsing for directories, 
@@ -47,8 +47,8 @@ DOS shell.
 After you've made sure you have the Tk module installed, simply execute
 oinkgui.pl (it's found in Oinkmaster's contrib directory, and you may
 want to copy it to some better location first). You don't have to be in 
-a DOS shell / UNIX shell to start it - you can create a shortcut for it 
-on your desktop if you like.
+a DOS/Unix shell to start it - you can create a shortcut for it on your 
+desktop if you like.
 
 
 
