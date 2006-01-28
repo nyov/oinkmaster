@@ -3,7 +3,8 @@
 Introduction
 ------------
 
-There are three known ways to run Oinkmaster under Windows:
+Oinkmaster should work just as well on Windows as on Unix/Linux.
+There are three known ways to run Oinkmaster on Windows:
 
 - ActivePerl
 - Cygwin from within a Cygwin shell
@@ -21,7 +22,9 @@ A few useful notes about Oinkmaster and Windows
 -----------------------------------------------
 
 o You must always specify the -C argument and point to your 
-  oinkmaster.conf since it's looked for in a UNIX directory by default.
+  oinkmaster.conf since it's looked for in a Unix directory by default
+
+o Use of the Oinkmaster GUI is optional
 
 o When using Cygwin (standalone or from within a Cygwin shell) you 
   should be able to use both msdos style paths (e.g. c:\foo) or Cygwin 
@@ -47,8 +50,8 @@ o Oinkmaster usually requires a few external binaries (tar, gzip and
 
 
 
-ActivePerl
-----------
+Running with ActivePerl
+-----------------------
 
 - If you don't have ActivePerl installed already, get the most recent 
   version from http://www.activestate.com/Products/ActivePerl/.
@@ -71,8 +74,8 @@ Your paths may of course be different.
 
 
 
-Cygwin from within a Cygwin shell
----------------------------------
+Running with Cygwin from within a Cygwin shell
+----------------------------------------------
 
 - If you don't have a recent version of Cygwin installed already, get 
   it from http://www.cygwin.com/. Make sure to include at least the 
@@ -99,8 +102,8 @@ Or the same but using Cygwin style:
 
 
 
-Cygwin but not from within a Cygwin shell
------------------------------------------
+Running with Cygwin but not from within a Cygwin shell
+------------------------------------------------------
 
 This assumes that you want to run Oinkmaster using Cygwin, but
 without first starting a Cygwin shell.
@@ -124,8 +127,8 @@ without first starting a Cygwin shell.
 
 - Done!
 
-Now you should be able to run Oinkmaster. (You probably want to start a 
-cmd.exe shell first so you see what's going on.) For example, if Cygwin 
+Now you should be able to run Oinkmaster. (You may want to start a 
+cmd.exe shell first so you see what's  going on.) For example, if Cygwin 
 is installed in c:\cygwin and Oinkmaster and the rules directory is in 
 c:\oink\, you can run:
 
