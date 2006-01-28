@@ -5,7 +5,7 @@ Introduction
 ~~~~~~~~~~~~
 
 Oinkmaster is written by Andreas Östling <andreaso@it.su.se>.
-Homepage: http://oinkmaster.sourceforge.net/
+The homepage is at http://oinkmaster.sourceforge.net/
 
 Oinkmaster is simple Perl script released under the BSD license that 
 helps you keep your Snort rules current with little or no user 
@@ -13,19 +13,17 @@ interaction. It has quite a few useful features regarding rules
 management, such as ability to enable, disable and modify specified 
 rules after each update. It will tell you the exact changes from your 
 previous rules, so you have total control of what's going on.
+It may be useful in conjunction with any program that can use Snort
+rules, like Snort (doh!) or Prelude-NIDS.
 
 Oinkmaster is most often used to grab the latest official rules tarball 
 from www.snort.org and apply a set of modifications to them (such as 
 disabling unwanted ones), but it can just as well be used to manage 
-local and third party rules and distribute them to multiple sensors 
-with ability to fine-tune the rules on each sensor or group of
-sensors.
-
-Oinkmaster is based on the now extremely obsolete arachNIDS Snort rules 
-updater which was pretty much the same thing but for the arachNIDS 
-Snort rules exports at http://www.whitehats.com/ which have not been 
-maintained for a very long time. It may be useful in conjunction with 
-any program that can use Snort rules, like Snort (doh!) or Prelude-NIDS.
+your local rules and also third party rules and distribute them to 
+multiple sensors with ability to fine-tune the rules on each sensor or 
+group of sensors. Oinkmaster is designed to integrate well with other 
+scripts and you can easily setup a very powerful rules management system.
+See the FAQ for hints and suggestions.
 
 Use Oinkmaster with care and at your own risk. Check the INSTALL file 
 for quick installation instructions. You may also find the FAQ useful, 
@@ -43,7 +41,7 @@ its rules.
 Requirements
 ~~~~~~~~~~~~
 
-It should work on most UNIX-like systems with Perl 5.6.1 or later.
+It should work on most Unix-like systems with Perl 5.6.1 or later.
 You also need either the binaries tar, gzip and wget, or the Perl 
 modules Archive::Tar, IO::Zlib and LWP::UserAgent. See oinkmaster.conf 
 for more information about this. So far it has been successfully tested 
@@ -60,8 +58,9 @@ current. On www.snort.org for example, there is a rules tarball that is
 updated with new and improved rules on a regular basis. Very soon you
 will realize that this tarball contains rules that are not suitable for
 your environment, so you delete (or comment out) them from your local 
-rules files. Everything is fine until it's time to update the rules 
-since you will have to apply all these modifications again (and you 
+rules files. There may also be rules that you have to tweak in different 
+ways to suit you better. Everything is fine until it's time to update the 
+rules since you will have to apply all these modifications again (and you 
 must also keep track of these modifications so you can repeat them after 
 each update). This clearly becomes a boring and difficult task if you do 
 it manually, especially if you have many sensors and make lots of local 
@@ -125,11 +124,11 @@ to oinkmaster.conf manually (or check out the contrib directory for a
 help script) before running Oinkmaster, or they will be re-enabled 
 after each update. 
 
-You disable rules by adding "disablesid x" to oinkmaster.conf, where x 
-is the SID of the rule in question. So if you want the rule with SID 
-12345 to be commented out after each update, you add the line 
+You disable rules by adding "disablesid <sid>" to oinkmaster.conf, where 
+<sid> is the SID of the rule in question. So if you want the rule with 
+SID 12345 to be commented out after each update, you add the line 
 "disablesid 12345" to oinkmaster.conf. When you update the rules the 
-next time, this rule will be commented out and Oinkmaster will notify 
+next time, this rule will become commented out and Oinkmaster will notify 
 you of that change.
 
 You can also add entire files to be totally ignored by adding 
@@ -138,10 +137,10 @@ file in the distribution archive you don't care about at all. These
 files will not be checked for changes and they will not be added or 
 updated. For example if you don't include the file icmp-info.rules from 
 your snort.conf and don't care about keeping it up to date and don't 
-want to be notified of changes in it, you can to add the line "skipfile 
-icmp-info.rules" to oinkmaster.conf. Although it may be a good idea to 
-track changes even for rules files you don't use (i.e. that you don't 
-include from your snort.conf). Who knows, you might find something 
+want to be notified of changes in it, you can to add the line
+"skipfile icmp-info.rules" to oinkmaster.conf. Although it may be a good 
+idea to track changes even for rules files you don't use (i.e. that you 
+don't include from your snort.conf). Who knows, you might find something 
 interesting some day.
 
 The skilled/brave/stupid people can also use the "modifysid" keyword in
@@ -152,7 +151,7 @@ it unless you really have to.
 Oinkmaster can be run manually or automatically as a cron job. But of 
 course, be very careful when doing the latter. Things could easily get 
 messed up from one update to another because of different layout in the 
-rules archive, typo in a rule, bugs in the script etc., etc. At least 
+rules archive, typo in a rule, bugs in the script, and so on. At least 
 run snort -T on the new rules before restarting your Snort process. 
 And as always when updating the Snort rules there may be some changes 
 that you really don't like (or at least want to know about before 
@@ -235,10 +234,9 @@ o Modified inactive:
     out) rule.
 
 
-Non-rule changes, if any, will also be printed. Non-rule lines are simply 
-lines that are not actual rules (or rules that for some reason could not 
-be successfully parsed), and Oinkmaster will keep track of those 
-as well.
+Non-rule changes will also be printed. Non-rule lines are simply lines 
+that are not actual rules (or rules that for some reason could not 
+be successfully parsed), and Oinkmaster will keep track of those as well.
 
 Here comes some typical example output. We see that an active rule in 
 exploit.rules has been modified and that a rule in web-frontpage.rules has 
@@ -287,14 +285,14 @@ The above modified rule would then instead look like this:
 If there were any added rules files (i.e. files that have not been 
 included in the rules archive before and that have now been added to 
 your output directory), you should consider including them from your 
-Snort configuration file. If there were any files removed from the 
-archive, you should probably consider excluding them from your Snort 
-configuration file (you must use -r to check for removed files).
-Note that if a SID is moved from one file to another, it will be 
-regarded as removed from the first one and added to the new one. This 
-is good, because if a rule we like is moved from file A to file B and 
-we only include file A from our snort.conf, we sure would like to be 
-informed of that.
+Snort configuration file by adding an "include <file>" statement for it.
+If there were any files removed from the archive, you should probably 
+consider excluding them from your Snort configuration file (you must use 
+-r to check for removed files). Note that if a SID is moved from one file 
+to another, it will be regarded as removed from the first one and added 
+to the new one. This is good, because if a rule we like is moved from file 
+A to file B and we only include file A from our snort.conf, we sure would 
+like to be informed of that.
 
 
 
@@ -311,8 +309,8 @@ o It's a really good idea to separate your local rules files (if you have
   the rules directory but specify another snort.conf (one that's not in 
   your output directory specified by -o to Oinkmaster) when starting 
   Snort. This way you can keep track of changes in the snort.conf file 
-  from the rules archive while keeping your customized copy intact (You 
-  do not want to update your production snort.conf automatically!). If 
+  from the rules archive while keeping your customized copy intact. You 
+  do not want to update your production snort.conf automatically!. If 
   there are added/removed rules files in the archive or added/modified 
   variables in snort.conf, you will have to edit your production copy 
   of snort.conf manually and update as needed. Oinkmaster does not do 
@@ -325,11 +323,11 @@ o It's a really good idea to separate your local rules files (if you have
   You can run with -U <file> though, which means that Oinkmaster will 
   search snort.conf in the downloaded rules archive(s) for all 
   variables (the "var varname something" lines) and then verify against 
-  <file> (which probably is your local production copy of snort.conf). 
+  <file>, which probably is your local production copy of snort.conf. 
   Variables that exist in the distribution snort.conf but not in <file> 
   will be added to <file> directly after any other variables it may 
   contain. Variables that have just been modified are NOT updated, the 
-  -U argument only cares about totally new ones.
+  -U argument only cares about new ones.
 
 o Oinkmaster never deletes any rules files from your system.
   So if a file called foo.rules is usually included in the rules 
@@ -354,8 +352,10 @@ o Remember that there are many ways to stop alerts from firing, and
   disabling the rule is not always the best way. For example, if all
   you want is to stop the alert from/to a particular host, you should
   not disable the rule completely. Instead, check the Snort manual on
-  how to use BPF filters, suppressing and pass rules and choose the
-  best method for the situation.
+  how to use BPF filters, suppressing and pass rules, and choose the
+  best method for the situation. Also check out the document entitled
+  "How to stop Snort alerts from being generated / how to (not) ignore 
+  traffic" on the Oinkmaster web site.
 
 o Don't depend too much on this script for the rules updating process.
   It's just intended to be a small help and you should always keep an 
