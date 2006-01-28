@@ -53,6 +53,6 @@ that after switching to Oinkmaster for updating the rules, all permanent
 modifications to the rules must be done by editing oinkmaster.conf, not 
 by editing the rules files directly.
 
-If you need more help, see the documentation at http://oinkmaster.sf.net/ 
-or ask on the Oinkmaster mailing list.
+If you need more help, see the documentation at
+http://oinkmaster.sourceforge.net/ or ask on the Oinkmaster mailing list.
 
