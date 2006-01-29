@@ -30,9 +30,9 @@ sure both files are loaded, i.e. either start Oinkmaster with
 The syntax to define a template is:
 define_template <name> "modifythis" | "withthis"
 
-The "modifythis" is a Perl regular expression that will match the 
+"modifythis" is a Perl regular expression that will match the 
 pattern you want to replace with the "withthis" expression.
-It is simply passed to a s/modifythis/withthis/ statement in Perl.
+It is basically passed to a s/modifythis/withthis/ statement in Perl.
 This means that you must escape special characters to match them
 as strings.
 
@@ -55,22 +55,22 @@ arguments to use_template. So %ARG1% will be replaced with the first
 argument, %ARG2% with the second one, and so on.
 This is useful when you for example want to add "tag" statements (or 
 thresholding/limiting or whatever) to rules using a modifysid template, 
-but where you want the number of seconds to tag to be different for 
-different rules. By giving this value as argument when using the 
-template, there is no need to write a new template for each value for 
-the number of seconds. Examples of this is found in 
-template-examples.conf.
+but you want the number of seconds to tag to be different for different
+rules. By giving this value as argument when using the template, there
+is no need to write a new template for each value for the number of
+seconds. This may sound confusing, but have a look at the examples in
+template-examples.conf and it will hopefully make sense.
 
 If you use variables in the substitution expression, it is strongly
-recommended to always specify them like ${varname} instead of
-$varname (${1} instead of $1 for example) to avoid parsing confusion
+recommended to always specify them like ${varname} instead of $varname 
+(${1} instead of $1 for example) to avoid parsing confusion
 in some situations.
 
 
 
 Usage hints
 -----------
-When adding new stuff to rules using templates (or regular modifysid 
+When appending new stuff to rules using templates (or regular modifysid 
 expressions) it usually doesn't matter where in the rule you put it 
 unless it affects the way Snort parses and optimizes the rules. The 
 important thing is to write the substitution expression so that it
