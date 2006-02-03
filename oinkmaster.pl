@@ -1462,9 +1462,12 @@ sub process_rule($ $ $ $ $ $ $ $)
   # modifysid that's no good since we don't know where in the
   # rule the trailing backslashes and newlines are going to be
   # and we don't want them to affect the regexp.
-    foreach my $mod_expr (@$modify_sid_ref) {
+    MOD_EXP:foreach my $mod_expr (@$modify_sid_ref) {
         my ($subst, $repl, $type, $arg) =
           ($mod_expr->[0], $mod_expr->[1], $mod_expr->[2], $mod_expr->[3]);
+
+        my $print_modify_warnings = 0;
+        $print_modify_warnings = 1 if (!$config{super_quiet} && $print_messages && $type eq "sid");
 
         if ($type eq "wildcard" || ($type eq "sid" && $sid eq $arg) ||
           ($type eq "file" && $filename eq $arg)) {
@@ -1474,6 +1477,16 @@ sub process_rule($ $ $ $ $ $ $ $)
                              "match type=$type, subst=$subst, ".
                              "repl=$repl\nBefore: $single"
                   if ($print_messages && $config{verbose});
+
+
+              # If user specified a backreference but the regexp did not set $1 - don't modify rule.
+                if (!defined($1) && ($repl =~ /[^\\]\$\d+\b/ || $repl =~ /[^\\]\$\{\d+\}/)) {
+                    print STDERR "WARNING: SID $sid matches modifysid expression \"$subst\" but ".
+                                 "backreference variable \$1 is undefined after match, skipping\n"
+                      if ($print_modify_warnings);
+                      next MOD_EXP;
+                }
+
 
               # Do the substitution on the single-line version and put it
               # back in $multi.
@@ -1485,7 +1498,7 @@ sub process_rule($ $ $ $ $ $ $ $)
 
                 $$stats_ref{modified}++;
             } else {
-                if (!$config{super_quiet} && $print_messages && $type eq "sid") {
+                if ($print_modify_warnings) {
                     print STDERR "WARNING: SID $sid does not match ".
                                  "modifysid expression \"$subst\", skipping.\n";
                 }
@@ -2467,6 +2480,10 @@ sub parse_mod_expr($ $ $ $)
 
         return (0) unless ($type);
 
+      # Only allow backreference variables. The check should at least catch some user typos.
+        clean_exit("Illegal replacement expression \"$repl\": unescaped \$ that isn't a backreference")
+          if ($repl =~ /[^\\]\$(\D.)/ && $1 !~ /{\d/);
+
       # Make sure the regexp is valid.
         my $repl_qq = "qq/$repl/";
         my $dummy   = "foo";
@@ -2475,6 +2492,7 @@ sub parse_mod_expr($ $ $ $)
             $dummy =~ s/$subst/$repl_qq/ee;
         };
 
+      # We should probably check for warnings as well as errors...
         if ($@) {
             warn("Invalid regexp: $@");
             return (0);

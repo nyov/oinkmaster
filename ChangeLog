@@ -17,6 +17,7 @@ o Added ability to grab rules files from a local directory by
   specifying dir://<directory> as URL.
 o Suppress warnings about using modifysid on non-existent SIDs when 
   running in quiet mode.
+o Added some modifysid sanity checks
 o Added Q33 to the FAQ on how to disable all rules by default and
   only activate specific ones, with example how to automatically
   update only a few selected rules from Bleeding Snort.
