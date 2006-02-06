@@ -2482,7 +2482,7 @@ sub parse_mod_expr($ $ $ $)
 
       # Sanity check to make sure user escaped at least all the "$" in $subst.
         clean_exit("unescaped \$ in expression \"$subst\", all special characters must be escaped")
-          if ($subst =~ /[^\\]\$/ || $subst =~ /^\$/);
+          if ($subst =~ /[^\\]\$./ || $subst =~ /^\$/);
 
       # Only allow backreference variables. The check should at least catch some user typos.
         clean_exit("illegal replacement expression \"$repl\": unescaped \$ that isn't a backreference")
