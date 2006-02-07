@@ -2085,7 +2085,7 @@ sub update_rules($ @)
     my $dst_dir        = shift;
     my @modified_files = @_;
 
-    print STDERR "Updating rules... "
+    print STDERR "Updating local rules files... "
       if (!$config{quiet} || $config{interactive});
 
     foreach my $file_w_path (@modified_files) {
