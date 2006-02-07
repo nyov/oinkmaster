@@ -2486,7 +2486,7 @@ sub parse_mod_expr($ $ $ $)
 
       # Only allow backreference variables. The check should at least catch some user typos.
         clean_exit("illegal replacement expression \"$repl\": unescaped \$ that isn't a backreference")
-          if ($repl =~ /[^\\]\$(\D.)/ && $1 !~ /{\d/);
+          if (($repl =~ /[^\\]\$(\D.)/ && $1 !~ /{\d/) || $repl =~ /[^\\]\$$/);
 
       # Make sure the regexp is valid.
         my $repl_qq = "qq/$repl/";
