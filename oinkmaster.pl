@@ -1480,13 +1480,14 @@ sub process_rule($ $ $ $ $ $ $ $)
 
 
               # If user specified a backreference but the regexp did not set $1 - don't modify rule.
-                if (!defined($1) && ($repl =~ /[^\\]\$\d+\b/ || $repl =~ /[^\\]\$\{\d+\}/)) {
-                    print STDERR "WARNING: SID $sid matches modifysid expression \"$subst\" but ".
-                                 "backreference variable \$1 is undefined after match, skipping\n"
+                if (!defined($1) && ($repl =~ /[^\\]\$\d+/ || $repl =~ /[^\\]\$\{\d+\}/
+                  || $repl =~ /^qq\/\$\d+/ || $repl =~ /^qq\/\$\{\d+\}/)) {
+                    warn("WARNING: SID $sid matches modifysid expression \"$subst\" but ".
+                         "backreference variable \$1 is undefined after match, ".
+                         "keeping original rule\n")
                       if ($print_modify_warnings);
-                      next MOD_EXP;
+                    next MOD_EXP;
                 }
-
 
               # Do the substitution on the single-line version and put it
               # back in $multi.
@@ -1499,8 +1500,8 @@ sub process_rule($ $ $ $ $ $ $ $)
                 $$stats_ref{modified}++;
             } else {
                 if ($print_modify_warnings) {
-                    print STDERR "WARNING: SID $sid does not match ".
-                                 "modifysid expression \"$subst\", skipping.\n";
+                    warn("WARNING: SID $sid does not match modifysid ".
+                         "expression \"$subst\", keeping original rule\n");
                 }
             }
         }
@@ -2481,12 +2482,25 @@ sub parse_mod_expr($ $ $ $)
         return (0) unless ($type);
 
       # Sanity check to make sure user escaped at least all the "$" in $subst.
-        clean_exit("unescaped \$ in expression \"$subst\", all special characters must be escaped")
-          if ($subst =~ /[^\\]\$./ || $subst =~ /^\$/);
+        if ($subst =~ /[^\\]\$./ || $subst =~ /^\$/) {
+            warn("WARNING: unescaped \$ in expression \"$subst\", all special ".
+                 "characters must be escaped\n");
+            return (0);
+        }
 
       # Only allow backreference variables. The check should at least catch some user typos.
-        clean_exit("illegal replacement expression \"$repl\": unescaped \$ that isn't a backreference")
-          if (($repl =~ /[^\\]\$(\D.)/ && $1 !~ /{\d/) || $repl =~ /[^\\]\$$/);
+        if (($repl =~ /[^\\]\$(\D.)/ && $1 !~ /{\d/) || $repl =~ /[^\\]\$$/
+          || ($repl =~ /^\$(\D.)/ && $1 !~ /{\d/)) {
+            warn("WARNING: illegal replacement expression \"$repl\": unescaped \$ ".
+                 "that isn't a backreference\n");
+            return (0);
+        }
+
+      # Don't permit unescaped @.
+        if ($repl =~ /[^\\]\@/ || $repl =~ /^\@/) {
+            warn("WARNING: illegal replacement expression \"$repl\": unescaped \@\n");
+            return (0);
+        }
 
       # Make sure the regexp is valid.
         my $repl_qq = "qq/$repl/";
