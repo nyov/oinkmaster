@@ -1,6 +1,6 @@
 # $Id$ #
 
-Oinkmaster v2.0 - 20060210
+Oinkmaster v2.0 - 20060213
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 o Major version bump to celebrate Oinkmaster's 5th birthday!
 o When using the -U argument to merge new variables, you can now also 
