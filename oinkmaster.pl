@@ -82,7 +82,7 @@ sub catch_sigint();
 sub clean_exit($);
 
 
-my $VERSION            = 'Oinkmaster v2.0, Copyright (C) 2001-2006 '.
+my $VERSION            = 'Oinkmaster v2.1, Copyright (C) 2001-2006 '.
                          'Andreas Östling <andreaso@it.su.se>';
 my $OUTFILE            = 'snortrules.tar.gz';
 my $RULES_DIR          = 'rules';
