@@ -1,5 +1,12 @@
 # $Id$ #
 
+Oinkmaster v2.1 - 200xxxxx
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+o Print message when URL is specified on both command line
+  and in config file (command line wins)
+
+
+
 Oinkmaster v2.0 - 20060218
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 o Major version bump to celebrate that Oinkmaster has now turned 5

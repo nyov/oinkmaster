@@ -622,8 +622,12 @@ sub read_config($ $)
 	    }
 
 	} elsif (/^url\s*=\s*(.*)/i) {
-            push(@{$$cfg_ref{url}}, $1)
-              unless ($$cfg_ref{cmdline_url});
+            if ($$cfg_ref{cmdline_url}) {
+                warn("Ignoring URL in configuration file - URL already set on command line\n")
+                  unless ($config{quiet});
+            } else {
+                push(@{$$cfg_ref{url}}, $1);
+            }
 
 	} elsif (/^path\s*=\s*(.+)/i) {
 	    $$cfg_ref{path} = $1;
