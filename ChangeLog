@@ -2,8 +2,10 @@
 
 Oinkmaster v2.1 - 200xxxxx
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
-o Print message when URL is specified on both command line
-  and in config file (command line wins)
+o Print message when URL is specified on both command line and in config 
+  file (command line wins)
+o Fixed the link to the community rules in default oinkmaster.conf as 
+  the filename now contains a Snort version number
 
 
 
