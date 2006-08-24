@@ -1264,7 +1264,7 @@ sub process_rules($ $ $ $ $ $)
           # Is it a dup? If so, see if this seems to be more recent (higher rev).
             if (exists($sids{$sid})) {
                 warn("\nWARNING: duplicate SID in downloaded archive, SID=$sid, ".
-                     "only keeping rule with highest 'rev'\n")
+                     "trying to keep active rule with highest 'rev'\n")
                   unless($config{super_quiet});
 
                 my ($old_rev) = ($sids{$sid}{single} =~ /\brev\s*:\s*(\d+)\s*;/);
@@ -1577,12 +1577,12 @@ sub setup_rules_hash($ $)
 
 	    while (get_next_entry(\@oldfile, \$single, \$multi, \$nonrule, undef, \$sid)) {
 	        if (defined($single)) {
-		    warn("\nWARNING: duplicate SID in your local rules, SID ".
-                         "$sid exists multiple times, you may need to fix this manually!\n")
-		      if (exists($old_sids{$sid}));
+		    warn("\nWARNING: duplicate SID in your local rules, active rule with SID ".
+                         "$sid exists multiple times, you may need to fix this manually if the problem persists!\n")
+		      if (exists($old_sids{$sid}) && ($single !~ /^#/ && $old_sids{$sid} !~ /^#/));
 
 	  	    $rh{old}{rules}{"$file"}{"$sid"} = $single;
-	  	    $old_sids{$sid}++;
+	  	    $old_sids{$sid} = $single;
                 } else {
 	            push(@{$rh{old}{other}{"$file"}}, $nonrule);
                 }
