@@ -94,15 +94,16 @@ foreach my $rulesdir (@rulesdirs) {
         my @file = <FILE>;
         close(FILE);
 
-        my ($single, $multi, $nonrule, $msg, $sid);
+        my ($single, $multi, $nonrule, $msg, $sid, %old_sids);
 
         while (get_next_entry(\@file, \$single, \$multi, \$nonrule, \$msg, \$sid)) {
             if (defined($single)) {
 
                 warn("WARNING: duplicate SID: $sid (discarding old)\n")
-                  if (exists($sidmap{$sid}));
+                  if (exists($old_sids{$sid}) && ($single !~ /^#/ && $old_sids{$sid} !~ /^#/));
 
                 $sidmap{$sid} = "$sid || $msg";
+                $old_sids{$sid} = $single;
 
               # Print all references. Borrowed from Brian Caswell's regen-sidmap script.
                 my $ref = $single;
