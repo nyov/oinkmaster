@@ -58,6 +58,8 @@ sub join_tmp_rules_dirs($ $ @);
 sub process_rules($ $ $ $ $ $);
 sub process_rule($ $ $ $ $ $ $ $);
 sub setup_rules_hash($ $);
+sub check_flowbits_dependencies($);
+sub parse_flowbits($ $ $);
 sub get_first_only($ $ $);
 sub print_changes($ $);
 sub print_changetype($ $ $ $);
@@ -280,6 +282,8 @@ my %changes = get_changes(\%rh, \%new_files, $RULES_DIR);
 get_new_vars(\%changes, \@{$config{dist_var_files}}, $config{varfile}, \@url_tmpdirs)
   if ($config{update_vars});
 
+# Check for broken flowbits dependencies.
+check_flowbits_dependencies(\%rh);
 
 # Find out if something had changed.
 my $something_changed = 0;
@@ -1562,6 +1566,7 @@ sub setup_rules_hash($ $)
 	while (get_next_entry(\@newfile, \$single, \$multi, \$nonrule, \$msg, \$sid)) {
 	    if (defined($single)) {
   	        $rh{new}{rules}{"$file"}{"$sid"} = $single;
+                parse_flowbits(\%rh, $single, $sid);
 	    } else {
 	        push(@{$rh{new}{other}{"$file"}}, $nonrule);
 	    }
@@ -2714,6 +2719,84 @@ sub join_multilines($)
     }
 
     return (split/\n/, $joined_conf);
+}
+
+
+
+# Check if some active rule depends on flowbits that is not
+# set in any other active rule.
+sub check_flowbits_dependencies($)
+{
+    my $rh_ref = shift;
+
+  # No flowbits check in super quiet mode.
+    return if ($config{super_quiet});
+
+    print STDERR "Checking flowbits dependencies... "
+      unless ($config{quiet});
+
+    my $warnings = "";
+
+
+  # Check for rules that checks for flowbits that are never set/toggled.
+    foreach my $sid (keys(%{$$rh_ref{flowbits_check_dependency}})) {
+        my $depend_bit = $$rh_ref{flowbits_check_dependency}{$sid};
+
+        unless (exists($$rh_ref{flowbits_active_set}{$depend_bit})) {
+            $warnings .= "WARNING: SID $sid depends on flowbit \"$depend_bit\" ";
+            if (exists($$rh_ref{flowbits_inactive_set}{$depend_bit})) {
+                my $depend_sid = $$rh_ref{flowbits_inactive_set}{$depend_bit};
+                $warnings .= "which is set in INACTIVE SID $depend_sid ".
+                      "(SID $sid is broken unless you also enable SID $depend_sid).\n";
+            } else {
+                $warnings .= "which is not set in any rule\n";
+            }
+        }
+    }
+
+    if ($warnings) {
+        print STDERR "problems found:\n\n" unless ($config{quiet});
+        print STDERR $warnings;
+    } else {
+        print STDERR "no problems found.\n" unless ($config{quiet});
+    }
+}
+
+
+
+sub parse_flowbits($ $ $)
+{
+    my $rh_ref = shift;
+    my $rule   = shift;
+    my $sid    = shift;
+
+
+  # Check if it's an active rule that sets (or toggles) any flowbits,
+  # or has an isset or isnotset check.
+    if ($rule !~ /^#/) {
+        my @fields = split(/\s*;\s*/, $rule);
+        foreach my $field (@fields) {
+            if ($field =~ /^flowbits\s*:\s*(?:set|toggle)\s*,\s*(.+)/) {
+                $$rh_ref{flowbits_active_set}{$1} = $sid;
+            }
+            if ($field =~ /^flowbits\s*:\s*isnotset\s*,\s*(.+)/) {
+                $$rh_ref{flowbits_check_dependency}{$sid} = $1;
+            }
+            if ($field =~ /^flowbits\s*:\s*isset\s*,\s*(.+)/) {
+                $$rh_ref{flowbits_check_dependency}{$sid} = $1;
+            }
+        }
+    }
+
+  # Check if it's an inactive rule that sets (or toggles) any flowbits.
+    if ($rule =~ /^#/) {
+        my @fields = split(/\s*;\s*/, $rule);
+        foreach my $field (@fields) {
+            if ($field =~ /^flowbits\s*:\s*(?:set|toggle)\s*,\s*(.+)/) {
+                $$rh_ref{flowbits_inactive_set}{$1} = $sid;
+            }
+        }
+    }
 }
 
 
