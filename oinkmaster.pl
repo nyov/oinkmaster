@@ -623,7 +623,7 @@ sub read_config($ $)
 
 	} elsif (/^url\s*=\s*(.*)/i) {
             if ($$cfg_ref{cmdline_url}) {
-                warn("Ignoring URL in configuration file - URL already set on command line\n")
+                warn("URL already set on command line, ignoring URL in configuration file\n")
                   unless ($config{quiet});
             } else {
                 push(@{$$cfg_ref{url}}, $1);
