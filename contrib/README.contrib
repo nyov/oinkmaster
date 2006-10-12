@@ -1,7 +1,7 @@
 # $Id$ #
 
 -------------------------------------------------------------------------------
-* oinkgui.pl by Andreas Östling <andreaso@it.su.se>
+* oinkgui.pl by Andreas Östling <andreas_ostling@bredband.net>
 
   A graphical front-end to Oinkmaster written in Perl/Tk.
   See README.gui for complete documentation.
@@ -10,7 +10,7 @@
 
 
 -------------------------------------------------------------------------------
-* addsid.pl by Andreas Östling <andreaso@it.su.se>
+* addsid.pl by Andreas Östling <andreas_ostling@bredband.net>
 
   A script that parses *.rules in all specified directories and adds a 
   SID to (active) rules that don't have any. (Actually, rev and classtype 
@@ -24,7 +24,7 @@
 
 
 -------------------------------------------------------------------------------
-* create-sidmap.pl by Andreas Östling <andreaso@it.su.se>
+* create-sidmap.pl by Andreas Östling <andreas_ostling@bredband.net>
 
   A script that parses all active rules in *.rules in all specified 
   directories and creates a SID map. (Like Snort's regen-sidmap, but this 
@@ -36,7 +36,7 @@
 
 -------------------------------------------------------------------------------
 * makesidex.pl, originally by Jerry Applebaum but later rewritten by
-  Andreas Östling <andreaso@it.su.se> to handle multi-line rules and
+  Andreas Östling <andreas_ostling@bredband.net> to handle multi-line rules and
   multiple rules directories.
 
   It reads *.rules in all specified directories, looks for all disabled
@@ -48,7 +48,7 @@
 
 
 -------------------------------------------------------------------------------
-* addmsg.pl by Andreas Östling <andreaso@it.su.se>:
+* addmsg.pl by Andreas Östling <andreas_ostling@bredband.net>:
 
   A script that will parse your oinkmaster.conf for
   localsid/enablesid/disablesid lines and add their rule message as a #comment.

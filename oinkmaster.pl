@@ -2,7 +2,7 @@
 
 # $Id$ #
 
-# Copyright (c) 2001-2006 Andreas Östling <andreaso@it.su.se>
+# Copyright (c) 2001-2006 Andreas Östling <andreas_ostling@bredband.net>
 # All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or

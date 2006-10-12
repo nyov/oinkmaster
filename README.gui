@@ -8,8 +8,7 @@ user interface in Perl/Tk. It was written just for fun and the result
 is not the prettiest interface you've seen, but it kind of works. It 
 runs on most Unix-like systems and also on Windows with ActivePerl.
 It's not well-written and may not be a high priority for me in the
-future, so use at your own risk. Send feedback to Andreas Östling 
-<andreaso@it.su.se>.
+future, so use at your own risk.
 
 
 
