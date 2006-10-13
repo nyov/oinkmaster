@@ -2,17 +2,18 @@
 
 Oinkmaster v2.1 - 200xxxxx
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
+o Flowbits dependency check is now performed on the downloaded rules
+  after being processed by Oinkmaster. You will get a warning message 
+  if a rule has 'flowbits:set,...' or 'flowbits:isnotset,...' statements 
+  for flowbits that are never set or toggled in any rule. If you get 
+  warnings about flowbits dependency problems, you have to fix them 
+  yourself. Flowbits check is suppressed when using -Q.
 o Print message when URL is specified on both command line and in config 
-  file (command line wins)
+  file (command line wins as usual)
 o Fixed the link to the community rules in default oinkmaster.conf as 
   the filename now contains a Snort version number
 o oinkmaster.pl and create-sidmap.pl: don't print dup warnings for
   rules that are commented out (thanks to David J. Bianco)
-o Flowbits dependency check is not performed on the downloaded rules
-  after being processed by Oinkmaster. You will get a warning message if
-  a rule has 'flowbits:set,...' or 'flowbits:isnotset,...' statements for
-  flowbits that are never set or toggled. Flowbits check is suppressed
-  when using -Q.
 
 
 
