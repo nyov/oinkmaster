@@ -97,6 +97,7 @@ Q32: What Perl modules do I need to be able to set use_external_bins = 0?
 Q33: Can I tell Oinkmaster to disable all rules by default, and only
      enable and update specific ones?
 
+Q34: Can Oinkmaster update the shared object rules (so_rules)?
 
 
 --------------
@@ -918,3 +919,18 @@ A33: Yes. This may be convenient if you for example want to update
      rule you want to use, you must add an 'enablesid' statement for it 
      as all added rules will be disabled by default.
 
+
+
+Q34: Can Oinkmaster update the shared object rules (so_rules)?
+
+A34: Yes, but you have to run Oinkmaster separately with its own 
+     configuration file. Copy your regular oinkmaster.conf file
+     to oinkmaster-so-rules.conf (or create a new one) and set
+     "rules_dir = so_rules". Then run Oinkmaster with
+     -C <path tooinkmaster-so-rules.conf> and use an output directory
+     (-o <dir>) different than your regular rules directory. This is
+     important as the "rules" and "so_rules" directories contains
+     files with identical filenames. See the Snort documentation on how
+     to use shared object rules. The shared object rules are currently
+     disabled by default so you have to use "enablesid" or "modifysid"
+     to activate the ones you want to use.
