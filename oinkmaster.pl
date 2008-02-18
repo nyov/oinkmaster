@@ -2,7 +2,7 @@
 
 # $Id$ #
 
-# Copyright (c) 2001-2006 Andreas Östling <andreas_ostling@bredband.net>
+# Copyright (c) 2001-2008 Andreas Östling <andreaso@andreaso.se>
 # All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or
@@ -84,10 +84,9 @@ sub catch_sigint();
 sub clean_exit($);
 
 
-my $VERSION            = 'Oinkmaster v2.1, Copyright (C) 2001-2006 '.
-                         'Andreas Östling <andreaso@it.su.se>';
+my $VERSION            = 'Oinkmaster v2.1, Copyright (C) 2001-2008 '.
+                         'Andreas Östling <andreaso@andreaso.se>';
 my $OUTFILE            = 'snortrules.tar.gz';
-my $RULES_DIR          = 'rules';
 
 my $PRINT_NEW          = 1;
 my $PRINT_OLD          = 2;
@@ -110,6 +109,9 @@ my %config = (
     use_external_bins  => 1,
     verbose            => 0,
     use_path_checks    => 1,
+    rules_dir	       => 'rules',
+    path               => '/bin:/usr/bin:/usr/local/bin',
+    update_files       => '\.rules$|\.config$|\.conf$|\.txt$|\.map$',
     rule_actions       => "alert|drop|log|pass|reject|sdrop|activate|dynamic",
     tmp_basedir        => $ENV{TMP} || $ENV{TMPDIR} || $ENV{TEMPDIR} || '/tmp',
 );
@@ -234,22 +236,22 @@ my @url_tmpdirs;
 foreach my $url (@{$config{url}}) {
     my $url_tmpdir = tempdir("url.XXXXXXXXXX", DIR => $tmpdir)
       or clean_exit("could not create temporary directory in $tmpdir: $!");
-    push(@url_tmpdirs, "$url_tmpdir/$RULES_DIR");
+    push(@url_tmpdirs, "$url_tmpdir/$config{rules_dir}");
     if ($url =~ /^dir:\/\/(.+)/) {
-        mkdir("$url_tmpdir/$RULES_DIR")
-          or clean_exit("Could not create $url_tmpdir/$RULES_DIR");
-        copy_rules($1, "$url_tmpdir/$RULES_DIR");
+        mkdir("$url_tmpdir/$config{rules_dir}")
+          or clean_exit("Could not create $url_tmpdir/$config{rules_dir}");
+        copy_rules($1, "$url_tmpdir/$config{rules_dir}");
     } else {
         download_file($url, "$url_tmpdir/$OUTFILE");
-        unpack_rules_archive("$url", "$url_tmpdir/$OUTFILE", $RULES_DIR);
+        unpack_rules_archive("$url", "$url_tmpdir/$OUTFILE", $config{rules_dir});
     }
 }
 
-# Copy all rules files from the tmp dirs into $RULES_DIR in the tmp directory.
+# Copy all rules files from the tmp dirs into $config{rules_dir} in the tmp directory.
 # File matching 'skipfile' a directive will not be copied.
 # Filenames (with full path) will be stored as %new_files{filename}.
 # Will exit in case of duplicate filenames.
-my $num_files = join_tmp_rules_dirs("$tmpdir/$RULES_DIR", \my %new_files, @url_tmpdirs);
+my $num_files = join_tmp_rules_dirs("$tmpdir/$config{rules_dir}", \my %new_files, @url_tmpdirs);
 
 # Make sure we have at least the minimum number of files.
 clean_exit("not enough rules files in downloaded rules archive(s).\n".
@@ -276,7 +278,7 @@ clean_exit("not enough rules in downloaded archive(s).\n".
 my %rh = setup_rules_hash(\%new_files, $config{output_dir});
 
 # Compare the new rules to the old ones.
-my %changes = get_changes(\%rh, \%new_files, $RULES_DIR);
+my %changes = get_changes(\%rh, \%new_files, $config{rules_dir});
 
 # Check for variables that exist in dist snort.conf(s) but not in local snort.conf.
 get_new_vars(\%changes, \@{$config{dist_var_files}}, $config{varfile}, \@url_tmpdirs)
@@ -666,6 +668,9 @@ sub read_config($ $)
         } elsif (/^user_agent\s*=\s*(.+)/i) {
             $$cfg_ref{user_agent} = $1;
 
+        } elsif (/^rules_dir\s*=\s*(.+)/i) {
+            $$cfg_ref{rules_dir} = $1;
+
         } elsif (/^include\s+(\S+.*)/i) {
              my $include = $1;
              read_config($include, $cfg_ref);
@@ -796,20 +801,25 @@ sub sanity_check()
         push(@{$config{url}}, $ok_url);
     }
 
-  # Wget must be found if url is http[s]:// or ftp://.
-    if ($config{use_external_bins}) {
-        clean_exit("wget not found in PATH ($ENV{PATH}).")
-          if ($config{'url'} =~ /^(https*|ftp):/ && !is_in_path("wget"));
+  # Look for binaries that are only required in certain situations.
+    foreach my $url (@{$config{url}}) {
+        if ($config{use_external_bins}) {
+	  # Wget must be found if any URL is http[s]:// or ftp://.
+            clean_exit("wget not found in PATH ($ENV{PATH})\n" .
+                       "Install wget if missing, or update \"path = ...\" in Oinkmaster configuration file")
+              if ($url =~ /^(https*|ftp):/ && !is_in_path("wget"));
+	}
+
+      # scp must be found if scp://... regardless of use_external_bins value
+	if ($url =~ /^scp:/) {
+    	    clean_exit("scp not found in PATH ($ENV{PATH}).")
+      	      unless (is_in_path("scp"));
+
+      	  # ssh key must exist if specified and url is scp://...
+            clean_exit("ssh key \"$config{scp_key}\" does not exist.")
+              if (exists($config{scp_key})&& !-e $config{scp_key});
+	}
     }
-
-  # scp must be found if scp://...
-    clean_exit("scp not found in PATH ($ENV{PATH}).")
-      if ($config{'url'} =~ /^scp:/ && !is_in_path("scp"));
-
-  # ssh key must exist if specified and url is scp://...
-    clean_exit("ssh key \"$config{scp_key}\" does not exist.")
-      if ($config{'url'} =~ /^scp:/ && exists($config{scp_key})
-        && !-e $config{scp_key});
 
   # Untaint output directory string.
     $config{output_dir} = untaint_path($config{output_dir});
@@ -1209,10 +1219,11 @@ sub process_rules($ $ $ $ $ $)
     my %sids;
 
     my %stats = (
-        disabled => 0,
-        enabled  => 0,
-        modified => 0,
-        total    => 0,
+        disablesid => 0,
+        enablesid  => 0,
+        modifysid  => 0,
+        localsid   => 0,
+        total      => 0,
     );
 
     warn("WARNING: all rules that are disabled by default will be enabled\n")
@@ -1337,6 +1348,7 @@ sub process_rules($ $ $ $ $ $)
 
                 print OUTFILE $$rh_tmp_ref{old}{rules}{basename($file)}{$sid};
                 $sids{$sid}{printed} = 1;
+                $stats{localsid}++;
 
                 warn("SID $sid is marked as local, keeping your version from ".
                       basename($file) . ".\n".
@@ -1384,8 +1396,8 @@ sub process_rules($ $ $ $ $ $)
         close(OUTFILE);
     }
 
-    print STDERR "disabled $stats{disabled}, enabled $stats{enabled}, ".
-                 "modified $stats{modified}, total=$stats{total}\n"
+    print STDERR "disablesid $stats{disablesid}, enablesid $stats{enablesid}, ".
+                 "modifysid $stats{modifysid}, localsid $stats{localsid}, total rules $stats{total}\n"
       unless ($config{quiet});
 
   # Print warnings on attempt at enablesid/disablesid/localsid on non-existent
@@ -1462,7 +1474,7 @@ sub process_rule($ $ $ $ $ $ $ $)
         $multi  =~ s/^#*//;
         $multi  =~ s/\n#*/\n/g;
         $single =~ s/^#*//;
-        $$stats_ref{enabled}++;
+        $$stats_ref{enablesid}++;
     }
 
   # Modify rule if requested. For disablesid/enablesid we work
@@ -1505,7 +1517,7 @@ sub process_rule($ $ $ $ $ $ $ $)
       	        print STDERR "After:  $single\n"
                   if ($print_messages && $config{verbose});
 
-                $$stats_ref{modified}++;
+                $$stats_ref{modifysid}++;
             } else {
                 if ($print_modify_warnings) {
                     warn("WARNING: SID $sid does not match modifysid ".
@@ -1519,14 +1531,14 @@ sub process_rule($ $ $ $ $ $ $ $)
     if (exists($$disable_sid_ref{$sid}) && $multi !~ /^\s*#/) {
         $multi = "#$multi";
         $multi =~ s/\n([^#].+)/\n#$1/g;
-        $$stats_ref{disabled}++;
+        $$stats_ref{disablesid}++;
     }
 
   # Enable rule if requested and it's not already enabled.
     if (exists($$enable_sid_ref{$sid}) && $multi =~ /^\s*#/) {
         $multi =~ s/^#+//;
         $multi =~ s/\n#+(.+)/\n$1/g;
-        $$stats_ref{enabled}++;
+        $$stats_ref{enablesid}++;
     }
 
     $$rule_ref{single} = $single;
