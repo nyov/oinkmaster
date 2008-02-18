@@ -10,10 +10,25 @@ o Flowbits dependency check is now performed on the downloaded rules
   yourself. Flowbits check is suppressed when using -Q.
 o Print message when URL is specified on both command line and in config 
   file (command line wins as usual)
-o Fixed the link to the community rules in default oinkmaster.conf as 
-  the filename now contains a Snort version number
 o oinkmaster.pl and create-sidmap.pl: don't print dup warnings for
   rules that are commented out (thanks to David J. Bianco)
+o Updated the default example URLs in oinkmaster.conf to point to
+  more recent Snort versions and the Emerging Threats site.
+o Set defaults for 'update_files' and 'path' in oinkmaster.pl
+  instead of in oinkmaster.conf.
+o Write stats for matching 'localsid' statements just like the rest.
+o Fixed a couple of minor sanity check bugs.
+o Allow rules_dir to be set in Oinkmaster config file. This is the
+  directory in the downloaded rules archive where Oinkmaster will 
+  search for the rules files. Default is the directory called "rules",
+  as that's where the normal rules usually are. This allows you to 
+  update the shared object rules (so_rules) with Oinkmaster by 
+  creating a separate oinkmaster.conf containing "rules_dir = so_rules". 
+  Note that you can not set multiple directories so you have to run 
+  Oinkmaster separately for each directory. Remember to point to 
+  different output directories as the "rules" and "so_rules" 
+  directories contains files with identical filenames.
+o Updated my email address everywhere (now andreaso@andreaso.se).
 
 
 
